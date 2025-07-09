@@ -1,0 +1,46 @@
+{
+  "name": "cm-notes-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "server": "cd server && npm install && npm start",
+    "server:dev": "cd server && npm install && npm run dev",
+    "setup:external": "node setup-external-server.js",
+    "network:info": "node check-network-info.cjs"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cytoscape": "^3.33.0",
+    "cytoscape-fcose": "^2.2.0",
+    "kaplay": "^3001.0.19",
+    "phaser": "^3.70.0",
+    "pixi-particles": "^4.3.1",
+    "pixi-tilemap": "^2.1.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-fast-marquee": "^1.6.5",
+    "react-is": "^19.1.1",
+    "react-router-dom": "^7.7.0",
+    "recharts": "^3.1.2",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "canvas": "^3.2.0",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.0.1",
+    "vite": "^5.4.1"
+  }
+}
