@@ -1,0 +1,74 @@
+.filter-bar {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.filter-group label {
+  font-weight: 400;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.filter-group select {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--background);
+  color: var(--text-primary);
+  min-width: 140px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.filter-group select:hover {
+  border-color: var(--primary-color);
+  background-color: var(--surface);
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.2);
+}
+
+.icon-select {
+  max-width: 180px;
+}
+
+.selected-icon-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .filter-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .filter-group select {
+    flex: 1;
+    max-width: 200px;
+  }
+} 

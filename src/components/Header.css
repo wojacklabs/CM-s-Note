@@ -1,0 +1,279 @@
+.header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  height: 70px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.header-tabs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0 2rem;
+  transform: translate(-50%, -50%);
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0 1rem;
+  height: 70px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-tab:hover {
+  color: var(--text-primary);
+}
+
+.nav-tab.active {
+  color: var(--primary-color);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-color);
+  border-radius: 3px 3px 0 0;
+}
+
+.section-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0 2rem;
+}
+
+.section-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.section-link:hover {
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.section-link:active {
+  transform: translateY(1px);
+}
+
+.project-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.project-selector label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.project-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.project-selector select:hover {
+  border-color: var(--primary-color);
+  background-color: var(--surface);
+}
+
+.project-selector select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+.project-selector select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.loading-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+@media (max-width: 968px) {
+  .header-container {
+    padding: 0 1rem;
+  }
+  
+  .section-nav {
+    order: 3;
+    width: 100%;
+    padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .section-link {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0 1rem;
+    gap: 0.5rem;
+  }
+  
+  .header-tabs {
+    padding: 0 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .nav-tab {
+    padding: 0 0.75rem;
+  }
+  
+  .project-selector label {
+    font-size: 0.75rem;
+  }
+  
+  .project-selector select {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-container {
+    padding: 0 0.75rem;
+    height: 50px;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+  
+  .nav-tab {
+    height: 50px;
+  }
+
+  .header-left {
+    flex-shrink: 0;
+  }
+  
+  .logo {
+    font-size: 1.1rem;
+  }
+
+  .logo span {
+    display: none;
+  }
+  
+  .header-tabs {
+    flex: 1;
+    padding: 0 0.25rem;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  
+  .nav-tab {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .project-selector {
+    flex-shrink: 0;
+    gap: 0.25rem;
+  }
+  
+  .project-selector label {
+    display: none; /* Hide label on mobile to save space */
+  }
+  
+  .project-selector select {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: 80px;
+    max-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0.5rem;
+  }
+  
+  .logo {
+    font-size: 1rem;
+  }
+  
+  .project-selector select {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.4rem;
+    min-width: 70px;
+    max-width: 100px;
+  }
+} 
