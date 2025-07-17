@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
+import PrivacyTermPage from './pages/PrivacyTermPage';
 import Header from './components/Header';
 import { getAllProjects } from './services/irysService';
 import { CacheService } from './services/cacheService';
@@ -47,17 +49,22 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <Header 
-        projects={projects}
-        selectedProject={selectedProject}
-        onProjectChange={handleProjectChange}
-        loading={loading}
-      />
-      <main className="main-content">
-        <HomePage selectedProject={selectedProject} />
-      </main>
-    </div>
+    <Router>
+      <div className="app">
+        <Header 
+          projects={projects}
+          selectedProject={selectedProject}
+          onProjectChange={handleProjectChange}
+          loading={loading}
+        />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage selectedProject={selectedProject} />} />
+            <Route path="/privacy-term" element={<PrivacyTermPage />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 

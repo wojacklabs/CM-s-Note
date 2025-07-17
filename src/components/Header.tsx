@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom';
 import './Header.css';
 
 interface HeaderProps {
@@ -8,10 +9,17 @@ interface HeaderProps {
 }
 
 function Header({ projects, selectedProject, onProjectChange, loading }: HeaderProps) {
+  const location = useLocation();
+
   return (
     <header className="header">
       <div className="header-container">
-        <h1 className="logo">CM's Notes</h1>
+        <div className="header-left">
+          <Link to="/" className="logo-link">
+            <h1 className="logo">CM's Notes</h1>
+          </Link>
+        </div>
+        
         <div className="project-selector">
           <label htmlFor="project-select">Project:</label>
           {loading ? (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Note, User } from '../types';
 import { queryNotesByProject } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
@@ -308,6 +309,12 @@ function HomePage({ selectedProject }: HomePageProps) {
           </div>
         </section>
       )}
+
+      <footer className="home-footer">
+        <Link to="/privacy-term" className="privacy-policy-link">
+          Privacy Policy
+        </Link>
+      </footer>
 
       {selectedNote && (
         <NoteModal
