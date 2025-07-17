@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './Header.css';
 
 interface HeaderProps {
@@ -9,8 +9,6 @@ interface HeaderProps {
 }
 
 function Header({ projects, selectedProject, onProjectChange, loading }: HeaderProps) {
-  const location = useLocation();
-
   return (
     <header className="header">
       <div className="header-container">
