@@ -1,0 +1,99 @@
+import { Note } from '../types';
+import './NoteModal.css';
+
+interface NoteModalProps {
+  note: Note;
+  onClose: () => void;
+}
+
+function NoteModal({ note, onClose }: NoteModalProps) {
+  // Format timestamp like in CM's Note extension
+  const formatTimestamp = (timestamp: number) => {
+    // Handle Unix timestamp (seconds)
+    const date = new Date(timestamp * 1000);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>
+          ×
+        </button>
+        
+        <div className="modal-header">
+          <img 
+            src={note.iconUrl} 
+            alt="Note icon" 
+            className="modal-icon"
+          />
+          <div className="modal-title">
+            <h3>{note.nickname || note.user}</h3>
+            <p className="modal-subtitle">@{note.twitterHandle}</p>
+          </div>
+        </div>
+        
+        <div className="modal-body">
+          <div className="note-meta">
+            <div className="meta-row">
+              <span className="meta-label">CM:</span>
+              <span className="meta-value">{note.cmName}</span>
+            </div>
+            {note.userType && (
+              <div className="meta-row">
+                <span className="meta-label">User Type:</span>
+                <span className="meta-value">{note.userType}</span>
+              </div>
+            )}
+            <div className="meta-row">
+              <span className="meta-label">Project:</span>
+              <span className="meta-value">{note.project}</span>
+            </div>
+            <div className="meta-row">
+              <span className="meta-label">Date:</span>
+              <span className="meta-value">{formatTimestamp(note.timestamp)}</span>
+            </div>
+            <div className="meta-row">
+              <span className="meta-label">Status:</span>
+              <span className={`meta-value status-${note.status}`}>
+                {note.status}
+              </span>
+            </div>
+          </div>
+          
+          <div className="note-content">
+            <h4>Note Content:</h4>
+            <p>{note.content}</p>
+          </div>
+          
+          {note.dataUrl && (
+            <div className="note-footer">
+              <a 
+                href={note.dataUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="view-irys-link"
+              >
+                View on Irys →
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default NoteModal; 

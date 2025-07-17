@@ -1,0 +1,100 @@
+.embedded-tweet {
+  background-color: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.embedded-tweet:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Style for Twitter's embedded tweets */
+.embedded-tweet .twitter-tweet {
+  margin: 0 !important;
+}
+
+/* Style for placeholder tweets */
+.twitter-embed-placeholder {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  font-family: var(--font-family);
+}
+
+.embed-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.embed-header img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.embed-author {
+  flex: 1;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.author-handle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.embed-content {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.embed-content p {
+  margin-bottom: 0.75rem;
+}
+
+.embed-content ol {
+  margin-left: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.embed-content li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.embed-content code {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+}
+
+.embed-footer {
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--border);
+}
+
+.embed-footer a {
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.embed-footer a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+} 

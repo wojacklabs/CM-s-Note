@@ -1,0 +1,152 @@
+.home-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.users-section {
+  margin-bottom: 4rem;
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.tweets-section {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: normal;
+}
+
+.embedded-tweets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tweets-info {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.tweets-info p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tweets-info strong {
+  color: var(--text-primary);
+}
+
+.marquee-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.marquee-controls label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.marquee-controls input[type="range"] {
+  width: 120px;
+  height: 4px;
+  background: var(--border);
+  outline: none;
+  -webkit-appearance: none;
+  border-radius: 2px;
+}
+
+.marquee-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--primary-color);
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.marquee-controls input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--primary-color);
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
+
+.marquee-controls span {
+  font-weight: 600;
+  color: var(--primary-color);
+  min-width: 2.5rem;
+  text-align: left;
+}
+
+.marquee-container {
+  background: linear-gradient(to bottom, var(--surface), var(--background));
+  border-radius: var(--radius);
+  padding: 2rem 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.marquee-container::before,
+.marquee-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.marquee-container::before {
+  left: 0;
+  background: linear-gradient(to right, var(--surface), transparent);
+}
+
+.marquee-container::after {
+  right: 0;
+  background: linear-gradient(to left, var(--surface), transparent);
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    padding: 1rem;
+  }
+  
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .embedded-tweets-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tweets-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+  }
+} 

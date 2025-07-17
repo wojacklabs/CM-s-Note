@@ -1,0 +1,101 @@
+.timeline-example {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.timeline-options {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.option-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.option-group label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.option-group input,
+.option-group select {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--background);
+}
+
+.timeline-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.timeline-section h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.current-implementation {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  height: 500px;
+  overflow-y: auto;
+}
+
+.current-implementation ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.current-implementation li {
+  padding: 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.recommendation {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+
+.recommendation h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.recommendation h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.recommendation ul {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.recommendation li {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .timeline-comparison {
+    grid-template-columns: 1fr;
+  }
+} 

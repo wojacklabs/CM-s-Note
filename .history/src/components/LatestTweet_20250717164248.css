@@ -1,0 +1,133 @@
+.latest-tweet {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.latest-tweet:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.latest-tweet.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.latest-tweet.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-color: var(--error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.latest-tweet.no-tweet {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content strong {
+  color: var(--error);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.error-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.no-tweet-icon {
+  font-size: 1.5rem;
+}
+
+.tweet-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tweet-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.tweet-author {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tweet-author strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.tweet-time {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.tweet-content {
+  border-left: 4px solid var(--primary-color);
+  padding-left: 1rem;
+  margin: 0 0 1rem 0;
+  background-color: var(--background);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 1rem;
+}
+
+.tweet-content a {
+  color: var(--text-primary);
+  text-decoration: none;
+  line-height: 1.5;
+  display: block;
+}
+
+.tweet-content a:hover {
+  color: var(--primary-color);
+}
+
+.tweet-footer {
+  text-align: right;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.tweet-footer a {
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tweet-footer a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+} 

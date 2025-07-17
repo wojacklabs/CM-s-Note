@@ -1,0 +1,20 @@
+.twitter-timeline-container {
+  width: 100%;
+  min-height: 400px;
+  background-color: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.timeline-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Override Twitter widget styles to match our design */
+.twitter-timeline-container iframe {
+  border-radius: var(--radius) !important;
+} 

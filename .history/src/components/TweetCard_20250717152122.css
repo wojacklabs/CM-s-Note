@@ -1,0 +1,81 @@
+.tweet-card {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 0 1rem;
+  min-width: 350px;
+  max-width: 400px;
+  transition: all 0.3s ease;
+}
+
+.tweet-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.tweet-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tweet-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tweet-author {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-handle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tweet-time {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.tweet-content {
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  word-wrap: break-word;
+}
+
+.tweet-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.view-tweet-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.view-tweet-link:hover {
+  text-decoration: underline;
+} 
