@@ -1,8 +1,35 @@
 import axios from 'axios';
 import { Note, ProjectIcon } from '../types';
+import { debugTimestamp } from '../utils/dateUtils';
 
 const IRYS_GATEWAY_URL = 'https://gateway.irys.xyz';
 const IRYS_GRAPHQL_URL = 'https://uploader.irys.xyz/graphql';
+
+// Helper function to properly handle timestamp from Irys
+function parseIrysTimestamp(timestamp: any): number {
+  if (!timestamp) return 0;
+  
+  // Convert to number if it's a string
+  const numTimestamp = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
+  
+  // Debug the raw timestamp
+  debugTimestamp(numTimestamp, 'Irys GraphQL');
+  
+  // Irys timestamps are Unix timestamps in seconds
+  // We need to determine if the timestamp is in seconds or milliseconds
+  // If the timestamp is less than year 2001 in milliseconds (< 978307200000),
+  // it's likely in seconds and needs to be converted
+  if (numTimestamp < 978307200000) {
+    // It's in seconds, keep as is for our formatTimestamp function
+    console.log(`[Irys] Timestamp is in seconds: ${numTimestamp}`);
+    return numTimestamp;
+  } else {
+    // It's in milliseconds, convert to seconds for our formatTimestamp function
+    const convertedTimestamp = Math.floor(numTimestamp / 1000);
+    console.log(`[Irys] Timestamp is in milliseconds: ${numTimestamp} -> ${convertedTimestamp} seconds`);
+    return convertedTimestamp;
+  }
+}
 
 // Query all notes for a specific project
 export async function queryNotesByProject(project: string): Promise<Note[]> {
@@ -39,11 +66,16 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
     const edges = response.data?.data?.transactions?.edges || [];
     const notes: Note[] = [];
 
+    console.log(`[IrysService] Fetched ${edges.length} transactions for project ${project}`);
+
     for (const edge of edges) {
       const node = edge.node;
       const tags = node.tags || [];
       
       const getTagValue = (tagName: string) => tags.find((t: any) => t.name === tagName)?.value;
+      
+      // Parse timestamp properly
+      const parsedTimestamp = parseIrysTimestamp(node.timestamp);
       
       const note: Note = {
         id: node.id,
@@ -56,10 +88,20 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         iconUrl: getTagValue('irys-cm-note-Icon'),
         content: '',
         status: getTagValue('irys-cm-note-status') || 'added',
-        timestamp: node.timestamp,
+        timestamp: parsedTimestamp,
         cmName: getTagValue('irys-cm-note-cm'),
         dataUrl: `${IRYS_GATEWAY_URL}/mutable/${getTagValue('Root-TX') || node.id}`
       };
+
+      // Log first few notes for debugging
+      if (notes.length < 3) {
+        console.log(`[IrysService] Note ${notes.length + 1}:`, {
+          id: note.id.substring(0, 8) + '...',
+          timestamp: note.timestamp,
+          twitterHandle: note.twitterHandle,
+          cmName: note.cmName
+        });
+      }
 
       // Fetch note content
       try {
@@ -72,7 +114,10 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
       notes.push(note);
     }
 
-    return filterActiveNotes(notes);
+    const activeNotes = filterActiveNotes(notes);
+    console.log(`[IrysService] Filtered to ${activeNotes.length} active notes`);
+    
+    return activeNotes;
   } catch (error) {
     console.error('Error querying notes:', error);
     return [];

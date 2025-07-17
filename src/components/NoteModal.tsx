@@ -1,4 +1,5 @@
 import { Note } from '../types';
+import { formatTimestamp } from '../utils/dateUtils';
 import './NoteModal.css';
 
 interface NoteModalProps {
@@ -7,25 +8,6 @@ interface NoteModalProps {
 }
 
 function NoteModal({ note, onClose }: NoteModalProps) {
-  // Format timestamp like in CM's Note extension
-  const formatTimestamp = (timestamp: number) => {
-    // Handle Unix timestamp (seconds)
-    const date = new Date(timestamp * 1000);
-    const now = new Date();
-    const diff = now - date;
-    
-    if (diff < 60000) return 'just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>

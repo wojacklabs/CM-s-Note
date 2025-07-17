@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, User } from '../types';
 import { queryNotesByProject } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
+import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
 import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
@@ -204,11 +205,6 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
     });
     return Array.from(values).sort();
-  };
-
-  const formatLastUpdated = (date: Date | null) => {
-    if (!date) return '';
-    return date.toLocaleTimeString();
   };
 
   if (loading) {
