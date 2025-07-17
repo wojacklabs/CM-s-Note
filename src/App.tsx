@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import HomePage from './pages/HomePage';
 import Header from './components/Header';
 import { getAllProjects } from './services/irysService';
+import { CacheService } from './services/cacheService';
 import './App.css';
 
 function App() {
@@ -28,12 +29,29 @@ function App() {
     }
   };
 
+  const handleProjectChange = (newProject: string) => {
+    if (newProject !== selectedProject) {
+      // Clear cache for other projects on project change
+      // This helps manage memory usage
+      const currentCacheSize = Object.keys(localStorage).filter(key => 
+        key.startsWith('cm-notes-cache-')
+      ).length;
+      
+      if (currentCacheSize > 3) {
+        console.log('[App] Clearing old caches to manage memory...');
+        CacheService.clearAllCaches();
+      }
+      
+      setSelectedProject(newProject);
+    }
+  };
+
   return (
     <div className="app">
       <Header 
         projects={projects}
         selectedProject={selectedProject}
-        onProjectChange={setSelectedProject}
+        onProjectChange={handleProjectChange}
         loading={loading}
       />
       <main className="main-content">

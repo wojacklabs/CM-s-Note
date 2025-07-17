@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, User } from '../types';
 import { queryNotesByProject } from '../services/irysService';
+import { CacheService } from '../services/cacheService';
 import UserCard from '../components/UserCard';
 import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
@@ -18,7 +19,9 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
   // Filter states
   const [selectedCM, setSelectedCM] = useState<string>('all');
@@ -27,59 +30,146 @@ function HomePage({ selectedProject }: HomePageProps) {
   
   // Marquee controls
   const [speed, setSpeed] = useState(50);
+  
+  // Auto-refresh interval ref
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Process notes data to users
+  const processNotesToUsers = useCallback((notesData: Note[]) => {
+    // Group notes by user
+    const userMap = new Map<string, User>();
+    
+    notesData.forEach(note => {
+      const key = note.twitterHandle;
+      if (!userMap.has(key)) {
+        userMap.set(key, {
+          twitterHandle: note.twitterHandle,
+          displayName: note.twitterHandle,
+          notes: []
+        });
+      }
+      userMap.get(key)!.notes.push(note);
+    });
+    
+    const userList = Array.from(userMap.values());
+    setUsers(userList);
+    
+    // Get recent users (sorted by most recent note timestamp)
+    const recentUserList = userList
+      .map(user => ({
+        ...user,
+        latestNoteTimestamp: Math.max(...user.notes.map(note => note.timestamp || 0))
+      }))
+      .sort((a, b) => b.latestNoteTimestamp - a.latestNoteTimestamp)
+      .slice(0, 20);
+    
+    setRecentUsers(recentUserList);
+    setLastUpdated(new Date());
+  }, []);
+
+  // Load data from API
+  const loadDataFromAPI = useCallback(async (showLoader = true) => {
+    if (!selectedProject) return;
+    
+    try {
+      if (showLoader) {
+        setLoading(true);
+      } else {
+        setUpdating(true);
+      }
+      
+      console.log(`[HomePage] Loading data from API for project: ${selectedProject}`);
+      const projectNotes = await queryNotesByProject(selectedProject);
+      
+      setNotes(projectNotes);
+      processNotesToUsers(projectNotes);
+      
+      // Save to cache
+      CacheService.saveToCache(selectedProject, projectNotes);
+      
+      console.log(`[HomePage] Loaded ${projectNotes.length} notes from API`);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      } else {
+        setUpdating(false);
+      }
+    }
+  }, [selectedProject, processNotesToUsers]);
+
+  // Load data (cache first, then API if needed)
+  const loadData = useCallback(async () => {
+    if (!selectedProject) return;
+    
+    // Try to load from cache first
+    const cachedNotes = CacheService.getFromCache(selectedProject);
+    
+    if (cachedNotes && cachedNotes.length > 0) {
+      console.log(`[HomePage] Loading from cache for project: ${selectedProject}`);
+      setNotes(cachedNotes);
+      processNotesToUsers(cachedNotes);
+      setLoading(false);
+      
+      // If cache is still valid, don't fetch from API
+      if (CacheService.isCacheValid(selectedProject)) {
+        console.log(`[HomePage] Cache is valid, skipping API call`);
+        setLastUpdated(new Date());
+        return;
+      }
+    }
+    
+    // If no cache or cache is invalid, load from API
+    await loadDataFromAPI(!cachedNotes || cachedNotes.length === 0);
+  }, [selectedProject, processNotesToUsers, loadDataFromAPI]);
+
+  // Setup auto-refresh
+  const setupAutoRefresh = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    intervalRef.current = setInterval(() => {
+      if (selectedProject && !CacheService.isCacheValid(selectedProject)) {
+        console.log('[HomePage] Auto-refreshing data...');
+        loadDataFromAPI(false);
+      }
+    }, 60000); // Check every minute
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [selectedProject, loadDataFromAPI]);
+
+  // Load data when project changes
   useEffect(() => {
     if (selectedProject) {
       loadData();
     }
-  }, [selectedProject]);
+  }, [selectedProject, loadData]);
 
+  // Setup auto-refresh when component mounts or project changes
+  useEffect(() => {
+    const cleanup = setupAutoRefresh();
+    return cleanup;
+  }, [setupAutoRefresh]);
+
+  // Apply filters
   useEffect(() => {
     applyFilters();
   }, [users, selectedCM, selectedUserType, selectedIcon]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load notes
-      const projectNotes = await queryNotesByProject(selectedProject);
-      setNotes(projectNotes);
-      
-      // Group notes by user
-      const userMap = new Map<string, User>();
-      
-      projectNotes.forEach(note => {
-        const key = note.twitterHandle;
-        if (!userMap.has(key)) {
-          userMap.set(key, {
-            twitterHandle: note.twitterHandle,
-            displayName: note.twitterHandle,
-            notes: []
-          });
-        }
-        userMap.get(key)!.notes.push(note);
-      });
-      
-      const userList = Array.from(userMap.values());
-      setUsers(userList);
-      
-      // Get recent users (sorted by most recent note timestamp)
-      const recentUserList = userList
-        .map(user => ({
-          ...user,
-          latestNoteTimestamp: Math.max(...user.notes.map(note => note.timestamp || 0))
-        }))
-        .sort((a, b) => b.latestNoteTimestamp - a.latestNoteTimestamp)
-        .slice(0, 20); // Show top 20 recent users
-      
-      setRecentUsers(recentUserList);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const applyFilters = () => {
     let filtered = [...users];
@@ -116,12 +206,17 @@ function HomePage({ selectedProject }: HomePageProps) {
     return Array.from(values).sort();
   };
 
+  const formatLastUpdated = (date: Date | null) => {
+    if (!date) return '';
+    return date.toLocaleTimeString();
+  };
+
   if (loading) {
     return (
       <div className="home-page">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading...</p>
+          <p>Loading notes...</p>
         </div>
       </div>
     );
@@ -139,6 +234,23 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   return (
     <div className="home-page">
+      <div className="status-bar">
+        <div className="status-info">
+          <span className="data-count">{notes.length} notes loaded</span>
+          {lastUpdated && (
+            <span className="last-updated">
+              Last updated: {formatLastUpdated(lastUpdated)}
+            </span>
+          )}
+          {updating && (
+            <span className="updating-indicator">
+              <div className="small-spinner"></div>
+              Updating...
+            </span>
+          )}
+        </div>
+      </div>
+
       <section className="users-section">
         <FilterBar
           cms={getUniqueValues('cmName')}
