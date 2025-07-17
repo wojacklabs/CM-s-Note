@@ -1,4 +1,3 @@
-import { ProjectIcon } from '../types';
 import './FilterBar.css';
 
 interface FilterBarProps {

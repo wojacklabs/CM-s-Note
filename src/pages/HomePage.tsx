@@ -33,7 +33,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [speed, setSpeed] = useState(50);
   
   // Auto-refresh interval ref
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[]) => {
@@ -136,7 +136,7 @@ function HomePage({ selectedProject }: HomePageProps) {
         console.log('[HomePage] Auto-refreshing data...');
         loadDataFromAPI(false);
       }
-    }, 60000); // Check every minute
+    }, 60000) as unknown as number; // Check every minute
     
     return () => {
       if (intervalRef.current) {

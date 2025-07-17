@@ -105,8 +105,10 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
 
       // Fetch note content
       try {
-        const contentResponse = await axios.get(note.dataUrl);
-        note.content = contentResponse.data.content || '';
+        if (note.dataUrl) {
+          const contentResponse = await axios.get(note.dataUrl);
+          note.content = contentResponse.data.content || '';
+        }
       } catch (error) {
         console.error('Error fetching note content:', error);
       }
