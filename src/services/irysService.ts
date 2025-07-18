@@ -31,7 +31,7 @@ function parseIrysTimestamp(timestamp: any): number {
   }
 }
 
-// Query all notes for a specific project
+// Query all notes for a specific project (optimized - no content fetching)
 export async function queryNotesByProject(project: string): Promise<Note[]> {
   const query = `
     query getNotesByProject($project: String!) {
@@ -58,6 +58,9 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
   `;
 
   try {
+    console.log(`[IrysService] Starting query for project: ${project}`);
+    const startTime = Date.now();
+    
     const response = await axios.post(IRYS_GRAPHQL_URL, {
       query,
       variables: { project }
@@ -66,7 +69,7 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
     const edges = response.data?.data?.transactions?.edges || [];
     const notes: Note[] = [];
 
-    console.log(`[IrysService] Fetched ${edges.length} transactions for project ${project}`);
+    console.log(`[IrysService] Fetched ${edges.length} transactions for project ${project} in ${Date.now() - startTime}ms`);
 
     for (const edge of edges) {
       const node = edge.node;
@@ -86,10 +89,11 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         nickname: getTagValue('irys-cm-note-user'),
         userType: getTagValue('irys-cm-note-user-type'),
         iconUrl: getTagValue('irys-cm-note-Icon'),
-        content: '',
+        content: '', // Will be loaded on demand
         status: getTagValue('irys-cm-note-status') || 'added',
         timestamp: parsedTimestamp,
         cmName: getTagValue('irys-cm-note-cm'),
+        cmTwitterHandle: getTagValue('irys-cm-note-cm-twitter-handle'),
         dataUrl: `${IRYS_GATEWAY_URL}/mutable/${getTagValue('Root-TX') || node.id}`
       };
 
@@ -103,27 +107,91 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         });
       }
 
-      // Fetch note content
-      try {
-        if (note.dataUrl) {
-          const contentResponse = await axios.get(note.dataUrl);
-          note.content = contentResponse.data.content || '';
-        }
-      } catch (error) {
-        console.error('Error fetching note content:', error);
-      }
-
       notes.push(note);
     }
 
     const activeNotes = filterActiveNotes(notes);
-    console.log(`[IrysService] Filtered to ${activeNotes.length} active notes`);
+    console.log(`[IrysService] Filtered to ${activeNotes.length} active notes in ${Date.now() - startTime}ms total`);
     
     return activeNotes;
   } catch (error) {
     console.error('Error querying notes:', error);
     return [];
   }
+}
+
+// Lazy load note content when needed
+export async function loadNoteContent(note: Note): Promise<string> {
+  if (note.content) {
+    return note.content; // Already loaded
+  }
+
+  try {
+    if (note.dataUrl) {
+      const contentResponse = await axios.get(note.dataUrl);
+      const content = contentResponse.data.content || '';
+      return content;
+    }
+  } catch (error) {
+    console.error('Error fetching note content:', error);
+  }
+
+  return '';
+}
+
+// Batch load content for multiple notes (for performance)
+export async function loadMultipleNoteContents(notes: Note[]): Promise<Note[]> {
+  const notesWithoutContent = notes.filter(note => !note.content && note.dataUrl);
+  
+  if (notesWithoutContent.length === 0) {
+    return notes; // All notes already have content
+  }
+
+  console.log(`[IrysService] Loading content for ${notesWithoutContent.length} notes`);
+  
+  // Load content in parallel with a reasonable limit
+  const BATCH_SIZE = 10;
+  const batches = [];
+  
+  for (let i = 0; i < notesWithoutContent.length; i += BATCH_SIZE) {
+    const batch = notesWithoutContent.slice(i, i + BATCH_SIZE);
+    batches.push(batch);
+  }
+
+  const updatedNotes = [...notes];
+  
+  for (const batch of batches) {
+    const contentPromises = batch.map(async (note) => {
+      try {
+        const contentResponse = await axios.get(note.dataUrl!);
+        return {
+          noteId: note.id,
+          content: contentResponse.data.content || ''
+        };
+      } catch (error) {
+        console.error(`Error fetching content for note ${note.id}:`, error);
+        return {
+          noteId: note.id,
+          content: ''
+        };
+      }
+    });
+
+    const contentResults = await Promise.all(contentPromises);
+    
+    // Update notes with loaded content
+    contentResults.forEach(result => {
+      const noteIndex = updatedNotes.findIndex(n => n.id === result.noteId);
+      if (noteIndex !== -1) {
+        updatedNotes[noteIndex] = {
+          ...updatedNotes[noteIndex],
+          content: result.content
+        };
+      }
+    });
+  }
+
+  return updatedNotes;
 }
 
 // Query icons for a project

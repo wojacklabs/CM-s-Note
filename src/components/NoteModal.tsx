@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Note } from '../types';
 import { formatTimestamp } from '../utils/dateUtils';
+import { loadNoteContent } from '../services/irysService';
 import './NoteModal.css';
 
 interface NoteModalProps {
@@ -8,6 +10,34 @@ interface NoteModalProps {
 }
 
 function NoteModal({ note, onClose }: NoteModalProps) {
+  const [content, setContent] = useState<string>(note.content || '');
+  const [loadingContent, setLoadingContent] = useState<boolean>(!note.content);
+  const [contentError, setContentError] = useState<string>('');
+
+  useEffect(() => {
+    const loadContent = async () => {
+      if (note.content) {
+        setContent(note.content);
+        setLoadingContent(false);
+        return;
+      }
+
+      try {
+        setLoadingContent(true);
+        setContentError('');
+        const loadedContent = await loadNoteContent(note);
+        setContent(loadedContent);
+      } catch (error) {
+        console.error('Error loading note content:', error);
+        setContentError('Failed to load note content');
+      } finally {
+        setLoadingContent(false);
+      }
+    };
+
+    loadContent();
+  }, [note.id, note.content]);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -57,7 +87,18 @@ function NoteModal({ note, onClose }: NoteModalProps) {
           
           <div className="note-content">
             <h4>Note Content:</h4>
-            <p>{note.content}</p>
+            {loadingContent ? (
+              <div className="content-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading content...</p>
+              </div>
+            ) : contentError ? (
+              <div className="content-error">
+                <p>{contentError}</p>
+              </div>
+            ) : (
+              <p>{content || 'No content available'}</p>
+            )}
           </div>
           
           {note.dataUrl && (
