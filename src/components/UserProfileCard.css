@@ -59,11 +59,6 @@
   color: var(--text-secondary);
 }
 
-.note-count {
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
 .last-noted {
   font-style: italic;
 }

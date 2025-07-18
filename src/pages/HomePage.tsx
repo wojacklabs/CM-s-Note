@@ -5,11 +5,21 @@ import { queryNotesByProject } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
 import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
+import CMCard from '../components/CMCard';
 import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
 import UserProfileCard from '../components/UserProfileCard';
 import Marquee from 'react-fast-marquee';
 import './HomePage.css';
+
+interface CMInfo {
+  cmName: string;
+  noteCount: number;
+  recentUsers: Array<{
+    twitterHandle: string;
+    timestamp: number;
+  }>;
+}
 
 interface HomePageProps {
   selectedProject: string;
@@ -20,6 +30,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -57,6 +68,56 @@ function HomePage({ selectedProject }: HomePageProps) {
     return notesByCM.size;
   }, []);
 
+  // Process CM data
+  const processCMData = useCallback((notesData: Note[]) => {
+    const cmMap = new Map<string, CMInfo>();
+    
+    notesData.forEach(note => {
+      const cmName = note.cmName;
+      
+      if (!cmMap.has(cmName)) {
+        cmMap.set(cmName, {
+          cmName,
+          noteCount: 0,
+          recentUsers: []
+        });
+      }
+      
+      const cmInfo = cmMap.get(cmName)!;
+      cmInfo.noteCount++;
+      
+      // Add user to recent users if not already present
+      const existingUserIndex = cmInfo.recentUsers.findIndex(
+        user => user.twitterHandle === note.twitterHandle
+      );
+      
+      if (existingUserIndex === -1) {
+        cmInfo.recentUsers.push({
+          twitterHandle: note.twitterHandle,
+          timestamp: note.timestamp
+        });
+      } else {
+        // Update timestamp if this note is more recent
+        if (note.timestamp > cmInfo.recentUsers[existingUserIndex].timestamp) {
+          cmInfo.recentUsers[existingUserIndex].timestamp = note.timestamp;
+        }
+      }
+    });
+    
+    // Sort recent users by timestamp and limit to most recent
+    const cmInfoList = Array.from(cmMap.values()).map(cmInfo => ({
+      ...cmInfo,
+      recentUsers: cmInfo.recentUsers
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 10) // Keep top 10 most recent users
+    }));
+    
+    // Sort CMs by note count (descending)
+    cmInfoList.sort((a, b) => b.noteCount - a.noteCount);
+    
+    setCmInfos(cmInfoList);
+  }, []);
+
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[]) => {
     // Group notes by user
@@ -87,8 +148,12 @@ function HomePage({ selectedProject }: HomePageProps) {
       .slice(0, 20);
     
     setRecentUsers(recentUserList);
+    
+    // Process CM data
+    processCMData(notesData);
+    
     setLastUpdated(new Date());
-  }, []);
+  }, [processCMData]);
 
   // Load data from API
   const loadDataFromAPI = useCallback(async (showLoader = true) => {
@@ -316,6 +381,20 @@ function HomePage({ selectedProject }: HomePageProps) {
           )}
         </div>
       </section>
+
+      {cmInfos.length > 0 && (
+        <section className="cm-section">
+          <h2 className="section-title">Community Managers</h2>
+          <div className="cm-grid">
+            {cmInfos.map(cmInfo => (
+              <CMCard
+                key={cmInfo.cmName}
+                cmInfo={cmInfo}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {recentUsers.length > 0 && (
         <section className="recent-users-section">
