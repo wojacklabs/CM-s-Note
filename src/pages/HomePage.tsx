@@ -356,6 +356,10 @@ function HomePage({ selectedProject }: HomePageProps) {
     setShowAllUsers(true);
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
   if (loading) {
     return (
       <div className="home-page">
@@ -405,13 +409,32 @@ function HomePage({ selectedProject }: HomePageProps) {
           selectedUserType={selectedUserType}
           selectedIcon={selectedIcon}
           selectedSort={selectedSort}
-          searchQuery={searchQuery}
           onCMChange={setSelectedCM}
           onUserTypeChange={setSelectedUserType}
           onIconChange={setSelectedIcon}
           onSortChange={setSelectedSort}
-          onSearchChange={setSearchQuery}
         />
+
+        <div className="search-area">
+          <div className="search-input-container">
+            <input
+              type="text"
+              placeholder="Search users by handle, nickname, or username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button 
+                onClick={handleClearSearch}
+                className="clear-search-button"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="users-grid">
           {displayedUsers.length === 0 ? (
