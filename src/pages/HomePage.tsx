@@ -26,22 +26,27 @@ interface HomePageProps {
   selectedProject: string;
 }
 
+const DEFAULT_USER_LIMIT = 20;
+
 function HomePage({ selectedProject }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [displayedUsers, setDisplayedUsers] = useState<User[]>([]);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [showAllUsers, setShowAllUsers] = useState(false);
   
   // Filter states
   const [selectedCM, setSelectedCM] = useState<string>('all');
   const [selectedUserType, setSelectedUserType] = useState<string>('all');
   const [selectedIcon, setSelectedIcon] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<string>('none');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   // Marquee controls
   const [speed, setSpeed] = useState(50);
@@ -264,7 +269,21 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Apply filters and sorting
   useEffect(() => {
     applyFiltersAndSorting();
-  }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, calculateBadgeCount]);
+  }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery, calculateBadgeCount]);
+
+  // Apply display limit
+  useEffect(() => {
+    if (showAllUsers) {
+      setDisplayedUsers(filteredUsers);
+    } else {
+      setDisplayedUsers(filteredUsers.slice(0, DEFAULT_USER_LIMIT));
+    }
+  }, [filteredUsers, showAllUsers]);
+
+  // Reset showAllUsers when filters change
+  useEffect(() => {
+    setShowAllUsers(false);
+  }, [selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -278,7 +297,22 @@ function HomePage({ selectedProject }: HomePageProps) {
   const applyFiltersAndSorting = () => {
     let filtered = [...users];
 
-    // Apply filters
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(user => {
+        const handleMatch = user.twitterHandle.toLowerCase().includes(query);
+        const nicknameMatch = user.notes.some(note => 
+          note.nickname?.toLowerCase().includes(query)
+        );
+        const userMatch = user.notes.some(note => 
+          note.user?.toLowerCase().includes(query)
+        );
+        return handleMatch || nicknameMatch || userMatch;
+      });
+    }
+
+    // Apply other filters
     if (selectedCM !== 'all') {
       filtered = filtered.filter(user => 
         user.notes.some(note => note.cmName === selectedCM)
@@ -316,6 +350,10 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
     });
     return Array.from(values).sort();
+  };
+
+  const handleShowAllUsers = () => {
+    setShowAllUsers(true);
   };
 
   if (loading) {
@@ -367,19 +405,21 @@ function HomePage({ selectedProject }: HomePageProps) {
           selectedUserType={selectedUserType}
           selectedIcon={selectedIcon}
           selectedSort={selectedSort}
+          searchQuery={searchQuery}
           onCMChange={setSelectedCM}
           onUserTypeChange={setSelectedUserType}
           onIconChange={setSelectedIcon}
           onSortChange={setSelectedSort}
+          onSearchChange={setSearchQuery}
         />
 
         <div className="users-grid">
-          {filteredUsers.length === 0 ? (
+          {displayedUsers.length === 0 ? (
             <div className="empty-state">
               <p>No users found</p>
             </div>
           ) : (
-            filteredUsers.map(user => (
+            displayedUsers.map(user => (
               <UserCard
                 key={user.twitterHandle}
                 user={user}
@@ -388,6 +428,25 @@ function HomePage({ selectedProject }: HomePageProps) {
             ))
           )}
         </div>
+
+        {!showAllUsers && filteredUsers.length > DEFAULT_USER_LIMIT && (
+          <div className="show-all-container">
+            <button 
+              onClick={handleShowAllUsers}
+              className="show-all-button"
+            >
+              Show All ({filteredUsers.length - DEFAULT_USER_LIMIT} more)
+            </button>
+          </div>
+        )}
+
+        {filteredUsers.length > 0 && (
+          <div className="users-summary">
+            <span className="users-count">
+              Showing {displayedUsers.length} of {filteredUsers.length} users
+            </span>
+          </div>
+        )}
       </section>
 
       {cmInfos.length > 0 && (

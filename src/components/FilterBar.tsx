@@ -8,10 +8,12 @@ interface FilterBarProps {
   selectedUserType: string;
   selectedIcon: string;
   selectedSort: string;
+  searchQuery: string;
   onCMChange: (cm: string) => void;
   onUserTypeChange: (userType: string) => void;
   onIconChange: (icon: string) => void;
   onSortChange: (sort: string) => void;
+  onSearchChange: (query: string) => void;
 }
 
 function FilterBar({
@@ -22,13 +24,27 @@ function FilterBar({
   selectedUserType,
   selectedIcon,
   selectedSort,
+  searchQuery,
   onCMChange,
   onUserTypeChange,
   onIconChange,
-  onSortChange
+  onSortChange,
+  onSearchChange
 }: FilterBarProps) {
   return (
     <div className="filter-bar">
+      <div className="filter-group">
+        <label htmlFor="search-input">Search:</label>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search users..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="search-input"
+        />
+      </div>
+
       <div className="filter-group">
         <label htmlFor="cm-filter">CM:</label>
         <select
