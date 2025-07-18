@@ -29,12 +29,28 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [selectedCM, setSelectedCM] = useState<string>('all');
   const [selectedUserType, setSelectedUserType] = useState<string>('all');
   const [selectedIcon, setSelectedIcon] = useState<string>('all');
+  const [selectedSort, setSelectedSort] = useState<string>('none');
   
   // Marquee controls
   const [speed, setSpeed] = useState(50);
   
   // Auto-refresh interval ref
   const intervalRef = useRef<number | null>(null);
+
+  // Calculate badge count for a user
+  const calculateBadgeCount = useCallback((user: User) => {
+    const notesByCM = new Map<string, Note[]>();
+    
+    user.notes.forEach(note => {
+      const key = `${note.cmName}-${note.iconUrl}`;
+      if (!notesByCM.has(key)) {
+        notesByCM.set(key, []);
+      }
+      notesByCM.get(key)!.push(note);
+    });
+    
+    return notesByCM.size;
+  }, []);
 
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[]) => {
@@ -159,10 +175,10 @@ function HomePage({ selectedProject }: HomePageProps) {
     return cleanup;
   }, [setupAutoRefresh]);
 
-  // Apply filters
+  // Apply filters and sorting
   useEffect(() => {
-    applyFilters();
-  }, [users, selectedCM, selectedUserType, selectedIcon]);
+    applyFiltersAndSorting();
+  }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, calculateBadgeCount]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -173,9 +189,10 @@ function HomePage({ selectedProject }: HomePageProps) {
     };
   }, []);
 
-  const applyFilters = () => {
+  const applyFiltersAndSorting = () => {
     let filtered = [...users];
 
+    // Apply filters
     if (selectedCM !== 'all') {
       filtered = filtered.filter(user => 
         user.notes.some(note => note.cmName === selectedCM)
@@ -192,6 +209,13 @@ function HomePage({ selectedProject }: HomePageProps) {
       filtered = filtered.filter(user => 
         user.notes.some(note => note.iconUrl === selectedIcon)
       );
+    }
+
+    // Apply sorting
+    if (selectedSort === 'badge-asc') {
+      filtered.sort((a, b) => calculateBadgeCount(a) - calculateBadgeCount(b));
+    } else if (selectedSort === 'badge-desc') {
+      filtered.sort((a, b) => calculateBadgeCount(b) - calculateBadgeCount(a));
     }
 
     setFilteredUsers(filtered);
@@ -256,9 +280,11 @@ function HomePage({ selectedProject }: HomePageProps) {
           selectedCM={selectedCM}
           selectedUserType={selectedUserType}
           selectedIcon={selectedIcon}
+          selectedSort={selectedSort}
           onCMChange={setSelectedCM}
           onUserTypeChange={setSelectedUserType}
           onIconChange={setSelectedIcon}
+          onSortChange={setSelectedSort}
         />
 
         <div className="users-grid">

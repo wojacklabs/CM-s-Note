@@ -7,9 +7,11 @@ interface FilterBarProps {
   selectedCM: string;
   selectedUserType: string;
   selectedIcon: string;
+  selectedSort: string;
   onCMChange: (cm: string) => void;
   onUserTypeChange: (userType: string) => void;
   onIconChange: (icon: string) => void;
+  onSortChange: (sort: string) => void;
 }
 
 function FilterBar({
@@ -19,9 +21,11 @@ function FilterBar({
   selectedCM,
   selectedUserType,
   selectedIcon,
+  selectedSort,
   onCMChange,
   onUserTypeChange,
-  onIconChange
+  onIconChange,
+  onSortChange
 }: FilterBarProps) {
   return (
     <div className="filter-bar">
@@ -79,6 +83,19 @@ function FilterBar({
             className="selected-icon-preview"
           />
         )}
+      </div>
+
+      <div className="filter-group">
+        <label htmlFor="sort-filter">Sort by:</label>
+        <select
+          id="sort-filter"
+          value={selectedSort}
+          onChange={(e) => onSortChange(e.target.value)}
+        >
+          <option value="none">Default</option>
+          <option value="badge-asc">Badge Count (Low to High)</option>
+          <option value="badge-desc">Badge Count (High to Low)</option>
+        </select>
       </div>
     </div>
   );
