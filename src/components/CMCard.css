@@ -39,11 +39,29 @@
   flex: 1;
 }
 
+.cm-name-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.cm-name-link:hover {
+  color: var(--primary-color);
+}
+
 .cm-name {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
+}
+
+.cm-handle {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin-bottom: 0.5rem;
 }
 
 .cm-stats {
@@ -88,11 +106,14 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .recent-user-item:hover {
   background: var(--surface);
   border-color: var(--primary-color);
+  transform: translateY(-1px);
 }
 
 .recent-user-avatar {
@@ -109,6 +130,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recent-user-item:hover .recent-user-handle {
+  color: var(--primary-color);
 }
 
 .more-users {
@@ -138,6 +163,10 @@
   
   .cm-name {
     font-size: 1.1rem;
+  }
+  
+  .cm-handle {
+    font-size: 0.8rem;
   }
   
   .recent-users-grid {

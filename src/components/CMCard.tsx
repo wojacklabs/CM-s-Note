@@ -3,6 +3,7 @@ import './CMCard.css';
 
 interface CMInfo {
   cmName: string;
+  cmTwitterHandle?: string;
   noteCount: number;
   recentUsers: Array<{
     twitterHandle: string;
@@ -16,14 +17,16 @@ interface CMCardProps {
 }
 
 function CMCard({ cmInfo }: CMCardProps) {
-  const { cmName, noteCount, recentUsers } = cmInfo;
+  const { cmName, cmTwitterHandle, noteCount, recentUsers } = cmInfo;
+
+  const cmProfileHandle = cmTwitterHandle || cmName;
 
   return (
     <div className="cm-card">
       <div className="cm-header">
         <div className="cm-avatar">
           <img 
-            src={`https://unavatar.io/twitter/${cmName}`}
+            src={`https://unavatar.io/twitter/${cmProfileHandle}`}
             alt={cmName}
             onError={(e) => {
               // Fallback to avatar placeholder if Twitter image fails
@@ -32,7 +35,17 @@ function CMCard({ cmInfo }: CMCardProps) {
           />
         </div>
         <div className="cm-info">
-          <h3 className="cm-name">{cmName}</h3>
+          <a 
+            href={`https://twitter.com/${cmProfileHandle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cm-name-link"
+          >
+            <h3 className="cm-name">{cmName}</h3>
+            {cmTwitterHandle && (
+              <span className="cm-handle">@{cmTwitterHandle}</span>
+            )}
+          </a>
           <div className="cm-stats">
             <span className="note-count">{noteCount} notes</span>
           </div>
@@ -43,7 +56,13 @@ function CMCard({ cmInfo }: CMCardProps) {
         <h4 className="recent-users-title">Recent Users</h4>
         <div className="recent-users-grid">
           {recentUsers.slice(0, 6).map((user, index) => (
-            <div key={`${user.twitterHandle}-${index}`} className="recent-user-item">
+            <a
+              key={`${user.twitterHandle}-${index}`}
+              href={`https://twitter.com/${user.twitterHandle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="recent-user-item"
+            >
               <img 
                 src={`https://unavatar.io/twitter/${user.twitterHandle}`}
                 alt={`@${user.twitterHandle}`}
@@ -54,7 +73,7 @@ function CMCard({ cmInfo }: CMCardProps) {
                 }}
               />
               <span className="recent-user-handle">@{user.twitterHandle}</span>
-            </div>
+            </a>
           ))}
         </div>
         {recentUsers.length > 6 && (

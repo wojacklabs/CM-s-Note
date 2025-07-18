@@ -11,6 +11,7 @@ export interface Note {
   status: 'added' | 'removed' | 'edited';
   timestamp: number;
   cmName: string;
+  cmTwitterHandle?: string;
   dataUrl?: string;
 }
 

@@ -14,6 +14,7 @@ import './HomePage.css';
 
 interface CMInfo {
   cmName: string;
+  cmTwitterHandle?: string;
   noteCount: number;
   recentUsers: Array<{
     twitterHandle: string;
@@ -74,10 +75,12 @@ function HomePage({ selectedProject }: HomePageProps) {
     
     notesData.forEach(note => {
       const cmName = note.cmName;
+      const cmTwitterHandle = note.cmTwitterHandle;
       
       if (!cmMap.has(cmName)) {
         cmMap.set(cmName, {
           cmName,
+          cmTwitterHandle,
           noteCount: 0,
           recentUsers: []
         });
@@ -85,6 +88,11 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       const cmInfo = cmMap.get(cmName)!;
       cmInfo.noteCount++;
+      
+      // Update cmTwitterHandle if it exists and wasn't set before
+      if (cmTwitterHandle && !cmInfo.cmTwitterHandle) {
+        cmInfo.cmTwitterHandle = cmTwitterHandle;
+      }
       
       // Add user to recent users if not already present
       const existingUserIndex = cmInfo.recentUsers.findIndex(
