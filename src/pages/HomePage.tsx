@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Note, User } from '../types';
-import { queryNotesByProject } from '../services/irysService';
+import { queryNotesByProject, loadMultipleNoteContents } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
 import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
@@ -40,6 +40,8 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
+  const [loadingNoteContents, setLoadingNoteContents] = useState(false);
+  const [noteContentProgress, setNoteContentProgress] = useState({ loaded: 0, total: 0 });
   
   // Filter states
   const [selectedCM, setSelectedCM] = useState<string>('all');
@@ -53,6 +55,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   
   // Auto-refresh interval ref
   const intervalRef = useRef<number | null>(null);
+  const contentLoadingRef = useRef<boolean>(false);
 
   // Mark page refresh on component mount
   useEffect(() => {
@@ -131,6 +134,56 @@ function HomePage({ selectedProject }: HomePageProps) {
     setCmInfos(cmInfoList);
   }, []);
 
+  // Load note contents in background
+  const loadNoteContentsInBackground = useCallback(async (notesData: Note[]) => {
+    if (contentLoadingRef.current) return; // Already loading
+    
+    const notesWithoutContent = notesData.filter(note => !note.content);
+    if (notesWithoutContent.length === 0) return;
+
+    contentLoadingRef.current = true;
+    setLoadingNoteContents(true);
+    setNoteContentProgress({ loaded: 0, total: notesWithoutContent.length });
+
+    try {
+      console.log(`[HomePage] Starting background loading of ${notesWithoutContent.length} note contents`);
+      
+      // Use progress callback to update UI
+      const updatedNotes = await loadMultipleNoteContents(notesData, (loaded, total) => {
+        setNoteContentProgress({ loaded, total });
+      });
+      
+      // Update notes state with loaded content
+      setNotes(updatedNotes);
+      
+      // Update users with loaded content
+      const userMap = new Map<string, User>();
+      updatedNotes.forEach(note => {
+        const key = note.twitterHandle;
+        if (!userMap.has(key)) {
+          userMap.set(key, {
+            twitterHandle: note.twitterHandle,
+            displayName: note.twitterHandle,
+            notes: []
+          });
+        }
+        userMap.get(key)!.notes.push(note);
+      });
+      
+      const userList = Array.from(userMap.values());
+      setUsers(userList);
+      
+      console.log(`[HomePage] Background loading completed for ${notesWithoutContent.length} note contents`);
+      
+    } catch (error) {
+      console.error('Error loading note contents in background:', error);
+    } finally {
+      setLoadingNoteContents(false);
+      setNoteContentProgress({ loaded: 0, total: 0 });
+      contentLoadingRef.current = false;
+    }
+  }, []);
+
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[]) => {
     // Group notes by user
@@ -166,7 +219,12 @@ function HomePage({ selectedProject }: HomePageProps) {
     processCMData(notesData);
     
     setLastUpdated(new Date());
-  }, [processCMData]);
+    
+    // Start background loading of note contents
+    setTimeout(() => {
+      loadNoteContentsInBackground(notesData);
+    }, 100); // Small delay to ensure UI is rendered first
+  }, [processCMData, loadNoteContentsInBackground]);
 
   // Load data from API
   const loadDataFromAPI = useCallback(async (showLoader = true) => {
@@ -395,6 +453,17 @@ function HomePage({ selectedProject }: HomePageProps) {
             <span className="updating-indicator">
               <div className="small-spinner"></div>
               Updating...
+            </span>
+          )}
+          {loadingNoteContents && (
+            <span className="content-loading-indicator">
+              <div className="small-spinner"></div>
+              Loading note contents in background...
+              {noteContentProgress.total > 0 && (
+                <span className="progress-info">
+                  ({noteContentProgress.loaded}/{noteContentProgress.total})
+                </span>
+              )}
             </span>
           )}
         </div>

@@ -140,7 +140,7 @@ export async function loadNoteContent(note: Note): Promise<string> {
 }
 
 // Batch load content for multiple notes (for performance)
-export async function loadMultipleNoteContents(notes: Note[]): Promise<Note[]> {
+export async function loadMultipleNoteContents(notes: Note[], onProgress?: (loaded: number, total: number) => void): Promise<Note[]> {
   const notesWithoutContent = notes.filter(note => !note.content && note.dataUrl);
   
   if (notesWithoutContent.length === 0) {
@@ -150,20 +150,19 @@ export async function loadMultipleNoteContents(notes: Note[]): Promise<Note[]> {
   console.log(`[IrysService] Loading content for ${notesWithoutContent.length} notes`);
   
   // Load content in parallel with a reasonable limit
-  const BATCH_SIZE = 10;
-  const batches = [];
-  
+  const BATCH_SIZE = 15; // Increased batch size for better performance
+  const updatedNotes = [...notes];
+  let loadedCount = 0;
+
+  // Process in batches to avoid overwhelming the server
   for (let i = 0; i < notesWithoutContent.length; i += BATCH_SIZE) {
     const batch = notesWithoutContent.slice(i, i + BATCH_SIZE);
-    batches.push(batch);
-  }
-
-  const updatedNotes = [...notes];
-  
-  for (const batch of batches) {
+    
     const contentPromises = batch.map(async (note) => {
       try {
-        const contentResponse = await axios.get(note.dataUrl!);
+        const contentResponse = await axios.get(note.dataUrl!, {
+          timeout: 10000 // 10 second timeout
+        });
         return {
           noteId: note.id,
           content: contentResponse.data.content || ''
@@ -177,20 +176,40 @@ export async function loadMultipleNoteContents(notes: Note[]): Promise<Note[]> {
       }
     });
 
-    const contentResults = await Promise.all(contentPromises);
-    
-    // Update notes with loaded content
-    contentResults.forEach(result => {
-      const noteIndex = updatedNotes.findIndex(n => n.id === result.noteId);
-      if (noteIndex !== -1) {
-        updatedNotes[noteIndex] = {
-          ...updatedNotes[noteIndex],
-          content: result.content
-        };
+    try {
+      const contentResults = await Promise.all(contentPromises);
+      
+      // Update notes with loaded content
+      contentResults.forEach(result => {
+        const noteIndex = updatedNotes.findIndex(n => n.id === result.noteId);
+        if (noteIndex !== -1) {
+          updatedNotes[noteIndex] = {
+            ...updatedNotes[noteIndex],
+            content: result.content
+          };
+        }
+      });
+
+      loadedCount += contentResults.length;
+      
+      // Call progress callback if provided
+      if (onProgress) {
+        onProgress(loadedCount, notesWithoutContent.length);
       }
-    });
+
+      console.log(`[IrysService] Loaded batch ${Math.floor(i / BATCH_SIZE) + 1}, total progress: ${loadedCount}/${notesWithoutContent.length}`);
+      
+      // Small delay between batches to avoid overwhelming the server
+      if (i + BATCH_SIZE < notesWithoutContent.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } catch (error) {
+      console.error(`Error loading batch starting at ${i}:`, error);
+      // Continue with next batch even if current batch fails
+    }
   }
 
+  console.log(`[IrysService] Completed loading content for ${loadedCount}/${notesWithoutContent.length} notes`);
   return updatedNotes;
 }
 

@@ -16,6 +16,7 @@ function NoteModal({ note, onClose }: NoteModalProps) {
 
   useEffect(() => {
     const loadContent = async () => {
+      // If content is already loaded, use it immediately
       if (note.content) {
         setContent(note.content);
         setLoadingContent(false);
@@ -25,8 +26,14 @@ function NoteModal({ note, onClose }: NoteModalProps) {
       try {
         setLoadingContent(true);
         setContentError('');
+        
+        // Try to load content (might be from background loading or fresh load)
         const loadedContent = await loadNoteContent(note);
         setContent(loadedContent);
+        
+        // Update the original note object with loaded content
+        note.content = loadedContent;
+        
       } catch (error) {
         console.error('Error loading note content:', error);
         setContentError('Failed to load note content');
@@ -36,7 +43,16 @@ function NoteModal({ note, onClose }: NoteModalProps) {
     };
 
     loadContent();
-  }, [note.id, note.content]);
+  }, [note.id]);
+
+  // Listen for changes in the note content (from background loading)
+  useEffect(() => {
+    if (note.content && note.content !== content) {
+      setContent(note.content);
+      setLoadingContent(false);
+      setContentError('');
+    }
+  }, [note.content, content]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -90,14 +106,26 @@ function NoteModal({ note, onClose }: NoteModalProps) {
             {loadingContent ? (
               <div className="content-loading">
                 <div className="loading-spinner"></div>
-                <p>Loading content...</p>
+                <p>Loading note content...</p>
               </div>
             ) : contentError ? (
               <div className="content-error">
                 <p>{contentError}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="retry-button"
+                >
+                  Retry
+                </button>
               </div>
             ) : (
-              <p>{content || 'No content available'}</p>
+              <div className="content-text">
+                {content ? (
+                  <p>{content}</p>
+                ) : (
+                  <p className="no-content">No content available</p>
+                )}
+              </div>
             )}
           </div>
           

@@ -40,6 +40,21 @@
   font-style: italic;
 }
 
+.content-loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+.progress-info {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-style: normal;
+}
+
 .small-spinner {
   width: 14px;
   height: 14px;
