@@ -26,7 +26,7 @@ interface HomePageProps {
   selectedProject: string;
 }
 
-const DEFAULT_USER_LIMIT = 20;
+const DEFAULT_USER_LIMIT = 6;
 
 function HomePage({ selectedProject }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
