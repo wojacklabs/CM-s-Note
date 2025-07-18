@@ -8,6 +8,7 @@ interface CacheItem {
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 const CACHE_KEY_PREFIX = 'cm-notes-cache-';
+const LAST_REFRESH_KEY = 'cm-notes-last-refresh';
 
 export class CacheService {
   private static getCacheKey(project: string): string {
@@ -98,6 +99,28 @@ export class CacheService {
     } catch (error) {
       console.error('[Cache] Error getting cache age:', error);
       return null;
+    }
+  }
+
+  static markPageRefresh(): void {
+    try {
+      localStorage.setItem(LAST_REFRESH_KEY, Date.now().toString());
+    } catch (error) {
+      console.error('[Cache] Error marking page refresh:', error);
+    }
+  }
+
+  static shouldRefreshOnLoad(): boolean {
+    try {
+      const lastRefresh = localStorage.getItem(LAST_REFRESH_KEY);
+      if (!lastRefresh) return true;
+
+      const timeSinceRefresh = Date.now() - parseInt(lastRefresh);
+      // If less than 1 second has passed, consider it a fresh page load
+      return timeSinceRefresh < 1000;
+    } catch (error) {
+      console.error('[Cache] Error checking refresh status:', error);
+      return true;
     }
   }
 } 

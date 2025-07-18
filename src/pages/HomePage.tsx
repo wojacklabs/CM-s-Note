@@ -37,6 +37,11 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Auto-refresh interval ref
   const intervalRef = useRef<number | null>(null);
 
+  // Mark page refresh on component mount
+  useEffect(() => {
+    CacheService.markPageRefresh();
+  }, []);
+
   // Calculate badge count for a user
   const calculateBadgeCount = useCallback((user: User) => {
     const notesByCM = new Map<string, Note[]>();
@@ -117,29 +122,37 @@ function HomePage({ selectedProject }: HomePageProps) {
     }
   }, [selectedProject, processNotesToUsers]);
 
-  // Load data (cache first, then API if needed)
+  // Load data with caching strategy
   const loadData = useCallback(async () => {
     if (!selectedProject) return;
     
-    // Try to load from cache first
+    const isPageRefresh = CacheService.shouldRefreshOnLoad();
     const cachedNotes = CacheService.getFromCache(selectedProject);
     
+    // Always show cached data immediately if available
     if (cachedNotes && cachedNotes.length > 0) {
       console.log(`[HomePage] Loading from cache for project: ${selectedProject}`);
       setNotes(cachedNotes);
       processNotesToUsers(cachedNotes);
       setLoading(false);
       
-      // If cache is still valid, don't fetch from API
-      if (CacheService.isCacheValid(selectedProject)) {
-        console.log(`[HomePage] Cache is valid, skipping API call`);
+      // If it's a page refresh, always fetch fresh data in background
+      if (isPageRefresh) {
+        console.log(`[HomePage] Page refresh detected, fetching fresh data...`);
+        await loadDataFromAPI(false);
+      } else if (!CacheService.isCacheValid(selectedProject)) {
+        // If cache is invalid and not a page refresh, fetch fresh data
+        console.log(`[HomePage] Cache invalid, fetching fresh data...`);
+        await loadDataFromAPI(false);
+      } else {
+        // Cache is valid, just update the timestamp
         setLastUpdated(new Date());
-        return;
       }
+    } else {
+      // No cached data, fetch from API with loading state
+      console.log(`[HomePage] No cached data, fetching from API...`);
+      await loadDataFromAPI(true);
     }
-    
-    // If no cache or cache is invalid, load from API
-    await loadDataFromAPI(!cachedNotes || cachedNotes.length === 0);
   }, [selectedProject, processNotesToUsers, loadDataFromAPI]);
 
   // Setup auto-refresh
