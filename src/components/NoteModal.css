@@ -1,0 +1,364 @@
+/* Note Modal */
+.note-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.note-modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+}
+
+.note-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.note-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.note-modal-back {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  margin-right: auto;
+}
+
+.note-modal-back:hover {
+  background: var(--background);
+  color: var(--primary-color);
+  transform: translateX(-2px);
+}
+
+.note-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.note-modal-close:hover {
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.invisible {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.note-modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Note Detail Styles */
+.note-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.note-detail-icon {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.note-detail-profile {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--background);
+}
+
+.note-detail-title {
+  flex: 1;
+}
+
+.note-detail-title h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.note-detail-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Nickname quote section */
+.note-nickname-quote {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background-color: rgba(212, 165, 116, 0.05);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.note-badge-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.note-nickname-text {
+  margin: 0;
+  font-size: 1.125rem;
+  font-style: italic;
+  color: var(--text-primary);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Note content within quote section */
+.note-content-section {
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.content-loading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  padding: 1rem;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.content-error-inline {
+  text-align: center;
+  padding: 0.75rem;
+  color: var(--error-color, #ef4444);
+}
+
+.content-text-inline {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+.content-text-inline p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+}
+
+.note-nickname-author {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  align-self: flex-end;
+}
+
+.note-detail-meta {
+  background: var(--background);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.meta-row:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.meta-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.meta-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.status-added {
+  color: var(--success-color, #10b981);
+}
+
+.status-removed {
+  color: var(--error-color, #ef4444);
+}
+
+.status-edited {
+  color: var(--warning-color, #f59e0b);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-content {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+.note-detail-footer {
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.view-irys-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.view-irys-link:hover {
+  color: var(--primary-color-hover, #2563eb);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .note-modal-backdrop {
+    padding: 0;
+  }
+  
+  .note-modal {
+    max-height: 100vh;
+    height: 100vh;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+  }
+  
+  .note-modal-header {
+    padding: 1rem;
+  }
+  
+  .note-modal-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .note-modal-back,
+  .note-modal-close {
+    font-size: 1.25rem;
+    padding: 0.375rem;
+  }
+  
+  .note-modal-content {
+    padding: 1rem;
+  }
+  
+  .note-detail-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .note-detail-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .note-detail-title h3 {
+    font-size: 1.1rem;
+  }
+  
+  .note-detail-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .note-detail-meta {
+    padding: 0.75rem;
+  }
+  
+  .meta-row {
+    padding: 0.5rem 0;
+  }
+  
+  .meta-label,
+  .meta-value {
+    font-size: 0.85rem;
+  }
+  
+  .note-nickname-quote {
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+  
+  .content-text-inline {
+    padding: 0.75rem;
+  }
+  
+  .content-text-inline p {
+    font-size: 0.9rem;
+  }
+} 
