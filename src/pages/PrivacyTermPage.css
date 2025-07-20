@@ -1,0 +1,254 @@
+.privacy-term-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+.privacy-header {
+  margin-bottom: 3rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--primary-color-hover, #2563eb);
+}
+
+.privacy-header h1 {
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.last-updated {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+.privacy-content {
+  color: var(--text-primary);
+}
+
+.privacy-section {
+  margin-bottom: 3rem;
+}
+
+.privacy-section h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+}
+
+.privacy-section h3 {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+  font-weight: 500;
+}
+
+.privacy-section p {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.data-table,
+.permissions-table {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.data-table table,
+.permissions-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.data-table th,
+.permissions-table th,
+.data-table td,
+.permissions-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th,
+.permissions-table th {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+}
+
+.data-table td ul,
+.permissions-table td ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.data-table td li,
+.permissions-table td li {
+  margin-bottom: 0.25rem;
+}
+
+.host-permissions {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.host-permissions h3 {
+  margin-top: 0;
+  color: var(--text-primary);
+}
+
+.host-permissions ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.host-permissions li {
+  background: var(--background);
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+}
+
+.security-list,
+.third-party-list,
+.rights-list,
+.retention-list,
+.changes-list,
+.compliance-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.security-list li,
+.third-party-list li,
+.rights-list li,
+.retention-list li,
+.changes-list li,
+.compliance-list li {
+  background: var(--surface);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+.security-list li::before,
+.third-party-list li::before,
+.rights-list li::before,
+.retention-list li::before,
+.changes-list li::before,
+.compliance-list li::before {
+  content: "•";
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  position: absolute;
+  left: 1rem;
+  top: 0.8rem;
+}
+
+.contact-info {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.contact-info p {
+  margin-bottom: 0.5rem;
+}
+
+.contact-info p:last-child {
+  margin-bottom: 0;
+}
+
+.final-section {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--primary-color);
+  margin-top: 2rem;
+}
+
+.final-note {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .privacy-term-page {
+    padding: 1rem;
+  }
+  
+  .privacy-header h1 {
+    font-size: 2rem;
+  }
+  
+  .data-table,
+  .permissions-table {
+    font-size: 0.9rem;
+  }
+  
+  .data-table th,
+  .permissions-table th,
+  .data-table td,
+  .permissions-table td {
+    padding: 0.75rem;
+  }
+  
+  .host-permissions {
+    padding: 1rem;
+  }
+  
+  .security-list li,
+  .third-party-list li,
+  .rights-list li,
+  .retention-list li,
+  .changes-list li,
+  .compliance-list li {
+    padding: 0.75rem;
+    padding-left: 2rem;
+  }
+  
+  .contact-info {
+    padding: 1rem;
+  }
+  
+  .final-section {
+    padding: 1.5rem;
+  }
+} 
