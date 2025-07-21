@@ -1,0 +1,279 @@
+{
+  "compressionlevel": -1,
+  "height": 20,
+  "infinite": false,
+  "layers": [
+    {
+      "data": [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+      ],
+      "height": 20,
+      "id": 1,
+      "name": "floor",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 25,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 2,
+      "name": "objects",
+      "objects": [
+        {
+          "height": 32,
+          "id": 1,
+          "name": "start",
+          "type": "start",
+          "visible": true,
+          "width": 32,
+          "x": 384,
+          "y": 576
+        },
+        {
+          "height": 128,
+          "id": 2,
+          "name": "meeting-room-1",
+          "properties": [
+            {
+              "name": "jitsiRoom",
+              "type": "string",
+              "value": "CMNotes-MeetingRoom1"
+            },
+            {
+              "name": "jitsiTrigger",
+              "type": "string",
+              "value": "onaction"
+            }
+          ],
+          "type": "meeting",
+          "visible": true,
+          "width": 160,
+          "x": 96,
+          "y": 96
+        },
+        {
+          "height": 128,
+          "id": 3,
+          "name": "meeting-room-2",
+          "properties": [
+            {
+              "name": "jitsiRoom",
+              "type": "string",
+              "value": "CMNotes-MeetingRoom2"
+            },
+            {
+              "name": "jitsiTrigger",
+              "type": "string",
+              "value": "onaction"
+            }
+          ],
+          "type": "meeting",
+          "visible": true,
+          "width": 160,
+          "x": 544,
+          "y": 96
+        },
+        {
+          "height": 128,
+          "id": 4,
+          "name": "quiet-zone-1",
+          "properties": [
+            {
+              "name": "silent",
+              "type": "bool",
+              "value": true
+            }
+          ],
+          "type": "silent",
+          "visible": true,
+          "width": 160,
+          "x": 96,
+          "y": 384
+        },
+        {
+          "height": 128,
+          "id": 5,
+          "name": "quiet-zone-2",
+          "properties": [
+            {
+              "name": "silent",
+              "type": "bool",
+              "value": true
+            }
+          ],
+          "type": "silent",
+          "visible": true,
+          "width": 160,
+          "x": 544,
+          "y": 384
+        },
+        {
+          "height": 32,
+          "id": 6,
+          "name": "whiteboard",
+          "properties": [
+            {
+              "name": "openWebsite",
+              "type": "string",
+              "value": "https://excalidraw.com"
+            },
+            {
+              "name": "openWebsiteTrigger",
+              "type": "string",
+              "value": "onaction"
+            },
+            {
+              "name": "openWebsiteAllowApi",
+              "type": "bool",
+              "value": true
+            }
+          ],
+          "type": "whiteboard",
+          "visible": true,
+          "width": 64,
+          "x": 352,
+          "y": 64
+        },
+        {
+          "height": 32,
+          "id": 7,
+          "name": "info-board",
+          "properties": [
+            {
+              "name": "openWebsite",
+              "type": "string",
+              "value": "https://cm-notes-web.vercel.app"
+            },
+            {
+              "name": "openWebsiteTrigger",
+              "type": "string",
+              "value": "onaction"
+            }
+          ],
+          "type": "website",
+          "visible": true,
+          "width": 64,
+          "x": 352,
+          "y": 320
+        },
+        {
+          "height": 32,
+          "id": 8,
+          "name": "welcome-sign",
+          "properties": [
+            {
+              "name": "openPopup",
+              "type": "string",
+              "value": "welcome"
+            },
+            {
+              "name": "openPopupEvent",
+              "type": "string",
+              "value": "Welcome to CM's Note Virtual Office!\\nUse arrow keys to move around.\\nPress SPACE near objects to interact."
+            }
+          ],
+          "type": "popup",
+          "visible": true,
+          "width": 96,
+          "x": 336,
+          "y": 480
+        }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "data": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12, 12, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12, 12, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 14, 14, 14, 14, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 14, 14, 14, 14, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 0, 0, 0, 0, 14, 14, 14, 14, 14, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      ],
+      "height": 20,
+      "id": 3,
+      "name": "decoration",
+      "opacity": 1,
+      "type": "tilelayer",
+      "visible": true,
+      "width": 25,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": 4,
+      "image": "iryslogo.png",
+      "name": "iryslogo",
+      "offsetx": 336,
+      "offsety": 256,
+      "opacity": 1,
+      "type": "imagelayer",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 5,
+  "nextobjectid": 10,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.7.2",
+  "tileheight": 32,
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "source": "tileset.tsx"
+    }
+  ],
+  "tilewidth": 32,
+  "type": "map",
+  "version": "1.6",
+  "width": 25,
+  "properties": [
+    {
+      "name": "script",
+      "type": "string",
+      "value": "scripts/welcome.js"
+    }
+  ]
+}
