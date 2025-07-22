@@ -23,10 +23,9 @@ interface CMCardProps {
 interface CMNotesModalProps {
   cmInfo: CMInfo;
   onClose: () => void;
-  onNoteClick?: (note: Note) => void;
 }
 
-function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
+function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [loadingContent, setLoadingContent] = useState<boolean>(false);
 
@@ -38,7 +37,6 @@ function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
 
   const handleNoteClick = async (note: Note) => {
     setSelectedNote(note);
-    onNoteClick?.(note);
     
     // Load content if not already loaded
     if (!note.content) {
@@ -66,6 +64,7 @@ function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
           // Notes List View
           <>
             <div className="cm-notes-modal-header">
+              <div className="cm-notes-modal-back invisible"></div>
               <h2>{cmInfo.cmName}'s Notes ({cmInfo.noteCount})</h2>
               <button className="cm-notes-modal-close" onClick={onClose}>×</button>
             </div>
@@ -194,11 +193,6 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
 
   const cmProfileHandle = cmTwitterHandle || cmName;
 
-  // Handle note click from preview
-  const handleNoteClick = (note: Note) => {
-    onNoteClick?.(note);
-  };
-
   return (
     <>
       <div className="cm-card">
@@ -240,7 +234,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                 <div 
                   key={`${note.id}-${index}`} 
                   className="cm-note-preview"
-                  onClick={() => handleNoteClick(note)}
+                  onClick={() => onNoteClick?.(note)}
                 >
                   <div className="cm-note-preview-user">
                     <img 
@@ -312,7 +306,6 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         <CMNotesModal
           cmInfo={cmInfo}
           onClose={() => setShowNotesModal(false)}
-          onNoteClick={onNoteClick}
         />
       )}
     </>
