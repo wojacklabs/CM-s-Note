@@ -1,0 +1,227 @@
+.gather-town-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.gather-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.gather-header h2 {
+  font-size: 3rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.gather-subtitle {
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.gather-preview {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.preview-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.9) 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 3rem;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  width: 100%;
+}
+
+.feature {
+  text-align: center;
+  color: #fff;
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.feature h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.feature p {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.gather-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.enter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+
+.enter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+}
+
+.enter-button:hover .arrow {
+  transform: translateX(4px);
+}
+
+.help-button {
+  padding: 1rem 2rem;
+  background: transparent;
+  color: #888;
+  border: 2px solid #333;
+  border-radius: 50px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.help-button:hover {
+  background: #222;
+  color: #fff;
+  border-color: #555;
+}
+
+.gather-instructions {
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.gather-instructions h3 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.gather-instructions ol {
+  color: #ccc;
+  margin-bottom: 2rem;
+  padding-left: 1.5rem;
+}
+
+.gather-instructions li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.tips {
+  background: #222;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.tips h4 {
+  color: #667eea;
+  margin-bottom: 0.8rem;
+}
+
+.tips ul {
+  list-style: none;
+  padding: 0;
+  color: #ccc;
+}
+
+.tips li {
+  margin-bottom: 0.4rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.tips li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.gather-info {
+  text-align: center;
+  color: #888;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.free-tier-info {
+  background: #1a3a1a;
+  border: 1px solid #2d5a2d;
+  color: #4ade80;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.description {
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .gather-header h2 {
+    font-size: 2rem;
+  }
+  
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .preview-overlay {
+    padding: 1.5rem;
+  }
+  
+  .gather-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .enter-button,
+  .help-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
