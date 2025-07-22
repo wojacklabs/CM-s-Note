@@ -37,7 +37,7 @@ function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
     <div className="cm-notes-modal-backdrop" onClick={handleBackdropClick}>
       <div className="cm-notes-modal">
         <div className="cm-notes-modal-header">
-          <h2>{cmInfo.cmName}의 노트 ({cmInfo.noteCount}개)</h2>
+          <h2>{cmInfo.cmName}'s Notes ({cmInfo.noteCount})</h2>
           <button className="cm-notes-modal-close" onClick={onClose}>×</button>
         </div>
         <div className="cm-notes-modal-content">
@@ -116,7 +116,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         {/* Recent Notes Section */}
         {recentNotes.length > 0 && (
           <div className="cm-recent-notes">
-            <h4 className="recent-notes-title">최근 노트</h4>
+            <h4 className="recent-notes-title">Recent Notes</h4>
             <div className="cm-notes-list">
               {recentNotes.slice(0, 4).map((note, index) => (
                 <div 
@@ -152,7 +152,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                 className="cm-show-more-notes"
                 onClick={() => setShowNotesModal(true)}
               >
-                더보기 ({recentNotes.length - 4}개 더)
+                Show More ({recentNotes.length - 4} more)
               </button>
             )}
           </div>
