@@ -86,7 +86,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   // Handle note click from preview or modal
   const handleNoteClick = (note: Note) => {
     setSelectedNote(note);
-    setShowNotesModal(false);
+    // Don't close showNotesModal - keep it for back navigation
     onNoteClick?.(note); // Also call the parent handler if provided
   };
 
@@ -205,7 +205,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         </div>
       </div>
       
-      {showNotesModal && (
+      {showNotesModal && !selectedNote && (
         <CMNotesModal
           cmInfo={cmInfo}
           onClose={() => setShowNotesModal(false)}
@@ -216,8 +216,11 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
       {selectedNote && (
         <NoteModal
           note={selectedNote}
-          onClose={() => setSelectedNote(null)}
-          onBack={handleBackToNotesList}
+          onClose={() => {
+            setSelectedNote(null);
+            setShowNotesModal(false);
+          }}
+          onBack={showNotesModal ? handleBackToNotesList : undefined}
         />
       )}
     </>
