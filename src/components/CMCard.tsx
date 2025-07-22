@@ -87,6 +87,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const handleNoteClick = (note: Note) => {
     setSelectedNote(note);
     setShowNotesModal(false);
+    onNoteClick?.(note); // Also call the parent handler if provided
   };
 
   // Handle back from note detail to notes list
