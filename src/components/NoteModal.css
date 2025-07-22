@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100;
   padding: 1rem;
 }
 
@@ -23,10 +23,42 @@
   position: relative;
 }
 
-.modal-close {
+.modal-nav {
   position: absolute;
   top: 1rem;
+  left: 1rem;
   right: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none; /* Allow clicks through empty space */
+}
+
+.modal-nav > * {
+  pointer-events: auto; /* Restore click events for buttons */
+}
+
+.modal-back {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-back:hover {
+  background: var(--background);
+  color: var(--primary-color);
+  transform: translateX(-2px);
+}
+
+.modal-close {
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -250,5 +282,17 @@
   
   .content-text {
     padding: 1rem;
+  }
+  
+  .modal-nav {
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+  }
+  
+  .modal-back,
+  .modal-close {
+    font-size: 1.25rem;
+    padding: 0.375rem;
   }
 } 

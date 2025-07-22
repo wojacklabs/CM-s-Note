@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Note } from '../types';
 import { formatTimestamp } from '../utils/dateUtils';
+import NoteModal from './NoteModal';
 import './CMCard.css';
 
 interface CMInfo {
@@ -78,8 +79,21 @@ function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
 function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const cmProfileHandle = cmTwitterHandle || cmName;
+
+  // Handle note click from preview or modal
+  const handleNoteClick = (note: Note) => {
+    setSelectedNote(note);
+    setShowNotesModal(false);
+  };
+
+  // Handle back from note detail to notes list
+  const handleBackToNotesList = () => {
+    setSelectedNote(null);
+    setShowNotesModal(true);
+  };
 
   return (
     <>
@@ -122,7 +136,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                 <div 
                   key={`${note.id}-${index}`} 
                   className="cm-note-preview"
-                  onClick={() => onNoteClick?.(note)}
+                  onClick={() => handleNoteClick(note)}
                 >
                   <div className="cm-note-preview-user">
                     <img 
@@ -194,10 +208,15 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         <CMNotesModal
           cmInfo={cmInfo}
           onClose={() => setShowNotesModal(false)}
-          onNoteClick={(note) => {
-            onNoteClick?.(note);
-            setShowNotesModal(false);
-          }}
+          onNoteClick={handleNoteClick}
+        />
+      )}
+      
+      {selectedNote && (
+        <NoteModal
+          note={selectedNote}
+          onClose={() => setSelectedNote(null)}
+          onBack={handleBackToNotesList}
         />
       )}
     </>

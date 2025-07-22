@@ -7,9 +7,10 @@ import './NoteModal.css';
 interface NoteModalProps {
   note: Note;
   onClose: () => void;
+  onBack?: () => void; // Optional back button for navigation
 }
 
-function NoteModal({ note, onClose }: NoteModalProps) {
+function NoteModal({ note, onClose, onBack }: NoteModalProps) {
   const [content, setContent] = useState<string>(note.content || '');
   const [loadingContent, setLoadingContent] = useState<boolean>(!note.content);
   const [contentError, setContentError] = useState<string>('');
@@ -57,9 +58,16 @@ function NoteModal({ note, onClose }: NoteModalProps) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
-          ×
-        </button>
+        <div className="modal-nav">
+          {onBack && (
+            <button className="modal-back" onClick={onBack} title="Back">
+              ←
+            </button>
+          )}
+          <button className="modal-close" onClick={onClose}>
+            ×
+          </button>
+        </div>
         
         <div className="modal-header">
           <img 
