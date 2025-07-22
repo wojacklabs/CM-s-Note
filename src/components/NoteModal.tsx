@@ -59,10 +59,12 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-nav">
-          {onBack && (
+          {onBack ? (
             <button className="modal-back" onClick={onBack} title="Back">
               ←
             </button>
+          ) : (
+            <div className="modal-back invisible"></div>
           )}
           <button className="modal-close" onClick={onClose}>
             ×
