@@ -89,7 +89,7 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         nickname: getTagValue('irys-cm-note-user'),
         userType: getTagValue('irys-cm-note-user-type'),
         iconUrl: getTagValue('irys-cm-note-Icon'),
-        content: '', // Will be loaded on demand
+        content: getTagValue('irys-cm-note-content') || '', // Load content from tag
         status: getTagValue('irys-cm-note-status') || 'added',
         timestamp: parsedTimestamp,
         cmName: getTagValue('irys-cm-note-cm'),
@@ -120,20 +120,15 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
   }
 }
 
-// Lazy load note content when needed
+// Lazy load note content when needed (now simplified since content is loaded from tags)
 export async function loadNoteContent(note: Note): Promise<string> {
+  // Content is now loaded directly from tags in queryNotesByProject
   if (note.content) {
-    return note.content; // Already loaded
+    return note.content;
   }
 
+  // Fallback for legacy notes or edge cases
   try {
-    // First try to get content from tags (new method)
-    const contentFromTags = await loadNoteContentFromTags(note.id);
-    if (contentFromTags) {
-      return contentFromTags;
-    }
-
-    // Fallback to old method
     if (note.dataUrl) {
       const contentResponse = await axios.get(note.dataUrl);
       const content = contentResponse.data.content || '';
@@ -146,47 +141,19 @@ export async function loadNoteContent(note: Note): Promise<string> {
   return '';
 }
 
-// Load note content from irys-cm-note-content tag
-async function loadNoteContentFromTags(noteId: string): Promise<string> {
-  const query = `
-    query getNoteContent($id: ID!) {
-      transaction(id: $id) {
-        tags {
-          name
-          value
-        }
-      }
-    }
-  `;
-
-  try {
-    const response = await axios.post(IRYS_GRAPHQL_URL, {
-      query,
-      variables: { id: noteId }
-    });
-
-    const tags = response.data?.data?.transaction?.tags || [];
-    const contentTag = tags.find((tag: any) => tag.name === 'irys-cm-note-content');
-    
-    return contentTag?.value || '';
-  } catch (error) {
-    console.error('Error fetching note content from tags:', error);
-    return '';
-  }
-}
-
-// Batch load content for multiple notes (for performance)
+// Batch load content for multiple notes (for performance) - Simplified since content is now in tags
 export async function loadMultipleNoteContents(notes: Note[], onProgress?: (loaded: number, total: number) => void): Promise<Note[]> {
   const notesWithoutContent = notes.filter(note => !note.content && note.dataUrl);
   
   if (notesWithoutContent.length === 0) {
+    console.log(`[IrysService] All notes already have content loaded from tags`);
     return notes; // All notes already have content
   }
 
-  console.log(`[IrysService] Loading content for ${notesWithoutContent.length} notes`);
+  console.log(`[IrysService] Loading legacy content for ${notesWithoutContent.length} notes`);
   
-  // Load content in parallel with a reasonable limit
-  const BATCH_SIZE = 15; // Increased batch size for better performance
+  // Load content in parallel for legacy notes only
+  const BATCH_SIZE = 15;
   const updatedNotes = [...notes];
   let loadedCount = 0;
 
@@ -196,16 +163,6 @@ export async function loadMultipleNoteContents(notes: Note[], onProgress?: (load
     
     const contentPromises = batch.map(async (note) => {
       try {
-        // First try to get content from tags (new method)
-        const contentFromTags = await loadNoteContentFromTags(note.id);
-        if (contentFromTags) {
-          return {
-            noteId: note.id,
-            content: contentFromTags
-          };
-        }
-
-        // Fallback to old method
         if (note.dataUrl) {
           const contentResponse = await axios.get(note.dataUrl, {
             timeout: 10000 // 10 second timeout
@@ -221,7 +178,7 @@ export async function loadMultipleNoteContents(notes: Note[], onProgress?: (load
           content: ''
         };
       } catch (error) {
-        console.error(`Error fetching content for note ${note.id}:`, error);
+        console.error(`Error fetching legacy content for note ${note.id}:`, error);
         return {
           noteId: note.id,
           content: ''
@@ -250,7 +207,7 @@ export async function loadMultipleNoteContents(notes: Note[], onProgress?: (load
         onProgress(loadedCount, notesWithoutContent.length);
       }
 
-      console.log(`[IrysService] Loaded batch ${Math.floor(i / BATCH_SIZE) + 1}, total progress: ${loadedCount}/${notesWithoutContent.length}`);
+      console.log(`[IrysService] Loaded legacy batch ${Math.floor(i / BATCH_SIZE) + 1}, total progress: ${loadedCount}/${notesWithoutContent.length}`);
       
       // Small delay between batches to avoid overwhelming the server
       if (i + BATCH_SIZE < notesWithoutContent.length) {
@@ -262,7 +219,7 @@ export async function loadMultipleNoteContents(notes: Note[], onProgress?: (load
     }
   }
 
-  console.log(`[IrysService] Completed loading content for ${loadedCount}/${notesWithoutContent.length} notes`);
+  console.log(`[IrysService] Completed loading legacy content for ${loadedCount}/${notesWithoutContent.length} notes`);
   return updatedNotes;
 }
 
