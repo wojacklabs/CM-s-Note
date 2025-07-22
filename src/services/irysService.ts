@@ -127,6 +127,13 @@ export async function loadNoteContent(note: Note): Promise<string> {
   }
 
   try {
+    // First try to get content from tags (new method)
+    const contentFromTags = await loadNoteContentFromTags(note.id);
+    if (contentFromTags) {
+      return contentFromTags;
+    }
+
+    // Fallback to old method
     if (note.dataUrl) {
       const contentResponse = await axios.get(note.dataUrl);
       const content = contentResponse.data.content || '';
@@ -137,6 +144,35 @@ export async function loadNoteContent(note: Note): Promise<string> {
   }
 
   return '';
+}
+
+// Load note content from irys-cm-note-content tag
+async function loadNoteContentFromTags(noteId: string): Promise<string> {
+  const query = `
+    query getNoteContent($id: ID!) {
+      transaction(id: $id) {
+        tags {
+          name
+          value
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await axios.post(IRYS_GRAPHQL_URL, {
+      query,
+      variables: { id: noteId }
+    });
+
+    const tags = response.data?.data?.transaction?.tags || [];
+    const contentTag = tags.find((tag: any) => tag.name === 'irys-cm-note-content');
+    
+    return contentTag?.value || '';
+  } catch (error) {
+    console.error('Error fetching note content from tags:', error);
+    return '';
+  }
 }
 
 // Batch load content for multiple notes (for performance)
@@ -160,12 +196,29 @@ export async function loadMultipleNoteContents(notes: Note[], onProgress?: (load
     
     const contentPromises = batch.map(async (note) => {
       try {
-        const contentResponse = await axios.get(note.dataUrl!, {
-          timeout: 10000 // 10 second timeout
-        });
+        // First try to get content from tags (new method)
+        const contentFromTags = await loadNoteContentFromTags(note.id);
+        if (contentFromTags) {
+          return {
+            noteId: note.id,
+            content: contentFromTags
+          };
+        }
+
+        // Fallback to old method
+        if (note.dataUrl) {
+          const contentResponse = await axios.get(note.dataUrl, {
+            timeout: 10000 // 10 second timeout
+          });
+          return {
+            noteId: note.id,
+            content: contentResponse.data.content || ''
+          };
+        }
+
         return {
           noteId: note.id,
-          content: contentResponse.data.content || ''
+          content: ''
         };
       } catch (error) {
         console.error(`Error fetching content for note ${note.id}:`, error);

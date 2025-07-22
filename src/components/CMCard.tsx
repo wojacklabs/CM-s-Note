@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Note } from '../types';
+import { formatTimestamp } from '../utils/dateUtils';
 import './CMCard.css';
 
 interface CMInfo {
@@ -9,6 +11,7 @@ interface CMInfo {
     twitterHandle: string;
     timestamp: number;
   }>;
+  recentNotes: Note[];
 }
 
 interface CMCardProps {
@@ -16,73 +19,188 @@ interface CMCardProps {
   onNoteClick?: (note: Note) => void;
 }
 
-function CMCard({ cmInfo }: CMCardProps) {
-  const { cmName, cmTwitterHandle, noteCount, recentUsers } = cmInfo;
+// CM Notes Modal Component
+interface CMNotesModalProps {
+  cmInfo: CMInfo;
+  onClose: () => void;
+  onNoteClick?: (note: Note) => void;
+}
+
+function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="cm-notes-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="cm-notes-modal">
+        <div className="cm-notes-modal-header">
+          <h2>{cmInfo.cmName}의 노트 ({cmInfo.noteCount}개)</h2>
+          <button className="cm-notes-modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="cm-notes-modal-content">
+          {cmInfo.recentNotes.map((note, index) => (
+            <div 
+              key={`${note.id}-${index}`} 
+              className="cm-note-item"
+              onClick={() => onNoteClick?.(note)}
+            >
+              <div className="cm-note-user">
+                <img 
+                  src={`https://unavatar.io/twitter/${note.twitterHandle}`}
+                  alt={note.twitterHandle}
+                  className="cm-note-user-avatar"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 
+                      `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=32`;
+                  }}
+                />
+                <div className="cm-note-user-info">
+                  <span className="cm-note-user-handle">@{note.twitterHandle}</span>
+                  <span className="cm-note-timestamp">{formatTimestamp(note.timestamp)}</span>
+                </div>
+              </div>
+              {note.iconUrl && (
+                <div className="cm-note-icon">
+                  <img src={note.iconUrl} alt="Project Icon" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
+  const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
+  const [showNotesModal, setShowNotesModal] = useState(false);
 
   const cmProfileHandle = cmTwitterHandle || cmName;
 
   return (
-    <div className="cm-card">
-      <div className="cm-header">
-        <div className="cm-avatar">
-          <img 
-            src={`https://unavatar.io/twitter/${cmProfileHandle}`}
-            alt={cmName}
-            onError={(e) => {
-              // Fallback to avatar placeholder if Twitter image fails
-              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
-            }}
-          />
-        </div>
-        <div className="cm-info">
-          <a 
-            href={`https://twitter.com/${cmProfileHandle}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cm-name-link"
-          >
-            <h3 className="cm-name">{cmName}</h3>
-            {cmTwitterHandle && (
-              <span className="cm-handle">@{cmTwitterHandle}</span>
-            )}
-          </a>
-          <div className="cm-stats">
-            <span className="note-count">{noteCount} notes</span>
+    <>
+      <div className="cm-card">
+        <div className="cm-header">
+          <div className="cm-avatar">
+            <img 
+              src={`https://unavatar.io/twitter/${cmProfileHandle}`}
+              alt={cmName}
+              onError={(e) => {
+                // Fallback to avatar placeholder if Twitter image fails
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+              }}
+            />
           </div>
+          <div className="cm-info">
+            <a 
+              href={`https://twitter.com/${cmProfileHandle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cm-name-link"
+            >
+              <h3 className="cm-name">{cmName}</h3>
+              {cmTwitterHandle && (
+                <span className="cm-handle">@{cmTwitterHandle}</span>
+              )}
+            </a>
+            <div className="cm-stats">
+              <span className="note-count">{noteCount} notes</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recent Notes Section */}
+        {recentNotes.length > 0 && (
+          <div className="cm-recent-notes">
+            <h4 className="recent-notes-title">최근 노트</h4>
+            <div className="cm-notes-list">
+              {recentNotes.slice(0, 4).map((note, index) => (
+                <div 
+                  key={`${note.id}-${index}`} 
+                  className="cm-note-preview"
+                  onClick={() => onNoteClick?.(note)}
+                >
+                  <div className="cm-note-preview-user">
+                    <img 
+                      src={`https://unavatar.io/twitter/${note.twitterHandle}`}
+                      alt={note.twitterHandle}
+                      className="cm-note-preview-avatar"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 
+                          `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=24`;
+                      }}
+                    />
+                    <div className="cm-note-preview-info">
+                      <span className="cm-note-preview-handle">@{note.twitterHandle}</span>
+                      <span className="cm-note-preview-time">{formatTimestamp(note.timestamp)}</span>
+                    </div>
+                  </div>
+                  {note.iconUrl && (
+                    <div className="cm-note-preview-icon">
+                      <img src={note.iconUrl} alt="Icon" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {recentNotes.length > 4 && (
+              <button 
+                className="cm-show-more-notes"
+                onClick={() => setShowNotesModal(true)}
+              >
+                더보기 ({recentNotes.length - 4}개 더)
+              </button>
+            )}
+          </div>
+        )}
+        
+        <div className="cm-recent-users">
+          <h4 className="recent-users-title">Recent Users</h4>
+          <div className="recent-users-grid">
+            {recentUsers.slice(0, 6).map((user, index) => (
+              <a
+                key={`${user.twitterHandle}-${index}`}
+                href={`https://twitter.com/${user.twitterHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="recent-user-item"
+              >
+                <img 
+                  src={`https://unavatar.io/twitter/${user.twitterHandle}`}
+                  alt={`@${user.twitterHandle}`}
+                  className="recent-user-avatar"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 
+                      `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff&size=32`;
+                  }}
+                />
+                <span className="recent-user-handle">@{user.twitterHandle}</span>
+              </a>
+            ))}
+          </div>
+          {recentUsers.length > 6 && (
+            <div className="more-users">
+              +{recentUsers.length - 6} more
+            </div>
+          )}
         </div>
       </div>
       
-      <div className="cm-recent-users">
-        <h4 className="recent-users-title">Recent Users</h4>
-        <div className="recent-users-grid">
-          {recentUsers.slice(0, 6).map((user, index) => (
-            <a
-              key={`${user.twitterHandle}-${index}`}
-              href={`https://twitter.com/${user.twitterHandle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="recent-user-item"
-            >
-              <img 
-                src={`https://unavatar.io/twitter/${user.twitterHandle}`}
-                alt={`@${user.twitterHandle}`}
-                className="recent-user-avatar"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 
-                    `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff&size=32`;
-                }}
-              />
-              <span className="recent-user-handle">@{user.twitterHandle}</span>
-            </a>
-          ))}
-        </div>
-        {recentUsers.length > 6 && (
-          <div className="more-users">
-            +{recentUsers.length - 6} more
-          </div>
-        )}
-      </div>
-    </div>
+      {showNotesModal && (
+        <CMNotesModal
+          cmInfo={cmInfo}
+          onClose={() => setShowNotesModal(false)}
+          onNoteClick={(note) => {
+            onNoteClick?.(note);
+            setShowNotesModal(false);
+          }}
+        />
+      )}
+    </>
   );
 }
 

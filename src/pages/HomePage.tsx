@@ -20,6 +20,7 @@ interface CMInfo {
     twitterHandle: string;
     timestamp: number;
   }>;
+  recentNotes: Note[];
 }
 
 interface HomePageProps {
@@ -90,12 +91,16 @@ function HomePage({ selectedProject }: HomePageProps) {
           cmName,
           cmTwitterHandle,
           noteCount: 0,
-          recentUsers: []
+          recentUsers: [],
+          recentNotes: []
         });
       }
       
       const cmInfo = cmMap.get(cmName)!;
       cmInfo.noteCount++;
+      
+      // Add note to recent notes
+      cmInfo.recentNotes.push(note);
       
       // Update cmTwitterHandle if it exists and wasn't set before
       if (cmTwitterHandle && !cmInfo.cmTwitterHandle) {
@@ -121,11 +126,14 @@ function HomePage({ selectedProject }: HomePageProps) {
     });
     
     // Sort recent users by timestamp and limit to most recent
+    // Sort recent notes by timestamp and limit to most recent
     const cmInfoList = Array.from(cmMap.values()).map(cmInfo => ({
       ...cmInfo,
       recentUsers: cmInfo.recentUsers
         .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 10) // Keep top 10 most recent users
+        .slice(0, 10), // Keep top 10 most recent users
+      recentNotes: cmInfo.recentNotes
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
     }));
     
     // Sort CMs by note count (descending)
@@ -549,6 +557,7 @@ function HomePage({ selectedProject }: HomePageProps) {
               <CMCard
                 key={cmInfo.cmName}
                 cmInfo={cmInfo}
+                onNoteClick={setSelectedNote}
               />
             ))}
           </div>
