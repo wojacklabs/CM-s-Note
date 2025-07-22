@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Note } from '../types';
 import { formatTimestamp } from '../utils/dateUtils';
-import NoteModal from './NoteModal';
 import './CMCard.css';
 
 interface CMInfo {
@@ -28,49 +27,162 @@ interface CMNotesModalProps {
 }
 
 function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [loadingContent, setLoadingContent] = useState<boolean>(false);
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
+  const handleNoteClick = async (note: Note) => {
+    setSelectedNote(note);
+    onNoteClick?.(note);
+    
+    // Load content if not already loaded
+    if (!note.content) {
+      setLoadingContent(true);
+      try {
+        const { loadNoteContent } = await import('../services/irysService');
+        const content = await loadNoteContent(note);
+        note.content = content;
+      } catch (error) {
+        console.error('Error loading note content:', error);
+      } finally {
+        setLoadingContent(false);
+      }
+    }
+  };
+
+  const handleBackToList = () => {
+    setSelectedNote(null);
+  };
+
   return (
     <div className="cm-notes-modal-backdrop" onClick={handleBackdropClick}>
       <div className="cm-notes-modal">
-        <div className="cm-notes-modal-header">
-          <h2>{cmInfo.cmName}'s Notes ({cmInfo.noteCount})</h2>
-          <button className="cm-notes-modal-close" onClick={onClose}>×</button>
-        </div>
-        <div className="cm-notes-modal-content">
-          {cmInfo.recentNotes.map((note, index) => (
-            <div 
-              key={`${note.id}-${index}`} 
-              className="cm-note-item"
-              onClick={() => onNoteClick?.(note)}
-            >
-              <div className="cm-note-user">
+        {!selectedNote ? (
+          // Notes List View
+          <>
+            <div className="cm-notes-modal-header">
+              <h2>{cmInfo.cmName}'s Notes ({cmInfo.noteCount})</h2>
+              <button className="cm-notes-modal-close" onClick={onClose}>×</button>
+            </div>
+            <div className="cm-notes-modal-content">
+              {cmInfo.recentNotes.map((note, index) => (
+                <div 
+                  key={`${note.id}-${index}`} 
+                  className="cm-note-item"
+                  onClick={() => handleNoteClick(note)}
+                >
+                  <div className="cm-note-user">
+                    <img 
+                      src={`https://unavatar.io/twitter/${note.twitterHandle}`}
+                      alt={note.twitterHandle}
+                      className="cm-note-user-avatar"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 
+                          `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=32`;
+                      }}
+                    />
+                    <div className="cm-note-user-info">
+                      <span className="cm-note-user-handle">@{note.twitterHandle}</span>
+                      <span className="cm-note-timestamp">{formatTimestamp(note.timestamp)}</span>
+                    </div>
+                  </div>
+                  {note.iconUrl && (
+                    <div className="cm-note-icon">
+                      <img src={note.iconUrl} alt="Project Icon" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          // Note Detail View
+          <>
+            <div className="cm-notes-modal-header">
+              <button className="cm-notes-modal-back" onClick={handleBackToList} title="Back to Notes List">
+                ←
+              </button>
+              <h2>Note Details</h2>
+              <button className="cm-notes-modal-close" onClick={onClose}>×</button>
+            </div>
+            <div className="cm-notes-modal-content note-detail-view">
+              <div className="note-detail-header">
                 <img 
-                  src={`https://unavatar.io/twitter/${note.twitterHandle}`}
-                  alt={note.twitterHandle}
-                  className="cm-note-user-avatar"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 
-                      `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=32`;
-                  }}
+                  src={selectedNote.iconUrl} 
+                  alt="Note icon" 
+                  className="note-detail-icon"
                 />
-                <div className="cm-note-user-info">
-                  <span className="cm-note-user-handle">@{note.twitterHandle}</span>
-                  <span className="cm-note-timestamp">{formatTimestamp(note.timestamp)}</span>
+                <div className="note-detail-title">
+                  <h3>{selectedNote.nickname || selectedNote.user}</h3>
+                  <p className="note-detail-subtitle">@{selectedNote.twitterHandle}</p>
                 </div>
               </div>
-              {note.iconUrl && (
-                <div className="cm-note-icon">
-                  <img src={note.iconUrl} alt="Project Icon" />
+              
+              <div className="note-detail-meta">
+                <div className="meta-row">
+                  <span className="meta-label">CM:</span>
+                  <span className="meta-value">{selectedNote.cmName}</span>
+                </div>
+                {selectedNote.userType && (
+                  <div className="meta-row">
+                    <span className="meta-label">User Type:</span>
+                    <span className="meta-value">{selectedNote.userType}</span>
+                  </div>
+                )}
+                <div className="meta-row">
+                  <span className="meta-label">Project:</span>
+                  <span className="meta-value">{selectedNote.project}</span>
+                </div>
+                <div className="meta-row">
+                  <span className="meta-label">Date:</span>
+                  <span className="meta-value">{formatTimestamp(selectedNote.timestamp)}</span>
+                </div>
+                <div className="meta-row">
+                  <span className="meta-label">Status:</span>
+                  <span className={`meta-value status-${selectedNote.status}`}>
+                    {selectedNote.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="note-detail-content">
+                <h4>Note Content:</h4>
+                {loadingContent ? (
+                  <div className="content-loading">
+                    <div className="loading-spinner"></div>
+                    <p>Loading note content...</p>
+                  </div>
+                ) : (
+                  <div className="content-text">
+                    {selectedNote.content ? (
+                      <p>{selectedNote.content}</p>
+                    ) : (
+                      <p className="no-content">No content available</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {selectedNote.dataUrl && (
+                <div className="note-detail-footer">
+                  <a 
+                    href={selectedNote.dataUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="view-irys-link"
+                  >
+                    View on Irys →
+                  </a>
                 </div>
               )}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -79,25 +191,12 @@ function CMNotesModal({ cmInfo, onClose, onNoteClick }: CMNotesModalProps) {
 function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const cmProfileHandle = cmTwitterHandle || cmName;
 
-  // Handle note click from preview or modal
+  // Handle note click from preview
   const handleNoteClick = (note: Note) => {
-    // First clear any existing state, then set the selected note
-    setShowNotesModal(false);
-    setSelectedNote(note);
-    onNoteClick?.(note); // Also call the parent handler if provided
-  };
-
-  // Handle back from note detail to notes list
-  const handleBackToNotesList = () => {
-    setSelectedNote(null);
-    // Small delay to ensure selectedNote is cleared before showing notes modal
-    setTimeout(() => {
-      setShowNotesModal(true);
-    }, 0);
+    onNoteClick?.(note);
   };
 
   return (
@@ -209,19 +308,11 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         </div>
       </div>
       
-      {showNotesModal && !selectedNote && (
+      {showNotesModal && (
         <CMNotesModal
           cmInfo={cmInfo}
           onClose={() => setShowNotesModal(false)}
-          onNoteClick={handleNoteClick}
-        />
-      )}
-      
-      {selectedNote && (
-        <NoteModal
-          note={selectedNote}
-          onClose={() => setSelectedNote(null)}
-          onBack={handleBackToNotesList}
+          onNoteClick={onNoteClick}
         />
       )}
     </>

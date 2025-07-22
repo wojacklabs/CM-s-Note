@@ -213,14 +213,44 @@
   flex-shrink: 0;
 }
 
+.cm-notes-modal-header {
+  position: relative;
+}
+
 .cm-notes-modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
+  text-align: center;
+}
+
+.cm-notes-modal-back {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.cm-notes-modal-back:hover {
+  background: var(--background);
+  color: var(--primary-color);
+  transform: translateY(-50%) translateX(-2px);
 }
 
 .cm-notes-modal-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -307,6 +337,146 @@
   height: 100%;
   object-fit: cover;
   border-radius: 3px;
+}
+
+/* Note Detail View Styles */
+.note-detail-view {
+  padding: 1.5rem;
+}
+
+.note-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.note-detail-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.note-detail-title h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.note-detail-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.note-detail-meta {
+  margin-bottom: 1.5rem;
+}
+
+.note-detail-meta .meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.note-detail-meta .meta-row:last-child {
+  border-bottom: none;
+}
+
+.note-detail-meta .meta-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.note-detail-meta .meta-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.note-detail-meta .status-added {
+  color: var(--success-color, #10b981);
+}
+
+.note-detail-meta .status-removed {
+  color: var(--error-color, #ef4444);
+}
+
+.note-detail-meta .status-edited {
+  color: var(--warning-color, #f59e0b);
+}
+
+.note-detail-content h4 {
+  margin: 0 0 1rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.note-detail-content .content-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.note-detail-content .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.note-detail-content .content-text {
+  background: var(--background);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+}
+
+.note-detail-content .content-text p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.note-detail-content .no-content {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+.note-detail-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.note-detail-footer .view-irys-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.note-detail-footer .view-irys-link:hover {
+  color: var(--primary-color-hover, #2563eb);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .cm-recent-users {
@@ -465,5 +635,38 @@
   
   .cm-note-timestamp {
     font-size: 0.7rem;
+  }
+  
+  /* Mobile styles for note detail view */
+  .note-detail-view {
+    padding: 1rem;
+  }
+  
+  .note-detail-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .note-detail-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .note-detail-title h3 {
+    font-size: 1.1rem;
+  }
+  
+  .note-detail-meta .meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .note-detail-content .content-loading {
+    padding: 1.5rem;
+  }
+  
+  .note-detail-content .content-text {
+    padding: 1rem;
   }
 } 
