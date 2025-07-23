@@ -309,6 +309,73 @@ function filterActiveNotes(notes: Note[]): Note[] {
   return activeNotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 }
 
+// Query CM permissions to get CM Twitter handles
+export async function queryCMPermissions(project: string): Promise<Map<string, string>> {
+  const query = `
+    query getCMPermissions($project: String!) {
+      transactions(
+        tags: [
+          { name: "App-Name", values: ["irys-cm-note-permission"] }
+          { name: "irys-cm-note-project", values: [$project] }
+        ],
+        first: 100,
+        order: DESC
+      ) {
+        edges {
+          node {
+            id
+            tags {
+              name
+              value
+            }
+            timestamp
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    console.log(`[IrysService] Querying CM permissions for project: ${project}`);
+    const response = await axios.post(IRYS_GRAPHQL_URL, {
+      query,
+      variables: { project }
+    });
+
+    const edges = response.data?.data?.transactions?.edges || [];
+    const cmTwitterHandles = new Map<string, string>();
+
+    // Get the most recent permission entry for each CM
+    const cmLatestTimestamp = new Map<string, number>();
+
+    for (const edge of edges) {
+      const node = edge.node;
+      const tags = node.tags || [];
+      
+      const getTagValue = (tagName: string) => tags.find((t: any) => t.name === tagName)?.value;
+      
+      const cmName = getTagValue('irys-cm-note-cm');
+      const twitterHandle = getTagValue('irys-cm-note-twitter-handle');
+      const timestamp = parseIrysTimestamp(node.timestamp);
+
+      if (cmName && twitterHandle) {
+        // Only update if this is the most recent entry for this CM
+        if (!cmLatestTimestamp.has(cmName) || timestamp > cmLatestTimestamp.get(cmName)!) {
+          cmTwitterHandles.set(cmName, twitterHandle);
+          cmLatestTimestamp.set(cmName, timestamp);
+          console.log(`[IrysService] Found Twitter handle for CM ${cmName}: @${twitterHandle}`);
+        }
+      }
+    }
+
+    console.log(`[IrysService] Found ${cmTwitterHandles.size} CM Twitter handles`);
+    return cmTwitterHandles;
+  } catch (error) {
+    console.error('Error querying CM permissions:', error);
+    return new Map();
+  }
+}
+
 // Get all unique projects
 export async function getAllProjects(): Promise<string[]> {
   const query = `

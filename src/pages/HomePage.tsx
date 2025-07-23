@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Note, User } from '../types';
-import { queryNotesByProject, loadMultipleNoteContents } from '../services/irysService';
+import { queryNotesByProject, loadMultipleNoteContents, queryCMPermissions } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
 import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
@@ -79,7 +79,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   }, []);
 
   // Process CM data
-  const processCMData = useCallback((notesData: Note[]) => {
+  const processCMData = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
     const cmMap = new Map<string, CMInfo>();
     
     notesData.forEach(note => {
@@ -87,9 +87,11 @@ function HomePage({ selectedProject }: HomePageProps) {
       const cmTwitterHandle = note.cmTwitterHandle;
       
       if (!cmMap.has(cmName)) {
+        // Use Twitter handle from permissions if available
+        const permissionTwitterHandle = cmTwitterHandlesMap?.get(cmName);
         cmMap.set(cmName, {
           cmName,
-          cmTwitterHandle,
+          cmTwitterHandle: permissionTwitterHandle || cmTwitterHandle,
           noteCount: 0,
           recentUsers: [],
           recentNotes: []
@@ -102,9 +104,20 @@ function HomePage({ selectedProject }: HomePageProps) {
       // Add note to recent notes
       cmInfo.recentNotes.push(note);
       
-      // Update cmTwitterHandle if it exists and wasn't set before
-      if (cmTwitterHandle && !cmInfo.cmTwitterHandle) {
+      // Update cmTwitterHandle - prioritize permission data
+      const permissionTwitterHandle = cmTwitterHandlesMap?.get(cmName);
+      if (permissionTwitterHandle) {
+        cmInfo.cmTwitterHandle = permissionTwitterHandle;
+        // Debug: Log when CM Twitter handle is found from permissions
+        if (cmInfo.noteCount === 1) {
+          console.log(`[CM Data] Found Twitter handle from permissions for ${cmName}: @${permissionTwitterHandle}`);
+        }
+      } else if (cmTwitterHandle) {
         cmInfo.cmTwitterHandle = cmTwitterHandle;
+        // Debug: Log when CM Twitter handle is found from note
+        if (cmInfo.noteCount === 1) {
+          console.log(`[CM Data] Found Twitter handle from note for ${cmName}: @${cmTwitterHandle}`);
+        }
       }
       
       // Add user to recent users if not already present
@@ -193,7 +206,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   }, []);
 
   // Process notes data to users
-  const processNotesToUsers = useCallback((notesData: Note[]) => {
+  const processNotesToUsers = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
     // Group notes by user
     const userMap = new Map<string, User>();
     
@@ -224,7 +237,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     setRecentUsers(recentUserList);
     
     // Process CM data
-    processCMData(notesData);
+    processCMData(notesData, cmTwitterHandlesMap);
     
     setLastUpdated(new Date());
     
@@ -246,10 +259,15 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
       
       console.log(`[HomePage] Loading data from API for project: ${selectedProject}`);
-      const projectNotes = await queryNotesByProject(selectedProject);
+      
+      // Load both notes and CM permissions in parallel
+      const [projectNotes, cmTwitterHandles] = await Promise.all([
+        queryNotesByProject(selectedProject),
+        queryCMPermissions(selectedProject)
+      ]);
       
       setNotes(projectNotes);
-      processNotesToUsers(projectNotes);
+      processNotesToUsers(projectNotes, cmTwitterHandles);
       
       // Save to cache
       CacheService.saveToCache(selectedProject, projectNotes);
@@ -277,7 +295,12 @@ function HomePage({ selectedProject }: HomePageProps) {
     if (cachedNotes && cachedNotes.length > 0) {
       console.log(`[HomePage] Loading from cache for project: ${selectedProject}`);
       setNotes(cachedNotes);
-      processNotesToUsers(cachedNotes);
+      
+      // Load CM permissions even when using cached notes
+      queryCMPermissions(selectedProject).then(cmTwitterHandles => {
+        processNotesToUsers(cachedNotes, cmTwitterHandles);
+      });
+      
       setLoading(false);
       
       // If it's a page refresh, always fetch fresh data in background
