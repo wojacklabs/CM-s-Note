@@ -9,6 +9,7 @@ import CMCard from '../components/CMCard';
 import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
 import UserProfileCard from '../components/UserProfileCard';
+import { UserCardSkeleton, CMCardSkeleton, UserProfileCardSkeleton } from '../components/SkeletonCard';
 import Marquee from 'react-fast-marquee';
 import './HomePage.css';
 
@@ -38,6 +39,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [hasDataLoaded, setHasDataLoaded] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
@@ -268,6 +270,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       setNotes(projectNotes);
       processNotesToUsers(projectNotes, cmTwitterHandles);
+      setHasDataLoaded(true);
       
       // Save to cache
       CacheService.saveToCache(selectedProject, projectNotes);
@@ -275,6 +278,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       console.log(`[HomePage] Loaded ${projectNotes.length} notes from API`);
     } catch (error) {
       console.error('Error loading data:', error);
+      // Don't set hasDataLoaded to true on error, keep showing skeleton
     } finally {
       if (showLoader) {
         setLoading(false);
@@ -301,6 +305,7 @@ function HomePage({ selectedProject }: HomePageProps) {
         processNotesToUsers(cachedNotes, cmTwitterHandles);
       });
       
+      setHasDataLoaded(true);
       setLoading(false);
       
       // If it's a page refresh, always fetch fresh data in background
@@ -345,6 +350,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Load data when project changes
   useEffect(() => {
     if (selectedProject) {
+      setHasDataLoaded(false);
       loadData();
     }
   }, [selectedProject, loadData]);
@@ -449,16 +455,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     setSearchQuery('');
   };
 
-  if (loading) {
-    return (
-      <div className="home-page">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading notes...</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove the global loading state - we'll handle loading per section
 
   if (!selectedProject) {
     return (
@@ -474,7 +471,9 @@ function HomePage({ selectedProject }: HomePageProps) {
     <div className="home-page">
       <div className="status-bar">
         <div className="status-info">
-          <span className="data-count">{notes.length} notes loaded</span>
+          <span className="data-count">
+            {loading || !hasDataLoaded ? 'Loading...' : `${notes.length} notes loaded`}
+          </span>
           {lastUpdated && (
             <span className="last-updated">
               Last updated: {formatLastUpdated(lastUpdated)}
@@ -502,9 +501,9 @@ function HomePage({ selectedProject }: HomePageProps) {
 
       <section className="users-section">
         <FilterBar
-          cms={getUniqueValues('cmName')}
-          userTypes={getUniqueValues('userType')}
-          icons={notes.map(n => ({ url: n.iconUrl, name: n.iconUrl })).filter((v, i, a) => a.findIndex(t => t.url === v.url) === i)}
+          cms={hasDataLoaded ? getUniqueValues('cmName') : []}
+          userTypes={hasDataLoaded ? getUniqueValues('userType') : []}
+          icons={hasDataLoaded ? notes.map(n => ({ url: n.iconUrl, name: n.iconUrl })).filter((v, i, a) => a.findIndex(t => t.url === v.url) === i) : []}
           selectedCM={selectedCM}
           selectedUserType={selectedUserType}
           selectedIcon={selectedIcon}
@@ -537,7 +536,12 @@ function HomePage({ selectedProject }: HomePageProps) {
         </div>
 
         <div className="users-grid">
-          {displayedUsers.length === 0 ? (
+          {loading || !hasDataLoaded ? (
+            // Show skeleton during loading
+            Array.from({ length: 6 }).map((_, index) => (
+              <UserCardSkeleton key={`user-skeleton-${index}`} />
+            ))
+          ) : displayedUsers.length === 0 ? (
             <div className="empty-state">
               <p>No users found</p>
             </div>
@@ -572,22 +576,31 @@ function HomePage({ selectedProject }: HomePageProps) {
         )}
       </section>
 
-      {cmInfos.length > 0 && (
-        <section className="cm-section">
-          <h2 className="section-title">Community Managers</h2>
-          <div className="cm-grid">
-            {cmInfos.map(cmInfo => (
+      <section className="cm-section">
+        <h2 className="section-title">Community Managers</h2>
+        <div className="cm-grid">
+          {loading || !hasDataLoaded ? (
+            // Show skeleton during loading
+            Array.from({ length: 3 }).map((_, index) => (
+              <CMCardSkeleton key={`cm-skeleton-${index}`} />
+            ))
+          ) : cmInfos.length > 0 ? (
+            cmInfos.map(cmInfo => (
               <CMCard
                 key={cmInfo.cmName}
                 cmInfo={cmInfo}
                 onNoteClick={setSelectedNote}
               />
-            ))}
-          </div>
-        </section>
-      )}
+            ))
+          ) : (
+            <div className="empty-state">
+              <p>No community managers found</p>
+            </div>
+          )}
+        </div>
+      </section>
 
-      {recentUsers.length > 0 && (
+      {(loading || !hasDataLoaded || recentUsers.length > 0) && (
         <section className="recent-users-section">
           <h2 className="section-title">Recently Noted Users</h2>
           <div className="marquee-controls">
@@ -611,9 +624,16 @@ function HomePage({ selectedProject }: HomePageProps) {
               gradientColor="#faf8f3"
               gradientWidth={120}
             >
-              {recentUsers.map((user, index) => (
-                <UserProfileCard key={`${user.twitterHandle}-${index}`} user={user} />
-              ))}
+              {loading || !hasDataLoaded ? (
+                // Show skeleton during loading
+                Array.from({ length: 6 }).map((_, index) => (
+                  <UserProfileCardSkeleton key={`recent-user-skeleton-${index}`} />
+                ))
+              ) : (
+                recentUsers.map((user, index) => (
+                  <UserProfileCard key={`${user.twitterHandle}-${index}`} user={user} />
+                ))
+              )}
             </Marquee>
           </div>
         </section>
