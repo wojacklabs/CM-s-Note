@@ -31,7 +31,7 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
             alt={`@${user.twitterHandle}`}
             onError={(e) => {
               // Fallback to avatar placeholder if Twitter image fails
-              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff`;
+              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.twitterHandle)}&background=d4a574&color=fff&size=56`;
             }}
           />
         </div>
