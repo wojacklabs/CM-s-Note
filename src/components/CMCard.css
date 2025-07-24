@@ -49,6 +49,14 @@
   color: var(--primary-color);
 }
 
+.cm-name-link.no-link {
+  cursor: default;
+}
+
+.cm-name-link.no-link:hover {
+  color: inherit;
+}
+
 .cm-name {
   font-size: 1.25rem;
   font-weight: 600;

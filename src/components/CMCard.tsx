@@ -191,7 +191,10 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
 
-  const cmProfileHandle = cmTwitterHandle || cmName;
+  // 트위터 핸들이 있는 경우에만 트위터 이미지 시도, 없으면 바로 아바타 사용
+  const profileImageSrc = cmTwitterHandle 
+    ? `https://unavatar.io/twitter/${cmTwitterHandle}`
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
 
   return (
     <>
@@ -199,20 +202,23 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
         <div className="cm-header">
           <div className="cm-avatar">
             <img 
-              src={`https://unavatar.io/twitter/${cmProfileHandle}`}
+              src={profileImageSrc}
               alt={cmName}
               onError={(e) => {
-                // Fallback to avatar placeholder if Twitter image fails
-                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmProfileHandle)}&background=d4a574&color=fff&size=64`;
+                // 트위터 핸들이 있었는데 이미지 로딩에 실패한 경우에만 fallback 적용
+                if (cmTwitterHandle) {
+                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+                }
               }}
             />
           </div>
           <div className="cm-info">
             <a 
-              href={`https://twitter.com/${cmProfileHandle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cm-name-link"
+              href={cmTwitterHandle ? `https://twitter.com/${cmTwitterHandle}` : '#'}
+              target={cmTwitterHandle ? "_blank" : "_self"}
+              rel={cmTwitterHandle ? "noopener noreferrer" : ""}
+              className={`cm-name-link ${!cmTwitterHandle ? 'no-link' : ''}`}
+              onClick={!cmTwitterHandle ? (e) => e.preventDefault() : undefined}
             >
               <h3 className="cm-name">{cmName}</h3>
               {cmTwitterHandle && (
