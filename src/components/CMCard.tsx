@@ -203,7 +203,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
               alt={cmName}
               onError={(e) => {
                 // Fallback to avatar placeholder if Twitter image fails
-                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmProfileHandle)}&background=d4a574&color=fff&size=64`;
               }}
             />
           </div>
@@ -216,7 +216,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
             >
               <h3 className="cm-name">{cmName}</h3>
               {cmTwitterHandle && (
-                <span className="cm-handle">@{cmTwitterHandle}</span>
+                <span className="cm-handle">{cmTwitterHandle}</span>
               )}
             </a>
             <div className="cm-stats">
