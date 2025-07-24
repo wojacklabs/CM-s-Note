@@ -109,16 +109,29 @@ function HomePage({ selectedProject }: HomePageProps) {
       // Update cmTwitterHandle - prioritize permission data
       const permissionTwitterHandle = cmTwitterHandlesMap?.get(cmName);
       if (permissionTwitterHandle) {
-        cmInfo.cmTwitterHandle = permissionTwitterHandle;
+        // @ 기호 제거하여 저장
+        const cleanHandle = permissionTwitterHandle.startsWith('@') 
+          ? permissionTwitterHandle.substring(1) 
+          : permissionTwitterHandle;
+        cmInfo.cmTwitterHandle = cleanHandle;
         // Debug: Log when CM Twitter handle is found from permissions
         if (cmInfo.noteCount === 1) {
-          console.log(`[CM Data] Found Twitter handle from permissions for ${cmName}: @${permissionTwitterHandle}`);
+          console.log(`[CM Data] Found Twitter handle from permissions for ${cmName}: ${cleanHandle}`);
         }
       } else if (cmTwitterHandle) {
-        cmInfo.cmTwitterHandle = cmTwitterHandle;
+        // @ 기호 제거하여 저장
+        const cleanHandle = cmTwitterHandle.startsWith('@') 
+          ? cmTwitterHandle.substring(1) 
+          : cmTwitterHandle;
+        cmInfo.cmTwitterHandle = cleanHandle;
         // Debug: Log when CM Twitter handle is found from note
         if (cmInfo.noteCount === 1) {
-          console.log(`[CM Data] Found Twitter handle from note for ${cmName}: @${cmTwitterHandle}`);
+          console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
+        }
+      } else {
+        // Debug: Log when no Twitter handle is found
+        if (cmInfo.noteCount === 1) {
+          console.log(`[CM Data] No Twitter handle found for ${cmName}`);
         }
       }
       

@@ -191,6 +191,9 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
 
+  // 디버깅: CM 정보 로그
+  console.log(`[CMCard] CM: ${cmName}, Twitter Handle: ${cmTwitterHandle}`);
+
   // 트위터 핸들이 있는 경우에만 트위터 이미지 시도, 없으면 바로 아바타 사용
   const profileImageSrc = cmTwitterHandle 
     ? `https://unavatar.io/twitter/${cmTwitterHandle}`
@@ -205,6 +208,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
               src={profileImageSrc}
               alt={cmName}
               onError={(e) => {
+                console.log(`[CMCard] Failed to load image for ${cmName} with handle ${cmTwitterHandle}`);
                 // 트위터 핸들이 있었는데 이미지 로딩에 실패한 경우에만 fallback 적용
                 if (cmTwitterHandle) {
                   (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
@@ -222,7 +226,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
             >
               <h3 className="cm-name">{cmName}</h3>
               {cmTwitterHandle && (
-                <span className="cm-handle">{cmTwitterHandle}</span>
+                <span className="cm-handle">@{cmTwitterHandle}</span>
               )}
             </a>
             <div className="cm-stats">
