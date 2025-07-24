@@ -55,36 +55,41 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
     }
   }, [note.content, content]);
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-nav">
+    <div className="note-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="note-modal">
+        <div className="note-modal-header">
           {onBack ? (
-            <button className="modal-back" onClick={onBack} title="Back">
+            <button className="note-modal-back" onClick={onBack} title="Back">
               ←
             </button>
           ) : (
-            <div className="modal-back invisible"></div>
+            <div className="note-modal-back invisible"></div>
           )}
-          <button className="modal-close" onClick={onClose}>
-            ×
-          </button>
+          <h2>Note Details</h2>
+          <button className="note-modal-close" onClick={onClose}>×</button>
         </div>
         
-        <div className="modal-header">
-          <img 
-            src={note.iconUrl} 
-            alt="Note icon" 
-            className="modal-icon"
-          />
-          <div className="modal-title">
-            <h3>{note.nickname || note.user}</h3>
-            <p className="modal-subtitle">@{note.twitterHandle}</p>
+        <div className="note-modal-content">
+          <div className="note-detail-header">
+            <img 
+              src={note.iconUrl} 
+              alt="Note icon" 
+              className="note-detail-icon"
+            />
+            <div className="note-detail-title">
+              <h3>{note.nickname || note.user}</h3>
+              <p className="note-detail-subtitle">@{note.twitterHandle}</p>
+            </div>
           </div>
-        </div>
-        
-        <div className="modal-body">
-          <div className="note-meta">
+          
+          <div className="note-detail-meta">
             <div className="meta-row">
               <span className="meta-label">CM:</span>
               <span className="meta-value">{note.cmName}</span>
@@ -111,7 +116,7 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
             </div>
           </div>
           
-          <div className="note-content">
+          <div className="note-detail-content">
             <h4>Note Content:</h4>
             {loadingContent ? (
               <div className="content-loading">
@@ -140,7 +145,7 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
           </div>
           
           {note.dataUrl && (
-            <div className="note-footer">
+            <div className="note-detail-footer">
               <a 
                 href={note.dataUrl}
                 target="_blank"
