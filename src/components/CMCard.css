@@ -689,3 +689,33 @@
     padding: 1rem;
   }
 } 
+
+/* No notes/users state styles */
+.cm-no-notes,
+.cm-no-users {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--text-secondary);
+}
+
+.cm-no-notes p,
+.cm-no-users p {
+  margin: 0;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+/* Empty state styling for better visual hierarchy */
+.cm-no-notes {
+  background: var(--background);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  margin: 0.5rem 0;
+}
+
+.cm-no-users {
+  background: var(--background);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  margin: 0.5rem 0;
+} 

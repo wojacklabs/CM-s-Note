@@ -84,20 +84,43 @@ function HomePage({ selectedProject }: HomePageProps) {
   const processCMData = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
     const cmMap = new Map<string, CMInfo>();
     
+    // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
+    if (cmTwitterHandlesMap) {
+      cmTwitterHandlesMap.forEach((twitterHandle, cmName) => {
+        const cleanHandle = twitterHandle.startsWith('@') 
+          ? twitterHandle.substring(1) 
+          : twitterHandle;
+        
+        cmMap.set(cmName, {
+          cmName,
+          cmTwitterHandle: cleanHandle,
+          noteCount: 0,
+          recentUsers: [],
+          recentNotes: []
+        });
+        
+        console.log(`[CM Data] Added CM from permissions: ${cmName} -> ${cleanHandle}`);
+      });
+    }
+    
+    // 노트 데이터를 처리하여 기존 CM에 노트 추가 또는 새로운 CM 생성
     notesData.forEach(note => {
       const cmName = note.cmName;
       const cmTwitterHandle = note.cmTwitterHandle;
       
       if (!cmMap.has(cmName)) {
-        // Use Twitter handle from permissions if available
-        const permissionTwitterHandle = cmTwitterHandlesMap?.get(cmName);
+        // 권한 맵에 없는 CM이지만 노트가 있는 경우 (레거시 데이터)
         cmMap.set(cmName, {
           cmName,
-          cmTwitterHandle: permissionTwitterHandle || cmTwitterHandle,
+          cmTwitterHandle: cmTwitterHandle ? (cmTwitterHandle.startsWith('@') 
+            ? cmTwitterHandle.substring(1) 
+            : cmTwitterHandle) : undefined,
           noteCount: 0,
           recentUsers: [],
           recentNotes: []
         });
+        
+        console.log(`[CM Data] Added CM from note data: ${cmName}`);
       }
       
       const cmInfo = cmMap.get(cmName)!;
@@ -106,33 +129,14 @@ function HomePage({ selectedProject }: HomePageProps) {
       // Add note to recent notes
       cmInfo.recentNotes.push(note);
       
-      // Update cmTwitterHandle - prioritize permission data
-      const permissionTwitterHandle = cmTwitterHandlesMap?.get(cmName);
-      if (permissionTwitterHandle) {
-        // @ 기호 제거하여 저장
-        const cleanHandle = permissionTwitterHandle.startsWith('@') 
-          ? permissionTwitterHandle.substring(1) 
-          : permissionTwitterHandle;
-        cmInfo.cmTwitterHandle = cleanHandle;
-        // Debug: Log when CM Twitter handle is found from permissions
-        if (cmInfo.noteCount === 1) {
-          console.log(`[CM Data] Found Twitter handle from permissions for ${cmName}: ${cleanHandle}`);
-        }
-      } else if (cmTwitterHandle) {
-        // @ 기호 제거하여 저장
+      // Twitter handle은 이미 권한에서 설정되었으므로 추가 업데이트 불필요
+      // 하지만 권한에 없는 경우를 위해 fallback 제공
+      if (!cmInfo.cmTwitterHandle && cmTwitterHandle) {
         const cleanHandle = cmTwitterHandle.startsWith('@') 
           ? cmTwitterHandle.substring(1) 
           : cmTwitterHandle;
         cmInfo.cmTwitterHandle = cleanHandle;
-        // Debug: Log when CM Twitter handle is found from note
-        if (cmInfo.noteCount === 1) {
-          console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
-        }
-      } else {
-        // Debug: Log when no Twitter handle is found
-        if (cmInfo.noteCount === 1) {
-          console.log(`[CM Data] No Twitter handle found for ${cmName}`);
-        }
+        console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
       }
       
       // Add user to recent users if not already present
@@ -164,8 +168,19 @@ function HomePage({ selectedProject }: HomePageProps) {
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
     }));
     
-    // Sort CMs by note count (descending)
-    cmInfoList.sort((a, b) => b.noteCount - a.noteCount);
+    // Sort CMs: 노트가 있는 CM을 먼저, 그 다음 노트 수 기준으로 정렬
+    cmInfoList.sort((a, b) => {
+      if (a.noteCount === 0 && b.noteCount === 0) {
+        return a.cmName.localeCompare(b.cmName); // 둘 다 노트가 없으면 이름순
+      }
+      if (a.noteCount === 0) return 1; // a가 노트 없으면 뒤로
+      if (b.noteCount === 0) return -1; // b가 노트 없으면 뒤로
+      return b.noteCount - a.noteCount; // 노트 수 기준 내림차순
+    });
+    
+    console.log(`[CM Data] Total CMs processed: ${cmInfoList.length}`);
+    console.log(`[CM Data] CMs with notes: ${cmInfoList.filter(cm => cm.noteCount > 0).length}`);
+    console.log(`[CM Data] CMs without notes: ${cmInfoList.filter(cm => cm.noteCount === 0).length}`);
     
     setCmInfos(cmInfoList);
   }, []);
