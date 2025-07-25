@@ -5,6 +5,30 @@ import { debugTimestamp } from '../utils/dateUtils';
 const IRYS_GATEWAY_URL = 'https://gateway.irys.xyz';
 const IRYS_GRAPHQL_URL = 'https://uploader.irys.xyz/graphql';
 
+// 통합 사용자 데이터 구조
+interface UnifiedUserData {
+  version: string;
+  updatedAt: number;
+  projects: {
+    [projectName: string]: {
+      cms: {
+        [cmName: string]: {
+          notes: Array<{
+            id: string;
+            rootTxId: string;
+            content: string;
+            status: 'added' | 'removed' | 'edited';
+            timestamp: number;
+            iconUrl?: string;
+            iconName?: string;
+            updatedAt: number;
+          }>;
+        };
+      };
+    };
+  };
+}
+
 // Helper function to properly handle timestamp from Irys
 function parseIrysTimestamp(timestamp: any): number {
   if (!timestamp) return 0;
@@ -31,8 +55,184 @@ function parseIrysTimestamp(timestamp: any): number {
   }
 }
 
-// Query all notes for a specific project (optimized - no content fetching)
+// Query unified user data for a specific project
+export async function queryUnifiedUserData(project: string): Promise<Note[]> {
+  const query = `
+    query getUnifiedUserData {
+      transactions(
+        tags: [
+          { name: "App-Name", values: ["irys-cm-note-unified"] }
+        ],
+        first: 1000,
+        order: DESC
+      ) {
+        edges {
+          node {
+            id
+            tags {
+              name
+              value
+            }
+            timestamp
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    console.log(`[IrysService] Starting unified data query for project: ${project}`);
+    const startTime = Date.now();
+    
+    const response = await axios.post(IRYS_GRAPHQL_URL, {
+      query
+    });
+
+    const edges = response.data?.data?.transactions?.edges || [];
+    const notes: Note[] = [];
+    
+    // Group transactions by Twitter handle to get latest for each user
+    const userTransactions = new Map<string, any>();
+    
+    for (const edge of edges) {
+      const node = edge.node;
+      const tags = node.tags || [];
+      const timestamp = parseIrysTimestamp(node.timestamp);
+      
+      const getTagValue = (tagName: string) => tags.find((t: any) => t.name === tagName)?.value;
+      const twitterHandle = getTagValue('Twitter-Handle');
+      const rootTxTag = getTagValue('Root-TX');
+      const rootTxId = rootTxTag || node.id;
+      
+      // Keep only the most recent transaction per user
+      if (twitterHandle) {
+        const existing = userTransactions.get(twitterHandle);
+        if (!existing || timestamp > parseIrysTimestamp(existing.timestamp)) {
+          userTransactions.set(twitterHandle, { node, rootTxId, timestamp });
+        }
+      }
+    }
+    
+    console.log(`[IrysService] Found ${userTransactions.size} unique users with unified data`);
+    
+    // Fetch and process unified data for each user
+    const fetchPromises = Array.from(userTransactions.entries()).map(async ([twitterHandle, { node, rootTxId }]) => {
+      try {
+        const mutableAddress = `${IRYS_GATEWAY_URL}/mutable/${rootTxId}`;
+        const dataResponse = await axios.get(mutableAddress, {
+          timeout: 10000 // 10 second timeout
+        });
+        const userData: UnifiedUserData = dataResponse.data;
+        
+        // Extract notes from unified data for the specified project
+        if (userData.projects && userData.projects[project]) {
+          const projectData = userData.projects[project];
+          
+          for (const cmName in projectData.cms) {
+            const cmData = projectData.cms[cmName];
+            
+            if (cmData.notes && Array.isArray(cmData.notes)) {
+              // Process only active notes
+              const activeNotes = cmData.notes.filter(note => note.status !== 'removed');
+              
+              for (const noteData of activeNotes) {
+                // Convert unified note data to Note interface
+                const note: Note = {
+                  id: noteData.id || `${rootTxId}_${Date.now()}_${Math.random()}`,
+                  rootTxId: rootTxId,
+                  project: project,
+                  twitterHandle: twitterHandle,
+                  user: twitterHandle,
+                  nickname: twitterHandle,
+                  userType: 'unified',
+                  iconUrl: noteData.iconUrl || '',
+                  content: noteData.content || '',
+                  status: noteData.status || 'added',
+                  timestamp: Math.floor(new Date(noteData.updatedAt || noteData.timestamp).getTime() / 1000),
+                  cmName: cmName,
+                  dataUrl: mutableAddress
+                };
+                
+                notes.push(note);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching unified data for user ${twitterHandle}:`, error);
+      }
+    });
+    
+    // Process in batches to avoid overwhelming the server
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
+      const batch = fetchPromises.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch);
+      
+      // Small delay between batches
+      if (i + BATCH_SIZE < fetchPromises.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    
+    // Sort notes by timestamp
+    notes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    console.log(`[IrysService] Loaded ${notes.length} notes from unified data in ${Date.now() - startTime}ms`);
+    
+    return notes;
+  } catch (error) {
+    console.error('Error querying unified user data:', error);
+    return [];
+  }
+}
+
+// Query all notes for a specific project (combined unified and individual notes)
 export async function queryNotesByProject(project: string): Promise<Note[]> {
+  try {
+    console.log(`[IrysService] Starting combined query for project: ${project}`);
+    const startTime = Date.now();
+    
+    // Query both unified data and individual notes in parallel
+    const [unifiedNotes, individualNotes] = await Promise.all([
+      queryUnifiedUserData(project),
+      queryIndividualNotes(project)
+    ]);
+    
+    // Combine results
+    const allNotes = [...unifiedNotes, ...individualNotes];
+    
+    // Remove duplicates based on rootTxId (prefer unified data)
+    const uniqueNotesMap = new Map<string, Note>();
+    
+    // Add unified notes first (higher priority)
+    unifiedNotes.forEach(note => {
+      uniqueNotesMap.set(note.rootTxId, note);
+    });
+    
+    // Add individual notes only if not already present
+    individualNotes.forEach(note => {
+      if (!uniqueNotesMap.has(note.rootTxId)) {
+        uniqueNotesMap.set(note.rootTxId, note);
+      }
+    });
+    
+    const uniqueNotes = Array.from(uniqueNotesMap.values());
+    const sortedNotes = uniqueNotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    console.log(`[IrysService] Combined query completed in ${Date.now() - startTime}ms`);
+    console.log(`[IrysService] Total notes: ${allNotes.length} (${unifiedNotes.length} unified, ${individualNotes.length} individual)`);
+    console.log(`[IrysService] Unique notes after deduplication: ${sortedNotes.length}`);
+    
+    return sortedNotes;
+  } catch (error) {
+    console.error('Error in combined query:', error);
+    return [];
+  }
+}
+
+// Query individual notes (legacy method)
+async function queryIndividualNotes(project: string): Promise<Note[]> {
   const query = `
     query getNotesByProject($project: String!) {
       transactions(
@@ -58,7 +258,7 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
   `;
 
   try {
-    console.log(`[IrysService] Starting query for project: ${project}`);
+    console.log(`[IrysService] Starting individual notes query for project: ${project}`);
     const startTime = Date.now();
     
     const response = await axios.post(IRYS_GRAPHQL_URL, {
@@ -69,7 +269,7 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
     const edges = response.data?.data?.transactions?.edges || [];
     const notes: Note[] = [];
 
-    console.log(`[IrysService] Fetched ${edges.length} transactions for project ${project} in ${Date.now() - startTime}ms`);
+    console.log(`[IrysService] Fetched ${edges.length} individual transactions for project ${project} in ${Date.now() - startTime}ms`);
 
     for (const edge of edges) {
       const node = edge.node;
@@ -87,7 +287,7 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         twitterHandle: getTagValue('irys-cm-note-twitter-handle'),
         user: getTagValue('irys-cm-note-user'),
         nickname: getTagValue('irys-cm-note-user'),
-        userType: getTagValue('irys-cm-note-user-type'),
+        userType: getTagValue('irys-cm-note-user-type') || 'individual',
         iconUrl: getTagValue('irys-cm-note-Icon'),
         content: getTagValue('irys-cm-note-content') || '', // Load content from tag
         status: getTagValue('irys-cm-note-status') || 'added',
@@ -97,25 +297,15 @@ export async function queryNotesByProject(project: string): Promise<Note[]> {
         dataUrl: `${IRYS_GATEWAY_URL}/mutable/${getTagValue('Root-TX') || node.id}`
       };
 
-      // Log first few notes for debugging
-      if (notes.length < 3) {
-        console.log(`[IrysService] Note ${notes.length + 1}:`, {
-          id: note.id.substring(0, 8) + '...',
-          timestamp: note.timestamp,
-          twitterHandle: note.twitterHandle,
-          cmName: note.cmName
-        });
-      }
-
       notes.push(note);
     }
 
     const activeNotes = filterActiveNotes(notes);
-    console.log(`[IrysService] Filtered to ${activeNotes.length} active notes in ${Date.now() - startTime}ms total`);
+    console.log(`[IrysService] Filtered to ${activeNotes.length} active individual notes in ${Date.now() - startTime}ms total`);
     
     return activeNotes;
   } catch (error) {
-    console.error('Error querying notes:', error);
+    console.error('Error querying individual notes:', error);
     return [];
   }
 }
@@ -281,7 +471,7 @@ export async function queryProjectIcons(project: string): Promise<ProjectIcon[]>
 }
 
 // Filter active notes (exclude removed ones)
-function filterActiveNotes(notes: Note[]): Note[] {
+export function filterActiveNotes(notes: Note[]): Note[] {
   const noteGroups: { [key: string]: Note[] } = {};
   
   // Group notes by rootTxId
@@ -376,36 +566,113 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
   }
 }
 
-// Get all unique projects
+// Get all unique projects from both unified and individual data
 export async function getAllProjects(): Promise<string[]> {
-  const query = `
-    query getAllProjects {
-      transactions(
-        tags: [
-          { name: "App-Name", values: ["irys-cm-note"] }
-        ],
-        first: 1000,
-        order: DESC
-      ) {
+  try {
+    // Query unified data
+    const unifiedQuery = `
+      query getAllUnifiedData {
+        transactions(
+          tags: [
+            { name: "App-Name", values: ["irys-cm-note-unified"] }
+          ],
+          first: 1000,
+          order: DESC
+        ) {
         edges {
           node {
+            id
             tags {
               name
               value
             }
+            timestamp
           }
         }
       }
     }
   `;
 
-  try {
-    const response = await axios.post(IRYS_GRAPHQL_URL, { query });
-    const edges = response.data?.data?.transactions?.edges || [];
-    
+    // Query individual notes
+    const individualQuery = `
+      query getAllProjects {
+        transactions(
+          tags: [
+            { name: "App-Name", values: ["irys-cm-note"] }
+          ],
+          first: 1000,
+          order: DESC
+        ) {
+          edges {
+            node {
+              tags {
+                name
+                value
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    // Execute both queries in parallel
+    const [unifiedResponse, individualResponse] = await Promise.all([
+      axios.post(IRYS_GRAPHQL_URL, { query: unifiedQuery }),
+      axios.post(IRYS_GRAPHQL_URL, { query: individualQuery })
+    ]);
+
     const projectSet = new Set<string>();
     
-    edges.forEach((edge: any) => {
+    // Process unified data
+    const unifiedEdges = unifiedResponse.data?.data?.transactions?.edges || [];
+    const userTransactions = new Map<string, any>();
+    
+    // Get latest transaction per user
+    for (const edge of unifiedEdges) {
+      const node = edge.node;
+      const tags = node.tags || [];
+      const timestamp = parseIrysTimestamp(node.timestamp);
+      
+      const getTagValue = (tagName: string) => tags.find((t: any) => t.name === tagName)?.value;
+      const twitterHandle = getTagValue('Twitter-Handle');
+      const rootTxTag = getTagValue('Root-TX');
+      const rootTxId = rootTxTag || node.id;
+      
+      if (twitterHandle) {
+        const existing = userTransactions.get(twitterHandle);
+        if (!existing || timestamp > parseIrysTimestamp(existing.timestamp)) {
+          userTransactions.set(twitterHandle, { rootTxId, timestamp });
+        }
+      }
+    }
+    
+    // Fetch unified data for each user to get projects
+    const fetchPromises = Array.from(userTransactions.entries()).map(async ([twitterHandle, { rootTxId }]) => {
+      try {
+        const mutableAddress = `${IRYS_GATEWAY_URL}/mutable/${rootTxId}`;
+        const dataResponse = await axios.get(mutableAddress, { timeout: 10000 });
+        const userData: UnifiedUserData = dataResponse.data;
+        
+        if (userData.projects) {
+          Object.keys(userData.projects).forEach(projectName => {
+            projectSet.add(projectName);
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching unified data for projects from user ${twitterHandle}:`, error);
+      }
+    });
+    
+    // Process in batches
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < fetchPromises.length; i += BATCH_SIZE) {
+      const batch = fetchPromises.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch);
+    }
+    
+    // Process individual notes for projects
+    const individualEdges = individualResponse.data?.data?.transactions?.edges || [];
+    individualEdges.forEach((edge: any) => {
       const tags = edge.node.tags || [];
       const projectTag = tags.find((t: any) => t.name === 'irys-cm-note-project');
       if (projectTag?.value) {
@@ -413,7 +680,9 @@ export async function getAllProjects(): Promise<string[]> {
       }
     });
 
-    return Array.from(projectSet).sort();
+    const projects = Array.from(projectSet).sort();
+    console.log(`[IrysService] Found ${projects.length} unique projects`);
+    return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
     return [];
