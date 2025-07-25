@@ -7,24 +7,36 @@ const IRYS_GRAPHQL_URL = 'https://uploader.irys.xyz/graphql';
 
 // 통합 사용자 데이터 구조
 interface UnifiedUserData {
+  twitterHandle: string;
   version: string;
-  updatedAt: number;
+  createdAt: string;
+  updatedAt: string;
   projects: {
     [projectName: string]: {
+      name: string;
       cms: {
         [cmName: string]: {
+          name: string;
           notes: Array<{
             id: string;
-            rootTxId: string;
+            twitterHandle: string;
+            nickname: string;
+            userType: string;
             content: string;
-            status: 'added' | 'removed' | 'edited';
-            timestamp: number;
+            badgeColor?: string;
             iconUrl?: string;
-            iconName?: string;
-            updatedAt: number;
+            project: string;
+            cmName: string;
+            status?: 'added' | 'removed' | 'edited';
+            createdAt: string;
+            updatedAt: string;
           }>;
+          createdAt: string;
+          updatedAt: string;
         };
       };
+      createdAt: string;
+      updatedAt: string;
     };
   };
 }
@@ -141,14 +153,14 @@ export async function queryUnifiedUserData(project: string): Promise<Note[]> {
                   id: noteData.id || `${rootTxId}_${Date.now()}_${Math.random()}`,
                   rootTxId: rootTxId,
                   project: project,
-                  twitterHandle: twitterHandle,
-                  user: twitterHandle,
-                  nickname: twitterHandle,
-                  userType: 'unified',
+                  twitterHandle: noteData.twitterHandle || twitterHandle,
+                  user: noteData.nickname || noteData.twitterHandle || twitterHandle,
+                  nickname: noteData.nickname || noteData.twitterHandle || twitterHandle,
+                  userType: noteData.userType || 'user',
                   iconUrl: noteData.iconUrl || '',
                   content: noteData.content || '',
                   status: noteData.status || 'added',
-                  timestamp: Math.floor(new Date(noteData.updatedAt || noteData.timestamp).getTime() / 1000),
+                  timestamp: Math.floor(new Date(noteData.updatedAt || noteData.createdAt).getTime() / 1000),
                   cmName: cmName,
                   dataUrl: mutableAddress
                 };
