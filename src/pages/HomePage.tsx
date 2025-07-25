@@ -85,7 +85,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     const cmMap = new Map<string, CMInfo>();
     
     // 테스트용 CM 계정들 (CM으로서는 노출하지 않음)
-    const testCMHandles = ['WojackLabs', '0xrahulk'];
+    const testCMHandles = ['wojacklabs', '0xrahulk']; // 소문자로 저장
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
     if (cmTwitterHandlesMap) {
@@ -94,8 +94,8 @@ function HomePage({ selectedProject }: HomePageProps) {
           ? twitterHandle.substring(1) 
           : twitterHandle;
         
-        // 테스트용 CM 계정은 제외
-        if (testCMHandles.includes(cleanHandle.toLowerCase())) {
+        // 테스트용 CM 계정은 제외 (Twitter handle과 CM name 모두 확인)
+        if (testCMHandles.includes(cleanHandle.toLowerCase()) || testCMHandles.includes(cmName.toLowerCase())) {
           console.log(`[CM Data] Skipping test CM account: ${cmName} -> ${cleanHandle}`);
           return;
         }
@@ -118,9 +118,11 @@ function HomePage({ selectedProject }: HomePageProps) {
       const cmTwitterHandle = note.cmTwitterHandle;
       
       // 테스트용 CM인지 확인 (cmTwitterHandle 또는 cmName으로 확인)
-      const isTestCM = cmTwitterHandle && testCMHandles.includes(
-        (cmTwitterHandle.startsWith('@') ? cmTwitterHandle.substring(1) : cmTwitterHandle).toLowerCase()
-      );
+      const cleanTwitterHandle = cmTwitterHandle ? 
+        (cmTwitterHandle.startsWith('@') ? cmTwitterHandle.substring(1) : cmTwitterHandle).toLowerCase() : '';
+      const cleanCMName = cmName ? cmName.toLowerCase() : '';
+      
+      const isTestCM = testCMHandles.includes(cleanTwitterHandle) || testCMHandles.includes(cleanCMName);
       
       if (isTestCM) {
         console.log(`[CM Data] Skipping note for test CM: ${cmName} (${cmTwitterHandle})`);
@@ -133,8 +135,9 @@ function HomePage({ selectedProject }: HomePageProps) {
           ? cmTwitterHandle.substring(1) 
           : cmTwitterHandle) : undefined;
         
-        // 테스트용 CM은 레거시 데이터에서도 제외
-        if (cleanHandle && testCMHandles.includes(cleanHandle.toLowerCase())) {
+        // 테스트용 CM은 레거시 데이터에서도 제외 (Twitter handle과 CM name 모두 확인)
+        if ((cleanHandle && testCMHandles.includes(cleanHandle.toLowerCase())) || 
+            testCMHandles.includes(cmName.toLowerCase())) {
           console.log(`[CM Data] Skipping test CM from legacy data: ${cmName} -> ${cleanHandle}`);
           return;
         }
