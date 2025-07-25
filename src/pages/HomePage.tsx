@@ -85,7 +85,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     const cmMap = new Map<string, CMInfo>();
     
     // 테스트용 CM 계정들 (CM으로서는 노출하지 않음)
-    const testCMHandles = ['wojacklabs', '0xrahulk'];
+    const testCMHandles = ['WojackLabs', '0xrahulk'];
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
     if (cmTwitterHandlesMap) {
