@@ -116,7 +116,7 @@ export async function queryUnifiedUserData(project: string): Promise<Note[]> {
     console.log(`[IrysService] Found ${userTransactions.size} unique users with unified data`);
     
     // Fetch and process unified data for each user
-    const fetchPromises = Array.from(userTransactions.entries()).map(async ([twitterHandle, { node, rootTxId }]) => {
+    const fetchPromises = Array.from(userTransactions.entries()).map(async ([twitterHandle, { rootTxId }]) => {
       try {
         const mutableAddress = `${IRYS_GATEWAY_URL}/mutable/${rootTxId}`;
         const dataResponse = await axios.get(mutableAddress, {
