@@ -187,230 +187,47 @@ export async function queryUnifiedUserData(project: string): Promise<Note[]> {
   }
 }
 
-// Query all notes for a specific project (combined unified and individual notes)
+// Query all notes for a specific project (unified data only)
 export async function queryNotesByProject(project: string): Promise<Note[]> {
   try {
-    console.log(`[IrysService] Starting combined query for project: ${project}`);
+    console.log(`[IrysService] Starting unified data query for project: ${project}`);
     const startTime = Date.now();
     
-    // Query both unified data and individual notes in parallel
-    const [unifiedNotes, individualNotes] = await Promise.all([
-      queryUnifiedUserData(project),
-      queryIndividualNotes(project)
-    ]);
+    // Query only unified data
+    const unifiedNotes = await queryUnifiedUserData(project);
     
-    // Combine results
-    const allNotes = [...unifiedNotes, ...individualNotes];
+    console.log(`[IrysService] Query completed in ${Date.now() - startTime}ms`);
+    console.log(`[IrysService] Total notes: ${unifiedNotes.length} from unified data`);
     
-    // Remove duplicates based on rootTxId (prefer unified data)
-    const uniqueNotesMap = new Map<string, Note>();
-    
-    // Add unified notes first (higher priority)
-    unifiedNotes.forEach(note => {
-      uniqueNotesMap.set(note.rootTxId, note);
-    });
-    
-    // Add individual notes only if not already present
-    individualNotes.forEach(note => {
-      if (!uniqueNotesMap.has(note.rootTxId)) {
-        uniqueNotesMap.set(note.rootTxId, note);
-      }
-    });
-    
-    const uniqueNotes = Array.from(uniqueNotesMap.values());
-    const sortedNotes = uniqueNotes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    console.log(`[IrysService] Combined query completed in ${Date.now() - startTime}ms`);
-    console.log(`[IrysService] Total notes: ${allNotes.length} (${unifiedNotes.length} unified, ${individualNotes.length} individual)`);
-    console.log(`[IrysService] Unique notes after deduplication: ${sortedNotes.length}`);
-    
-    return sortedNotes;
+    return unifiedNotes;
   } catch (error) {
-    console.error('Error in combined query:', error);
+    console.error('Error in query:', error);
     return [];
   }
 }
 
-// Query individual notes (legacy method)
-async function queryIndividualNotes(project: string): Promise<Note[]> {
-  const query = `
-    query getNotesByProject($project: String!) {
-      transactions(
-        tags: [
-          { name: "App-Name", values: ["irys-cm-note"] }
-          { name: "irys-cm-note-project", values: [$project] }
-        ],
-        first: 1000,
-        order: DESC
-      ) {
-        edges {
-          node {
-            id
-            tags {
-              name
-              value
-            }
-            timestamp
-          }
-        }
-      }
-    }
-  `;
 
-  try {
-    console.log(`[IrysService] Starting individual notes query for project: ${project}`);
-    const startTime = Date.now();
-    
-    const response = await axios.post(IRYS_GRAPHQL_URL, {
-      query,
-      variables: { project }
-    });
 
-    const edges = response.data?.data?.transactions?.edges || [];
-    const notes: Note[] = [];
-
-    console.log(`[IrysService] Fetched ${edges.length} individual transactions for project ${project} in ${Date.now() - startTime}ms`);
-
-    for (const edge of edges) {
-      const node = edge.node;
-      const tags = node.tags || [];
-      
-      const getTagValue = (tagName: string) => tags.find((t: any) => t.name === tagName)?.value;
-      
-      // Parse timestamp properly
-      const parsedTimestamp = parseIrysTimestamp(node.timestamp);
-      
-      const note: Note = {
-        id: node.id,
-        rootTxId: getTagValue('Root-TX') || node.id,
-        project: getTagValue('irys-cm-note-project'),
-        twitterHandle: getTagValue('irys-cm-note-twitter-handle'),
-        user: getTagValue('irys-cm-note-user'),
-        nickname: getTagValue('irys-cm-note-user'),
-        userType: getTagValue('irys-cm-note-user-type') || 'individual',
-        iconUrl: getTagValue('irys-cm-note-Icon'),
-        content: getTagValue('irys-cm-note-content') || '', // Load content from tag
-        status: getTagValue('irys-cm-note-status') || 'added',
-        timestamp: parsedTimestamp,
-        cmName: getTagValue('irys-cm-note-cm'),
-        cmTwitterHandle: getTagValue('irys-cm-note-cm-twitter-handle'),
-        dataUrl: `${IRYS_GATEWAY_URL}/mutable/${getTagValue('Root-TX') || node.id}`
-      };
-
-      notes.push(note);
-    }
-
-    const activeNotes = filterActiveNotes(notes);
-    console.log(`[IrysService] Filtered to ${activeNotes.length} active individual notes in ${Date.now() - startTime}ms total`);
-    
-    return activeNotes;
-  } catch (error) {
-    console.error('Error querying individual notes:', error);
-    return [];
-  }
-}
-
-// Lazy load note content when needed (now simplified since content is loaded from tags)
+// Lazy load note content when needed
 export async function loadNoteContent(note: Note): Promise<string> {
-  // Content is now loaded directly from tags in queryNotesByProject
+  // Content is already loaded from unified data
   if (note.content) {
     return note.content;
-  }
-
-  // Fallback for legacy notes or edge cases
-  try {
-    if (note.dataUrl) {
-      const contentResponse = await axios.get(note.dataUrl);
-      const content = contentResponse.data.content || '';
-      return content;
-    }
-  } catch (error) {
-    console.error('Error fetching note content:', error);
   }
 
   return '';
 }
 
-// Batch load content for multiple notes (for performance) - Simplified since content is now in tags
+// Batch load content for multiple notes (content is already loaded from unified data)
 export async function loadMultipleNoteContents(notes: Note[], onProgress?: (loaded: number, total: number) => void): Promise<Note[]> {
-  const notesWithoutContent = notes.filter(note => !note.content && note.dataUrl);
+  // All notes from unified data already have content loaded
+  console.log(`[IrysService] All notes already have content loaded from unified data`);
   
-  if (notesWithoutContent.length === 0) {
-    console.log(`[IrysService] All notes already have content loaded from tags`);
-    return notes; // All notes already have content
+  if (onProgress) {
+    onProgress(notes.length, notes.length);
   }
-
-  console.log(`[IrysService] Loading legacy content for ${notesWithoutContent.length} notes`);
   
-  // Load content in parallel for legacy notes only
-  const BATCH_SIZE = 15;
-  const updatedNotes = [...notes];
-  let loadedCount = 0;
-
-  // Process in batches to avoid overwhelming the server
-  for (let i = 0; i < notesWithoutContent.length; i += BATCH_SIZE) {
-    const batch = notesWithoutContent.slice(i, i + BATCH_SIZE);
-    
-    const contentPromises = batch.map(async (note) => {
-      try {
-        if (note.dataUrl) {
-          const contentResponse = await axios.get(note.dataUrl, {
-            timeout: 10000 // 10 second timeout
-          });
-          return {
-            noteId: note.id,
-            content: contentResponse.data.content || ''
-          };
-        }
-
-        return {
-          noteId: note.id,
-          content: ''
-        };
-      } catch (error) {
-        console.error(`Error fetching legacy content for note ${note.id}:`, error);
-        return {
-          noteId: note.id,
-          content: ''
-        };
-      }
-    });
-
-    try {
-      const contentResults = await Promise.all(contentPromises);
-      
-      // Update notes with loaded content
-      contentResults.forEach(result => {
-        const noteIndex = updatedNotes.findIndex(n => n.id === result.noteId);
-        if (noteIndex !== -1) {
-          updatedNotes[noteIndex] = {
-            ...updatedNotes[noteIndex],
-            content: result.content
-          };
-        }
-      });
-
-      loadedCount += contentResults.length;
-      
-      // Call progress callback if provided
-      if (onProgress) {
-        onProgress(loadedCount, notesWithoutContent.length);
-      }
-
-      console.log(`[IrysService] Loaded legacy batch ${Math.floor(i / BATCH_SIZE) + 1}, total progress: ${loadedCount}/${notesWithoutContent.length}`);
-      
-      // Small delay between batches to avoid overwhelming the server
-      if (i + BATCH_SIZE < notesWithoutContent.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    } catch (error) {
-      console.error(`Error loading batch starting at ${i}:`, error);
-      // Continue with next batch even if current batch fails
-    }
-  }
-
-  console.log(`[IrysService] Completed loading legacy content for ${loadedCount}/${notesWithoutContent.length} notes`);
-  return updatedNotes;
+  return notes;
 }
 
 // Query icons for a project
@@ -566,7 +383,7 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
   }
 }
 
-// Get all unique projects from both unified and individual data
+// Get all unique projects from unified data only
 export async function getAllProjects(): Promise<string[]> {
   try {
     // Query unified data
@@ -593,33 +410,7 @@ export async function getAllProjects(): Promise<string[]> {
     }
   `;
 
-    // Query individual notes
-    const individualQuery = `
-      query getAllProjects {
-        transactions(
-          tags: [
-            { name: "App-Name", values: ["irys-cm-note"] }
-          ],
-          first: 1000,
-          order: DESC
-        ) {
-          edges {
-            node {
-              tags {
-                name
-                value
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    // Execute both queries in parallel
-    const [unifiedResponse, individualResponse] = await Promise.all([
-      axios.post(IRYS_GRAPHQL_URL, { query: unifiedQuery }),
-      axios.post(IRYS_GRAPHQL_URL, { query: individualQuery })
-    ]);
+    const unifiedResponse = await axios.post(IRYS_GRAPHQL_URL, { query: unifiedQuery });
 
     const projectSet = new Set<string>();
     
@@ -669,19 +460,9 @@ export async function getAllProjects(): Promise<string[]> {
       const batch = fetchPromises.slice(i, i + BATCH_SIZE);
       await Promise.all(batch);
     }
-    
-    // Process individual notes for projects
-    const individualEdges = individualResponse.data?.data?.transactions?.edges || [];
-    individualEdges.forEach((edge: any) => {
-      const tags = edge.node.tags || [];
-      const projectTag = tags.find((t: any) => t.name === 'irys-cm-note-project');
-      if (projectTag?.value) {
-        projectSet.add(projectTag.value);
-      }
-    });
 
     const projects = Array.from(projectSet).sort();
-    console.log(`[IrysService] Found ${projects.length} unique projects`);
+    console.log(`[IrysService] Found ${projects.length} unique projects from unified data`);
     return projects;
   } catch (error) {
     console.error('Error fetching projects:', error);
