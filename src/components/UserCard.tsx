@@ -7,16 +7,8 @@ interface UserCardProps {
 }
 
 function UserCard({ user, onNoteClick }: UserCardProps) {
-  // Group notes by CM to avoid duplicates
-  const notesByCM = new Map<string, Note[]>();
-  
-  user.notes.forEach(note => {
-    const key = `${note.cmName}-${note.iconUrl}`;
-    if (!notesByCM.has(key)) {
-      notesByCM.set(key, []);
-    }
-    notesByCM.get(key)!.push(note);
-  });
+  // Sort notes by timestamp (most recent first)
+  const sortedNotes = [...user.notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
   // Get unique nicknames and user types
   const uniqueNicknames = Array.from(new Set(user.notes.map(n => n.nickname || n.user).filter(Boolean)));
@@ -48,26 +40,20 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       </div>
       
       <div className="user-badges">
-        {Array.from(notesByCM.values()).map((notes, index) => {
-          const latestNote = notes.sort((a, b) => b.timestamp - a.timestamp)[0];
-          return (
-            <div
-              key={`${latestNote.cmName}-${latestNote.iconUrl}-${index}`}
-              className="note-badge"
-              onClick={() => onNoteClick(latestNote)}
-              title={`Note by ${latestNote.cmName}`}
-            >
-              <img 
-                src={latestNote.iconUrl} 
-                alt={`Icon`}
-                className="badge-icon"
-              />
-              {notes.length > 1 && (
-                <span className="badge-count">{notes.length}</span>
-              )}
-            </div>
-          );
-        })}
+        {sortedNotes.map((note, index) => (
+          <div
+            key={`${note.id}-${index}`}
+            className="note-badge"
+            onClick={() => onNoteClick(note)}
+            title={`Note by ${note.cmName}`}
+          >
+            <img 
+              src={note.iconUrl} 
+              alt={`Icon`}
+              className="badge-icon"
+            />
+          </div>
+        ))}
       </div>
       
       <div className="user-meta">

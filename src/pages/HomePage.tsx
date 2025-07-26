@@ -65,19 +65,9 @@ function HomePage({ selectedProject }: HomePageProps) {
     CacheService.markPageRefresh();
   }, []);
 
-  // Calculate badge count for a user
+  // Calculate badge count for a user (now simply counts total notes)
   const calculateBadgeCount = useCallback((user: User) => {
-    const notesByCM = new Map<string, Note[]>();
-    
-    user.notes.forEach(note => {
-      const key = `${note.cmName}-${note.iconUrl}`;
-      if (!notesByCM.has(key)) {
-        notesByCM.set(key, []);
-      }
-      notesByCM.get(key)!.push(note);
-    });
-    
-    return notesByCM.size;
+    return user.notes.length;
   }, []);
 
   // Process CM data
