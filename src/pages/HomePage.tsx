@@ -625,7 +625,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       </section>
 
       <section className="cm-section">
-        <h2 className="section-title">Community Managers</h2>
+        <h2 className="section-title">CMs</h2>
         <div className="cm-grid">
           {loading || !hasDataLoaded ? (
             // Show skeleton during loading
@@ -642,7 +642,7 @@ function HomePage({ selectedProject }: HomePageProps) {
             ))
           ) : (
             <div className="empty-state">
-              <p>No community managers found</p>
+              <p>No CMs found</p>
             </div>
           )}
         </div>
