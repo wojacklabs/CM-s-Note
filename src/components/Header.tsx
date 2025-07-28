@@ -14,7 +14,10 @@ function Header({ projects, selectedProject, onProjectChange, loading }: HeaderP
       <div className="header-container">
         <div className="header-left">
           <Link to="/" className="logo-link">
-            <h1 className="logo">CM's Notes</h1>
+            <h1 className="logo">
+              <img src="/icon128.png" alt="CM's Notes Logo" className="logo-icon" />
+              CM's Notes
+            </h1>
           </Link>
         </div>
         

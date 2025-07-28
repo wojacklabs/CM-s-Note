@@ -691,6 +691,15 @@ function HomePage({ selectedProject }: HomePageProps) {
         <Link to="/privacy-term" className="privacy-policy-link">
           Privacy Policy
         </Link>
+        <span className="footer-separator">|</span>
+        <a 
+          href="https://chromewebstore.google.com/detail/cms-notes/gojmblhkimanjdmooganfebjmcoelmdm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="chrome-extension-link"
+        >
+          Chrome Extension
+        </a>
       </footer>
 
       {selectedNote && (
