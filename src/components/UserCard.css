@@ -134,4 +134,14 @@
   color: var(--text-primary);
   flex: 1;
   word-wrap: break-word;
+}
+
+.meta-value-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-value-list > div {
+  line-height: 1.4;
 } 

@@ -98,20 +98,54 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       <div className="user-meta">
         <div className="meta-item">
           <span className="meta-label">CM:</span>
-          <span className="meta-value">{Array.from(new Set(user.notes.map(n => n.cmName))).join(', ')}</span>
+          <span className="meta-value">
+            {(() => {
+              const cmNames = Array.from(new Set(user.notes.map(n => n.cmName)));
+              if (cmNames.length === 1) {
+                return cmNames[0];
+              }
+              return (
+                <div className="meta-value-list">
+                  {cmNames.map((cm, idx) => (
+                    <div key={idx}>· {cm}</div>
+                  ))}
+                </div>
+              );
+            })()}
+          </span>
         </div>
         
         {uniqueNicknames.length > 0 && (
           <div className="meta-item">
             <span className="meta-label">Nicknames:</span>
-            <span className="meta-value">{uniqueNicknames.join(', ')}</span>
+            <span className="meta-value">
+              {uniqueNicknames.length === 1 ? (
+                uniqueNicknames[0]
+              ) : (
+                <div className="meta-value-list">
+                  {uniqueNicknames.map((nickname, idx) => (
+                    <div key={idx}>· {nickname}</div>
+                  ))}
+                </div>
+              )}
+            </span>
           </div>
         )}
         
         {uniqueUserTypes.length > 0 && (
           <div className="meta-item">
             <span className="meta-label">Types:</span>
-            <span className="meta-value">{uniqueUserTypes.join(', ')}</span>
+            <span className="meta-value">
+              {uniqueUserTypes.length === 1 ? (
+                uniqueUserTypes[0]
+              ) : (
+                <div className="meta-value-list">
+                  {uniqueUserTypes.map((type, idx) => (
+                    <div key={idx}>· {type}</div>
+                  ))}
+                </div>
+              )}
+            </span>
           </div>
         )}
       </div>
