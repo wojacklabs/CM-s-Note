@@ -178,7 +178,19 @@
 .users-count {
   color: var(--text-secondary);
   font-size: 0.9rem;
-  font-style: italic;
+}
+
+.cms-summary {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.cms-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .cm-section {

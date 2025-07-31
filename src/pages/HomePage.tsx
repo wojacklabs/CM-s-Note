@@ -29,6 +29,7 @@ interface HomePageProps {
 }
 
 const DEFAULT_USER_LIMIT = 6;
+const DEFAULT_CM_LIMIT = 6;
 
 function HomePage({ selectedProject }: HomePageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -37,12 +38,14 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [displayedUsers, setDisplayedUsers] = useState<User[]>([]);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
+  const [displayedCMs, setDisplayedCMs] = useState<CMInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [hasDataLoaded, setHasDataLoaded] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
+  const [showAllCMs, setShowAllCMs] = useState(false);
   const [loadingNoteContents, setLoadingNoteContents] = useState(false);
   const [noteContentProgress, setNoteContentProgress] = useState({ loaded: 0, total: 0 });
   
@@ -414,7 +417,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     applyFiltersAndSorting();
   }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery, calculateBadgeCount]);
 
-  // Apply display limit
+  // Apply display limit for users
   useEffect(() => {
     if (showAllUsers) {
       setDisplayedUsers(filteredUsers);
@@ -423,9 +426,19 @@ function HomePage({ selectedProject }: HomePageProps) {
     }
   }, [filteredUsers, showAllUsers]);
 
-  // Reset showAllUsers when filters change
+  // Apply display limit for CMs
+  useEffect(() => {
+    if (showAllCMs) {
+      setDisplayedCMs(cmInfos);
+    } else {
+      setDisplayedCMs(cmInfos.slice(0, DEFAULT_CM_LIMIT));
+    }
+  }, [cmInfos, showAllCMs]);
+
+  // Reset showAllUsers and showAllCMs when filters change
   useEffect(() => {
     setShowAllUsers(false);
+    setShowAllCMs(false);
   }, [selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery]);
 
   // Cleanup interval on unmount
@@ -497,6 +510,10 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   const handleShowAllUsers = () => {
     setShowAllUsers(true);
+  };
+
+  const handleShowAllCMs = () => {
+    setShowAllCMs(true);
   };
 
   const handleClearSearch = () => {
@@ -632,8 +649,8 @@ function HomePage({ selectedProject }: HomePageProps) {
             Array.from({ length: 3 }).map((_, index) => (
               <CMCardSkeleton key={`cm-skeleton-${index}`} />
             ))
-          ) : cmInfos.length > 0 ? (
-            cmInfos.map(cmInfo => (
+          ) : displayedCMs.length > 0 ? (
+            displayedCMs.map(cmInfo => (
               <CMCard
                 key={cmInfo.cmName}
                 cmInfo={cmInfo}
@@ -646,6 +663,25 @@ function HomePage({ selectedProject }: HomePageProps) {
             </div>
           )}
         </div>
+        
+        {!showAllCMs && cmInfos.length > DEFAULT_CM_LIMIT && (
+          <div className="show-all-container">
+            <button 
+              onClick={handleShowAllCMs}
+              className="show-all-button"
+            >
+              Show All ({cmInfos.length - DEFAULT_CM_LIMIT} more)
+            </button>
+          </div>
+        )}
+        
+        {cmInfos.length > 0 && (
+          <div className="cms-summary">
+            <span className="cms-count">
+              Showing {displayedCMs.length} of {cmInfos.length} CMs
+            </span>
+          </div>
+        )}
       </section>
 
       {(loading || !hasDataLoaded || recentUsers.length > 0) && (
