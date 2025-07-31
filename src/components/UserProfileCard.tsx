@@ -13,15 +13,15 @@ function UserProfileCard({ user }: UserProfileCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // First, try to get cached image
+    // First, try to get cached image (including fallback)
     const cachedImage = ProfileImageCacheService.getCachedImage(user.twitterHandle);
     
     if (cachedImage) {
       setProfileImageUrl(cachedImage);
       setIsLoading(false);
       
-      // Load new image in background
-      ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(newUrl => {
+      // Always try to load actual image in background with forceRefresh
+      ProfileImageCacheService.loadProfileImage(user.twitterHandle, true).then(newUrl => {
         if (newUrl !== cachedImage) {
           setProfileImageUrl(newUrl);
         }
@@ -32,7 +32,7 @@ function UserProfileCard({ user }: UserProfileCardProps) {
       setProfileImageUrl(fallbackUrl);
       setIsLoading(false);
       
-      // Load actual image
+      // Load actual image (will try real image first, then cache the result)
       ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(url => {
         setProfileImageUrl(url);
       });

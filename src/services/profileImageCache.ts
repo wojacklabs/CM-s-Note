@@ -3,11 +3,13 @@ interface ProfileImageCache {
     imageUrl: string;
     timestamp: number;
     isValid: boolean;
+    isFallback?: boolean; // Add flag to track if it's a fallback image
   };
 }
 
 const CACHE_KEY = 'cm-profile-images-cache';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+const FALLBACK_RETRY_DURATION = 5 * 60 * 1000; // 5 minutes for fallback images
 
 export class ProfileImageCacheService {
   private static cache: ProfileImageCache = {};
@@ -56,12 +58,13 @@ export class ProfileImageCacheService {
     return null;
   }
 
-  static setCachedImage(twitterHandle: string, imageUrl: string, isValid: boolean) {
+  static setCachedImage(twitterHandle: string, imageUrl: string, isValid: boolean, isFallback: boolean = false) {
     this.init();
     this.cache[twitterHandle] = {
       imageUrl,
       timestamp: Date.now(),
-      isValid
+      isValid,
+      isFallback
     };
     this.save();
   }
@@ -75,13 +78,23 @@ export class ProfileImageCacheService {
     });
   }
 
-  static async loadProfileImage(twitterHandle: string): Promise<string> {
+  static async loadProfileImage(twitterHandle: string, forceRefresh: boolean = false): Promise<string> {
     this.init();
     
     // Check cache first
-    const cached = this.getCachedImage(twitterHandle);
-    if (cached) {
-      return cached;
+    const cached = this.cache[twitterHandle];
+    
+    // If we have a valid non-fallback cache and not forcing refresh, return it
+    if (!forceRefresh && cached && cached.isValid && !cached.isFallback && 
+        (Date.now() - cached.timestamp < CACHE_DURATION)) {
+      return cached.imageUrl;
+    }
+    
+    // If we have a fallback cache but it's recent, return it
+    // (unless forceRefresh is true, which happens in background updates)
+    if (!forceRefresh && cached && cached.isFallback && 
+        (Date.now() - cached.timestamp < FALLBACK_RETRY_DURATION)) {
+      return cached.imageUrl;
     }
 
     // Try to load from unavatar.io
@@ -91,7 +104,7 @@ export class ProfileImageCacheService {
     try {
       const success = await this.preloadImage(primaryUrl);
       if (success) {
-        this.setCachedImage(twitterHandle, primaryUrl, true);
+        this.setCachedImage(twitterHandle, primaryUrl, true, false);
         return primaryUrl;
       }
     } catch (error) {
@@ -99,12 +112,12 @@ export class ProfileImageCacheService {
     }
 
     // Use fallback
-    this.setCachedImage(twitterHandle, fallbackUrl, true);
+    this.setCachedImage(twitterHandle, fallbackUrl, true, true);
     return fallbackUrl;
   }
 
   static async preloadAllImages(twitterHandles: string[]): Promise<void> {
-    const promises = twitterHandles.map(handle => this.loadProfileImage(handle));
+    const promises = twitterHandles.map(handle => this.loadProfileImage(handle, true));
     await Promise.allSettled(promises);
   }
 
