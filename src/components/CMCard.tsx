@@ -203,18 +203,23 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
       return;
     }
 
-    // First, try to get cached image (including fallback)
-    const cachedImage = ProfileImageCacheService.getCachedImage(cmTwitterHandle);
+    // First, try to get cached image info
+    const cachedInfo = ProfileImageCacheService.getCachedImageInfo(cmTwitterHandle);
     
-    if (cachedImage) {
-      setProfileImageUrl(cachedImage);
+    if (cachedInfo) {
+      setProfileImageUrl(cachedInfo.imageUrl);
       setIsLoading(false);
       
-      // Always try to load actual image in background with forceRefresh
+      // Always try to load actual image in background
+      // This is especially important for fallback images
       ProfileImageCacheService.loadProfileImage(cmTwitterHandle, true).then(newUrl => {
-        if (newUrl !== cachedImage) {
+        // Update if we got a different (better) image
+        if (newUrl !== cachedInfo.imageUrl) {
+          console.log(`[CMCard] Updated profile image for @${cmTwitterHandle}: ${cachedInfo.imageUrl} -> ${newUrl}`);
           setProfileImageUrl(newUrl);
         }
+      }).catch(error => {
+        console.error(`[CMCard] Error loading profile image for @${cmTwitterHandle}:`, error);
       });
     } else {
       // No cache, show placeholder and load image
@@ -224,7 +229,10 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
       
       // Load actual image (will try real image first, then cache the result)
       ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(url => {
+        console.log(`[CMCard] Loaded profile image for @${cmTwitterHandle}: ${url}`);
         setProfileImageUrl(url);
+      }).catch(error => {
+        console.error(`[CMCard] Error loading profile image for @${cmTwitterHandle}:`, error);
       });
     }
   }, [cmTwitterHandle, cmName]);

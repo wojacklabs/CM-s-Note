@@ -58,6 +58,25 @@ export class ProfileImageCacheService {
     return null;
   }
 
+  static getCachedImageInfo(twitterHandle: string): { imageUrl: string; isFallback: boolean } | null {
+    this.init();
+    const cached = this.cache[twitterHandle];
+    
+    if (cached && cached.isValid) {
+      // For fallback images, only return if within retry duration
+      if (cached.isFallback && (Date.now() - cached.timestamp >= FALLBACK_RETRY_DURATION)) {
+        return null;
+      }
+      // For real images, check normal cache duration
+      if (!cached.isFallback && (Date.now() - cached.timestamp >= CACHE_DURATION)) {
+        return null;
+      }
+      return { imageUrl: cached.imageUrl, isFallback: cached.isFallback || false };
+    }
+    
+    return null;
+  }
+
   static setCachedImage(twitterHandle: string, imageUrl: string, isValid: boolean, isFallback: boolean = false) {
     this.init();
     this.cache[twitterHandle] = {
@@ -84,9 +103,17 @@ export class ProfileImageCacheService {
     // Check cache first
     const cached = this.cache[twitterHandle];
     
+    // Log cache status
+    if (cached) {
+      console.log(`[ProfileImageCache] Cache found for @${twitterHandle}: ${cached.imageUrl} (isFallback: ${cached.isFallback}, age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
+    } else {
+      console.log(`[ProfileImageCache] No cache found for @${twitterHandle}`);
+    }
+    
     // If we have a valid non-fallback cache and not forcing refresh, return it
     if (!forceRefresh && cached && cached.isValid && !cached.isFallback && 
         (Date.now() - cached.timestamp < CACHE_DURATION)) {
+      console.log(`[ProfileImageCache] Returning cached real image for @${twitterHandle}`);
       return cached.imageUrl;
     }
     
@@ -94,6 +121,7 @@ export class ProfileImageCacheService {
     // (unless forceRefresh is true, which happens in background updates)
     if (!forceRefresh && cached && cached.isFallback && 
         (Date.now() - cached.timestamp < FALLBACK_RETRY_DURATION)) {
+      console.log(`[ProfileImageCache] Returning cached fallback image for @${twitterHandle} (too recent to retry)`);
       return cached.imageUrl;
     }
 
@@ -101,17 +129,23 @@ export class ProfileImageCacheService {
     const primaryUrl = `https://unavatar.io/twitter/${twitterHandle}`;
     const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=56`;
 
+    console.log(`[ProfileImageCache] Attempting to load real image for @${twitterHandle}${forceRefresh ? ' (forceRefresh)' : ''}`);
+    
     try {
       const success = await this.preloadImage(primaryUrl);
       if (success) {
+        console.log(`[ProfileImageCache] Successfully loaded real image for @${twitterHandle}`);
         this.setCachedImage(twitterHandle, primaryUrl, true, false);
         return primaryUrl;
+      } else {
+        console.log(`[ProfileImageCache] Failed to load real image for @${twitterHandle}, using fallback`);
       }
     } catch (error) {
       console.error(`[ProfileImageCache] Error loading image for @${twitterHandle}:`, error);
     }
 
     // Use fallback
+    console.log(`[ProfileImageCache] Using fallback image for @${twitterHandle}`);
     this.setCachedImage(twitterHandle, fallbackUrl, true, true);
     return fallbackUrl;
   }

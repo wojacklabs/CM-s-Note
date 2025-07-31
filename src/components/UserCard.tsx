@@ -13,18 +13,23 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // First, try to get cached image (including fallback)
-    const cachedImage = ProfileImageCacheService.getCachedImage(user.twitterHandle);
+    // First, try to get cached image info
+    const cachedInfo = ProfileImageCacheService.getCachedImageInfo(user.twitterHandle);
     
-    if (cachedImage) {
-      setProfileImageUrl(cachedImage);
+    if (cachedInfo) {
+      setProfileImageUrl(cachedInfo.imageUrl);
       setIsLoading(false);
       
-      // Always try to load actual image in background with forceRefresh
+      // Always try to load actual image in background
+      // This is especially important for fallback images
       ProfileImageCacheService.loadProfileImage(user.twitterHandle, true).then(newUrl => {
-        if (newUrl !== cachedImage) {
+        // Update if we got a different (better) image
+        if (newUrl !== cachedInfo.imageUrl) {
+          console.log(`[UserCard] Updated profile image for @${user.twitterHandle}: ${cachedInfo.imageUrl} -> ${newUrl}`);
           setProfileImageUrl(newUrl);
         }
+      }).catch(error => {
+        console.error(`[UserCard] Error loading profile image for @${user.twitterHandle}:`, error);
       });
     } else {
       // No cache, show placeholder and load image
@@ -34,7 +39,10 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       
       // Load actual image (will try real image first, then cache the result)
       ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(url => {
+        console.log(`[UserCard] Loaded profile image for @${user.twitterHandle}: ${url}`);
         setProfileImageUrl(url);
+      }).catch(error => {
+        console.error(`[UserCard] Error loading profile image for @${user.twitterHandle}:`, error);
       });
     }
   }, [user.twitterHandle]);
