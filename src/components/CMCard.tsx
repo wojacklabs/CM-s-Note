@@ -30,6 +30,20 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [loadingContent, setLoadingContent] = useState<boolean>(false);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    // Save current body overflow style
+    const originalOverflow = document.body.style.overflow;
+    
+    // Disable body scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Cleanup function to restore body scroll
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();

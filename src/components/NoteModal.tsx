@@ -15,6 +15,20 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
   const [loadingContent, setLoadingContent] = useState<boolean>(!note.content);
   const [contentError, setContentError] = useState<string>('');
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    // Save current body overflow style
+    const originalOverflow = document.body.style.overflow;
+    
+    // Disable body scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Cleanup function to restore body scroll
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   useEffect(() => {
     const loadContent = async () => {
       // If content is already loaded, use it immediately
