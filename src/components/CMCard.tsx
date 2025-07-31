@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Note } from '../types';
 import { formatTimestamp } from '../utils/dateUtils';
 import './CMCard.css';
+import { useState, useEffect } from 'react';
+import { ProfileImageCacheService } from '../services/profileImageCache';
 
 interface CMInfo {
   cmName: string;
@@ -190,31 +191,59 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
 function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!cmTwitterHandle) {
+      // No Twitter handle, use avatar directly
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+      setProfileImageUrl(avatarUrl);
+      setIsLoading(false);
+      return;
+    }
+
+    // First, try to get cached image
+    const cachedImage = ProfileImageCacheService.getCachedImage(cmTwitterHandle);
+    
+    if (cachedImage) {
+      setProfileImageUrl(cachedImage);
+      setIsLoading(false);
+      
+      // Load new image in background
+      ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(newUrl => {
+        if (newUrl !== cachedImage) {
+          setProfileImageUrl(newUrl);
+        }
+      });
+    } else {
+      // No cache, show placeholder and load image
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+      setProfileImageUrl(fallbackUrl);
+      setIsLoading(false);
+      
+      // Load actual image
+      ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(url => {
+        setProfileImageUrl(url);
+      });
+    }
+  }, [cmTwitterHandle, cmName]);
 
   // 디버깅: CM 정보 로그
   console.log(`[CMCard] CM: ${cmName}, Twitter Handle: ${cmTwitterHandle}`);
-
-  // 트위터 핸들이 있는 경우에만 트위터 이미지 시도, 없으면 바로 아바타 사용
-  const profileImageSrc = cmTwitterHandle 
-    ? `https://unavatar.io/twitter/${cmTwitterHandle}`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
 
   return (
     <>
       <div className="cm-card">
         <div className="cm-header">
           <div className="cm-avatar">
-            <img 
-              src={profileImageSrc}
-              alt={cmName}
-              onError={(e) => {
-                console.log(`[CMCard] Failed to load image for ${cmName} with handle ${cmTwitterHandle}`);
-                // 트위터 핸들이 있었는데 이미지 로딩에 실패한 경우에만 fallback 적용
-                if (cmTwitterHandle) {
-                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
-                }
-              }}
-            />
+            {profileImageUrl && (
+              <img 
+                src={profileImageUrl}
+                alt={cmName}
+                className={isLoading ? 'loading' : ''}
+              />
+            )}
           </div>
           <div className="cm-info">
             <a 

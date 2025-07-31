@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Note, User } from '../types';
 import { queryNotesByProject, loadMultipleNoteContents, queryCMPermissions } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
+import { ProfileImageCacheService } from '../services/profileImageCache';
 import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
 import CMCard from '../components/CMCard';
@@ -293,6 +294,19 @@ function HomePage({ selectedProject }: HomePageProps) {
     processCMData(notesData, cmTwitterHandlesMap);
     
     setLastUpdated(new Date());
+    
+    // Preload profile images in background
+    const twitterHandles = userList.map(user => user.twitterHandle);
+    const cmHandles = Array.from(cmTwitterHandlesMap?.values() || [])
+      .filter(handle => handle)
+      .map(handle => handle.startsWith('@') ? handle.substring(1) : handle);
+    
+    const allHandles = [...new Set([...twitterHandles, ...cmHandles])];
+    
+    console.log(`[HomePage] Preloading ${allHandles.length} profile images in background`);
+    ProfileImageCacheService.preloadAllImages(allHandles).then(() => {
+      console.log(`[HomePage] Profile images preloading completed`);
+    });
     
     // Start background loading of note contents
     setTimeout(() => {

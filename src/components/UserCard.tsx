@@ -1,6 +1,7 @@
 import { User, Note } from '../types';
 import './UserCard.css';
 import { useState, useEffect } from 'react';
+import { ProfileImageCacheService } from '../services/profileImageCache';
 
 interface UserCardProps {
   user: User;
@@ -8,13 +9,34 @@ interface UserCardProps {
 }
 
 function UserCard({ user, onNoteClick }: UserCardProps) {
-  const [imageError, setImageError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Reset image error state when component mounts or user changes
   useEffect(() => {
-    setImageError(false);
-    setRetryCount(0);
+    // First, try to get cached image
+    const cachedImage = ProfileImageCacheService.getCachedImage(user.twitterHandle);
+    
+    if (cachedImage) {
+      setProfileImageUrl(cachedImage);
+      setIsLoading(false);
+      
+      // Load new image in background
+      ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(newUrl => {
+        if (newUrl !== cachedImage) {
+          setProfileImageUrl(newUrl);
+        }
+      });
+    } else {
+      // No cache, show placeholder and load image
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.twitterHandle)}&background=d4a574&color=fff&size=56`;
+      setProfileImageUrl(fallbackUrl);
+      setIsLoading(false);
+      
+      // Load actual image
+      ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(url => {
+        setProfileImageUrl(url);
+      });
+    }
   }, [user.twitterHandle]);
   
   // Sort notes by timestamp (most recent first)
@@ -24,38 +46,17 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   const uniqueNicknames = Array.from(new Set(user.notes.map(n => n.nickname || n.user).filter(Boolean)));
   const uniqueUserTypes = Array.from(new Set(user.notes.map(n => n.userType).filter(Boolean)));
 
-  // Add timestamp to force cache refresh
-  const getImageUrl = () => {
-    if (imageError) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.twitterHandle)}&background=d4a574&color=fff&size=56`;
-    }
-    // Add a retry parameter to bypass cache on retries
-    const retryParam = retryCount > 0 ? `&retry=${retryCount}` : '';
-    return `https://unavatar.io/twitter/${user.twitterHandle}?t=${Date.now()}${retryParam}`;
-  };
-
-  const handleImageError = () => {
-    if (retryCount < 2) {
-      // Retry up to 2 times
-      setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-      }, 1000); // Wait 1 second before retry
-    } else {
-      // After 2 retries, use fallback
-      setImageError(true);
-    }
-  };
-
   return (
     <div className="user-card">
       <div className="user-header">
         <div className="user-avatar">
-          <img 
-            key={`${user.twitterHandle}-${retryCount}`} // Force re-render on retry
-            src={getImageUrl()} 
-            alt={`@${user.twitterHandle}`}
-            onError={handleImageError}
-          />
+          {profileImageUrl && (
+            <img 
+              src={profileImageUrl}
+              alt={`@${user.twitterHandle}`}
+              className={isLoading ? 'loading' : ''}
+            />
+          )}
         </div>
         <div className="user-info">
           <a 
