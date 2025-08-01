@@ -380,9 +380,14 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
       if (cmName && twitterHandle) {
         // Only update if this is the most recent entry for this CM
         if (!cmLatestTimestamp.has(cmName) || timestamp > cmLatestTimestamp.get(cmName)!) {
-          cmTwitterHandles.set(cmName, twitterHandle);
+          // Remove @ prefix if present
+          const cleanHandle = twitterHandle.startsWith('@') 
+            ? twitterHandle.substring(1) 
+            : twitterHandle;
+          
+          cmTwitterHandles.set(cmName, cleanHandle);
           cmLatestTimestamp.set(cmName, timestamp);
-          console.log(`[IrysService] Found Twitter handle for CM ${cmName}: @${twitterHandle}`);
+          console.log(`[IrysService] Found Twitter handle for CM ${cmName}: @${cleanHandle}`);
         }
       }
     }
