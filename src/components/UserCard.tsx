@@ -56,6 +56,14 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       user.notes.map(note => [note.cmName, { name: note.cmName, twitterHandle: note.cmTwitterHandle }])
     ).values()
   );
+  
+  // Debug logging
+  useEffect(() => {
+    console.log(`[UserCard] User @${user.twitterHandle} has ${uniqueCMs.length} unique CMs:`, uniqueCMs);
+    uniqueCMs.forEach(cm => {
+      console.log(`[UserCard] CM: ${cm.name}, Twitter: ${cm.twitterHandle || 'N/A'}`);
+    });
+  }, [user.twitterHandle, uniqueCMs]);
 
   return (
     <div className="user-card">
@@ -115,41 +123,56 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
 // Helper component for CM profile images
 function CMProfileImage({ cmName, cmTwitterHandle }: { cmName: string; cmTwitterHandle?: string }) {
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
   
   useEffect(() => {
+    // Reset error state when props change
+    setImageError(false);
+    
     if (!cmTwitterHandle) {
       // No Twitter handle, use avatar
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=32`;
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=56`;
       setProfileImageUrl(avatarUrl);
       return;
     }
 
-    // Get cached image or load new one
-    const cachedInfo = ProfileImageCacheService.getCachedImageInfo(cmTwitterHandle);
-    
-    if (cachedInfo) {
-      setProfileImageUrl(cachedInfo.imageUrl);
-      
-      // Try to load actual image in background
-      ProfileImageCacheService.loadProfileImage(cmTwitterHandle, true).then(newUrl => {
-        if (newUrl !== cachedInfo.imageUrl) {
-          setProfileImageUrl(newUrl);
-        }
-      });
-    } else {
-      // No cache, show placeholder and load image
-      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=32`;
-      setProfileImageUrl(fallbackUrl);
-      
-      ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(url => {
+    // Load image (will use cache if available)
+    const loadImage = async () => {
+      try {
+        // Always try to load with the same logic as other components
+        const url = await ProfileImageCacheService.loadProfileImage(cmTwitterHandle, false);
         setProfileImageUrl(url);
-      });
-    }
+        
+        // If we got a fallback, try to refresh in background
+        if (url.includes('ui-avatars.com')) {
+          ProfileImageCacheService.loadProfileImage(cmTwitterHandle, true).then(newUrl => {
+            if (newUrl !== url && !newUrl.includes('ui-avatars.com')) {
+              console.log(`[CMProfileImage] Updated image for @${cmTwitterHandle}`);
+              setProfileImageUrl(newUrl);
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`[CMProfileImage] Error loading image for @${cmTwitterHandle}:`, error);
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=56`;
+        setProfileImageUrl(fallbackUrl);
+      }
+    };
+    
+    loadImage();
   }, [cmTwitterHandle, cmName]);
 
   const handleClick = () => {
     if (cmTwitterHandle) {
       window.open(`https://twitter.com/${cmTwitterHandle}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=56`;
+      setProfileImageUrl(fallbackUrl);
     }
   };
 
@@ -164,6 +187,7 @@ function CMProfileImage({ cmName, cmTwitterHandle }: { cmName: string; cmTwitter
         <img 
           src={profileImageUrl}
           alt={cmName}
+          onError={handleImageError}
         />
       )}
     </div>
