@@ -144,4 +144,32 @@
 
 .meta-value-list > div {
   line-height: 1.4;
+}
+
+.cm-profiles {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cm-profile-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border);
+}
+
+.cm-profile-image:hover {
+  transform: scale(1.1);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.cm-profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 } 

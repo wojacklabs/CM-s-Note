@@ -261,10 +261,21 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
+    // Enrich notes with CM Twitter handles
+    const enrichedNotes = notesData.map(note => {
+      if (cmTwitterHandlesMap && cmTwitterHandlesMap.has(note.cmName)) {
+        return {
+          ...note,
+          cmTwitterHandle: cmTwitterHandlesMap.get(note.cmName)
+        };
+      }
+      return note;
+    });
+    
     // Group notes by user
     const userMap = new Map<string, User>();
     
-    notesData.forEach(note => {
+    enrichedNotes.forEach(note => {
       const key = note.twitterHandle;
       if (!userMap.has(key)) {
         userMap.set(key, {
@@ -291,7 +302,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     setRecentUsers(recentUserList);
     
     // Process CM data
-    processCMData(notesData, cmTwitterHandlesMap);
+    processCMData(enrichedNotes, cmTwitterHandlesMap);
     
     setLastUpdated(new Date());
     
@@ -310,7 +321,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     
     // Start background loading of note contents
     setTimeout(() => {
-      loadNoteContentsInBackground(notesData);
+      loadNoteContentsInBackground(enrichedNotes);
     }, 100); // Small delay to ensure UI is rendered first
   }, [processCMData, loadNoteContentsInBackground]);
 
@@ -333,14 +344,25 @@ function HomePage({ selectedProject }: HomePageProps) {
         queryCMPermissions(selectedProject)
       ]);
       
-      setNotes(projectNotes);
-      processNotesToUsers(projectNotes, cmTwitterHandles);
+      // Enrich notes with CM Twitter handles
+      const enrichedNotes = projectNotes.map(note => {
+        if (cmTwitterHandles && cmTwitterHandles.has(note.cmName)) {
+          return {
+            ...note,
+            cmTwitterHandle: cmTwitterHandles.get(note.cmName)
+          };
+        }
+        return note;
+      });
+      
+      setNotes(enrichedNotes);
+      processNotesToUsers(enrichedNotes, cmTwitterHandles);
       setHasDataLoaded(true);
       
       // Save to cache
-      CacheService.saveToCache(selectedProject, projectNotes);
+      CacheService.saveToCache(selectedProject, enrichedNotes);
       
-      console.log(`[HomePage] Loaded ${projectNotes.length} notes from API`);
+      console.log(`[HomePage] Loaded ${enrichedNotes.length} notes from API`);
     } catch (error) {
       console.error('Error loading data:', error);
       // Don't set hasDataLoaded to true on error, keep showing skeleton
@@ -579,6 +601,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       </div>
 
       <section className="users-section">
+        <h2 className="section-title">Community</h2>
         <FilterBar
           cms={hasDataLoaded ? getUniqueValues('cmName') : []}
           userTypes={hasDataLoaded ? getUniqueValues('userType') : []}

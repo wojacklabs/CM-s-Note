@@ -50,9 +50,12 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   // Sort notes by timestamp (most recent first)
   const sortedNotes = [...user.notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Get unique nicknames and user types
-  const uniqueNicknames = Array.from(new Set(user.notes.map(n => n.nickname || n.user).filter(Boolean)));
-  const uniqueUserTypes = Array.from(new Set(user.notes.map(n => n.userType).filter(Boolean)));
+  // Get unique CMs with their Twitter handles
+  const uniqueCMs = Array.from(
+    new Map(
+      user.notes.map(note => [note.cmName, { name: note.cmName, twitterHandle: note.cmTwitterHandle }])
+    ).values()
+  );
 
   return (
     <div className="user-card">
@@ -98,57 +101,71 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       <div className="user-meta">
         <div className="meta-item">
           <span className="meta-label">CM:</span>
-          <span className="meta-value">
-            {(() => {
-              const cmNames = Array.from(new Set(user.notes.map(n => n.cmName)));
-              if (cmNames.length === 1) {
-                return cmNames[0];
-              }
-              return (
-                <div className="meta-value-list">
-                  {cmNames.map((cm, idx) => (
-                    <div key={idx}>· {cm}</div>
-                  ))}
-                </div>
-              );
-            })()}
-          </span>
+          <div className="cm-profiles">
+            {uniqueCMs.map((cm, idx) => (
+              <CMProfileImage key={idx} cmName={cm.name} cmTwitterHandle={cm.twitterHandle} />
+            ))}
+          </div>
         </div>
-        
-        {uniqueNicknames.length > 0 && (
-          <div className="meta-item">
-            <span className="meta-label">Nicknames:</span>
-            <span className="meta-value">
-              {uniqueNicknames.length === 1 ? (
-                uniqueNicknames[0]
-              ) : (
-                <div className="meta-value-list">
-                  {uniqueNicknames.map((nickname, idx) => (
-                    <div key={idx}>· {nickname}</div>
-                  ))}
-                </div>
-              )}
-            </span>
-          </div>
-        )}
-        
-        {uniqueUserTypes.length > 0 && (
-          <div className="meta-item">
-            <span className="meta-label">Types:</span>
-            <span className="meta-value">
-              {uniqueUserTypes.length === 1 ? (
-                uniqueUserTypes[0]
-              ) : (
-                <div className="meta-value-list">
-                  {uniqueUserTypes.map((type, idx) => (
-                    <div key={idx}>· {type}</div>
-                  ))}
-                </div>
-              )}
-            </span>
-          </div>
-        )}
       </div>
+    </div>
+  );
+}
+
+// Helper component for CM profile images
+function CMProfileImage({ cmName, cmTwitterHandle }: { cmName: string; cmTwitterHandle?: string }) {
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+  
+  useEffect(() => {
+    if (!cmTwitterHandle) {
+      // No Twitter handle, use avatar
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=32`;
+      setProfileImageUrl(avatarUrl);
+      return;
+    }
+
+    // Get cached image or load new one
+    const cachedInfo = ProfileImageCacheService.getCachedImageInfo(cmTwitterHandle);
+    
+    if (cachedInfo) {
+      setProfileImageUrl(cachedInfo.imageUrl);
+      
+      // Try to load actual image in background
+      ProfileImageCacheService.loadProfileImage(cmTwitterHandle, true).then(newUrl => {
+        if (newUrl !== cachedInfo.imageUrl) {
+          setProfileImageUrl(newUrl);
+        }
+      });
+    } else {
+      // No cache, show placeholder and load image
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=32`;
+      setProfileImageUrl(fallbackUrl);
+      
+      ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(url => {
+        setProfileImageUrl(url);
+      });
+    }
+  }, [cmTwitterHandle, cmName]);
+
+  const handleClick = () => {
+    if (cmTwitterHandle) {
+      window.open(`https://twitter.com/${cmTwitterHandle}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  return (
+    <div 
+      className="cm-profile-image" 
+      onClick={handleClick}
+      title={`${cmName}${cmTwitterHandle ? ` (@${cmTwitterHandle})` : ''}`}
+      style={{ cursor: cmTwitterHandle ? 'pointer' : 'default' }}
+    >
+      {profileImageUrl && (
+        <img 
+          src={profileImageUrl}
+          alt={cmName}
+        />
+      )}
     </div>
   );
 }
