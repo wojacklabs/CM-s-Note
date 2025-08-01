@@ -108,7 +108,7 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
       
       <div className="user-meta">
         <div className="meta-item">
-          <span className="meta-label">CM:</span>
+          <span className="meta-label">Sent By:</span>
           <div className="cm-profiles">
             {uniqueCMs.map((cm, idx) => (
               <CMProfileImage key={idx} cmName={cm.name} cmTwitterHandle={cm.twitterHandle} />
