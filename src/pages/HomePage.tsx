@@ -570,7 +570,48 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   return (
     <div className="home-page">
-      <div className="status-bar">
+
+{(loading || !hasDataLoaded || recentUsers.length > 0) && (
+        <section className="recent-users-section">
+          <h2 className="section-title">Recently Noted Users</h2>
+          <div className="marquee-controls">
+            <label>
+              Speed: 
+              <input
+                type="range"
+                min="20"
+                max="100"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+              />
+              <span>{speed}</span>
+            </label>
+          </div>
+          
+          <div className="marquee-container">
+            <Marquee
+              speed={speed}
+              gradient={true}
+              gradientColor="#faf8f3"
+              gradientWidth={120}
+            >
+              {loading || !hasDataLoaded ? (
+                // Show skeleton during loading
+                Array.from({ length: 6 }).map((_, index) => (
+                  <UserProfileCardSkeleton key={`recent-user-skeleton-${index}`} />
+                ))
+              ) : (
+                recentUsers.map((user, index) => (
+                  <UserProfileCard key={`${user.twitterHandle}-${index}`} user={user} />
+                ))
+              )}
+            </Marquee>
+          </div>
+        </section>
+      )}
+      <section className="users-section">
+        <h2 className="section-title">Community</h2>
+        <div className="status-bar">
         <div className="status-info">
           <span className="data-count">
             {loading || !hasDataLoaded ? 'Loading...' : `${notes.length} notes loaded`}
@@ -599,9 +640,6 @@ function HomePage({ selectedProject }: HomePageProps) {
           )}
         </div>
       </div>
-
-      <section className="users-section">
-        <h2 className="section-title">Community</h2>
         <FilterBar
           cms={hasDataLoaded ? getUniqueValues('cmName') : []}
           userTypes={hasDataLoaded ? getUniqueValues('userType') : []}
@@ -720,46 +758,6 @@ function HomePage({ selectedProject }: HomePageProps) {
           </div>
         )}
       </section>
-
-      {(loading || !hasDataLoaded || recentUsers.length > 0) && (
-        <section className="recent-users-section">
-          <h2 className="section-title">Recently Noted Users</h2>
-          <div className="marquee-controls">
-            <label>
-              Speed: 
-              <input
-                type="range"
-                min="20"
-                max="100"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-              />
-              <span>{speed}</span>
-            </label>
-          </div>
-          
-          <div className="marquee-container">
-            <Marquee
-              speed={speed}
-              gradient={true}
-              gradientColor="#faf8f3"
-              gradientWidth={120}
-            >
-              {loading || !hasDataLoaded ? (
-                // Show skeleton during loading
-                Array.from({ length: 6 }).map((_, index) => (
-                  <UserProfileCardSkeleton key={`recent-user-skeleton-${index}`} />
-                ))
-              ) : (
-                recentUsers.map((user, index) => (
-                  <UserProfileCard key={`${user.twitterHandle}-${index}`} user={user} />
-                ))
-              )}
-            </Marquee>
-          </div>
-        </section>
-      )}
-
       <footer className="home-footer">
         <Link to="/privacy-term" className="privacy-policy-link">
           Privacy Policy
