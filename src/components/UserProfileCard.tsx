@@ -11,44 +11,41 @@ interface UserProfileCardProps {
 function UserProfileCard({ user }: UserProfileCardProps) {
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
   
   useEffect(() => {
-    // Reset error state when user changes
-    setImageError(false);
-    
     // First, try to get cached image info
     const cachedInfo = ProfileImageCacheService.getCachedImageInfo(user.twitterHandle);
     
-    if (cachedInfo && !cachedInfo.isFallback) {
+    if (cachedInfo) {
       setProfileImageUrl(cachedInfo.imageUrl);
       setIsLoading(false);
+      
+      // Always try to load actual image in background
+      // This is especially important for fallback images
+      ProfileImageCacheService.loadProfileImage(user.twitterHandle, true).then(newUrl => {
+        // Update if we got a different (better) image
+        if (newUrl !== cachedInfo.imageUrl) {
+          console.log(`[UserProfileCard] Updated profile image for @${user.twitterHandle}: ${cachedInfo.imageUrl} -> ${newUrl}`);
+          setProfileImageUrl(newUrl);
+        }
+      }).catch(error => {
+        console.error(`[UserProfileCard] Error loading profile image for @${user.twitterHandle}:`, error);
+      });
     } else {
-      // Show fallback immediately
+      // No cache, show placeholder and load image
       const fallbackUrl = `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff`;
       setProfileImageUrl(fallbackUrl);
       setIsLoading(false);
       
-      // Try to load real image in background
-      ProfileImageCacheService.loadProfileImage(user.twitterHandle, !cachedInfo).then(url => {
-        if (!url.includes('ui-avatars.com')) {
-          setProfileImageUrl(url);
-        }
+      // Load actual image (will try real image first, then cache the result)
+      ProfileImageCacheService.loadProfileImage(user.twitterHandle).then(url => {
+        console.log(`[UserProfileCard] Loaded profile image for @${user.twitterHandle}: ${url}`);
+        setProfileImageUrl(url);
       }).catch(error => {
         console.error(`[UserProfileCard] Error loading profile image for @${user.twitterHandle}:`, error);
       });
     }
   }, [user.twitterHandle]);
-  
-  const handleImageError = () => {
-    if (!imageError && !profileImageUrl.includes('ui-avatars.com')) {
-      setImageError(true);
-      const fallbackUrl = `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff`;
-      setProfileImageUrl(fallbackUrl);
-      // Mark as fallback in cache
-      ProfileImageCacheService.setCachedImage(user.twitterHandle, fallbackUrl, true, true);
-    }
-  };
   
   const latestNote = user.notes.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0];
   
@@ -60,7 +57,6 @@ function UserProfileCard({ user }: UserProfileCardProps) {
             src={profileImageUrl}
             alt={`@${user.twitterHandle}`}
             className={isLoading ? 'loading' : ''}
-            onError={handleImageError}
           />
         )}
       </div>
