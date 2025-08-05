@@ -9,11 +9,12 @@ interface ProfileImageCache {
 
 const CACHE_KEY = 'cm-profile-images-cache';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const FALLBACK_RETRY_DURATION = 60 * 60 * 1000; // 1 hour for fallback images (reduced from 5 minutes)
+const FALLBACK_RETRY_DURATION = 30 * 1000; // 30 seconds for fallback images
 
 export class ProfileImageCacheService {
   private static cache: ProfileImageCache = {};
   private static initialized = false;
+  private static sessionStartTime = Date.now(); // Track when the session started
 
   private static init() {
     if (this.initialized) return;
@@ -63,9 +64,16 @@ export class ProfileImageCacheService {
     const cached = this.cache[twitterHandle];
     
     if (cached && cached.isValid) {
-      // For fallback images, only return if within retry duration
-      if (cached.isFallback && (Date.now() - cached.timestamp >= FALLBACK_RETRY_DURATION)) {
-        return null;
+      // For fallback images, check if we should retry
+      if (cached.isFallback) {
+        // Always retry on new session
+        if (cached.timestamp < this.sessionStartTime) {
+          return null;
+        }
+        // Also retry after short duration
+        if (Date.now() - cached.timestamp >= FALLBACK_RETRY_DURATION) {
+          return null;
+        }
       }
       // For real images, check normal cache duration
       if (!cached.isFallback && (Date.now() - cached.timestamp >= CACHE_DURATION)) {
@@ -139,10 +147,15 @@ export class ProfileImageCacheService {
       return cached.imageUrl;
     }
     
-    // If we have a fallback cache but it's recent, return it
-    if (!forceRefresh && cached && cached.isFallback && 
-        (Date.now() - cached.timestamp < FALLBACK_RETRY_DURATION)) {
-      return cached.imageUrl;
+    // For fallback images, check if we should use cache or retry
+    if (!forceRefresh && cached && cached.isFallback) {
+      // Always retry on new session
+      if (cached.timestamp < this.sessionStartTime) {
+        // Continue to retry below
+      } else if (Date.now() - cached.timestamp < FALLBACK_RETRY_DURATION) {
+        // Too recent, use cached fallback
+        return cached.imageUrl;
+      }
     }
 
     // 여러 아바타 서비스를 시도
@@ -154,7 +167,7 @@ export class ProfileImageCacheService {
     const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=200`;
 
     // 캐시가 없거나 오래된 경우에만 로그
-    if (!cached || (Date.now() - cached.timestamp > FALLBACK_RETRY_DURATION)) {
+    if (!cached || cached.isFallback || (Date.now() - cached.timestamp > FALLBACK_RETRY_DURATION)) {
       console.log(`[ProfileImageCache] Loading profile image for @${twitterHandle}`);
     }
     
@@ -164,6 +177,7 @@ export class ProfileImageCacheService {
         const success = await this.preloadImage(serviceUrl);
         if (success) {
           // 성공하면 캐시하고 반환
+          console.log(`[ProfileImageCache] Successfully loaded real image for @${twitterHandle}`);
           this.setCachedImage(twitterHandle, serviceUrl, true, false);
           return serviceUrl;
         }
@@ -173,6 +187,7 @@ export class ProfileImageCacheService {
     }
 
     // 모든 서비스 실패시 fallback 사용
+    console.log(`[ProfileImageCache] Using fallback image for @${twitterHandle}`);
     this.setCachedImage(twitterHandle, fallbackUrl, true, true);
     return fallbackUrl;
   }
