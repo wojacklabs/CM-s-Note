@@ -29,38 +29,45 @@ interface CMNotesModalProps {
 // Helper component for user avatars in notes
 function NoteUserAvatar({ twitterHandle }: { twitterHandle: string }) {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
   
   useEffect(() => {
+    setImageError(false);
+    
     const loadImage = async () => {
       try {
+        // Start with fallback
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+        setImageUrl(fallbackUrl);
+        
         // Use the cache service for consistent behavior
         const url = await ProfileImageCacheService.loadProfileImage(twitterHandle, false);
-        setImageUrl(url);
-        
-        // If it's a fallback, try to refresh in background
-        if (url.includes('ui-avatars.com')) {
-          ProfileImageCacheService.loadProfileImage(twitterHandle, true).then(newUrl => {
-            if (newUrl !== url && !newUrl.includes('ui-avatars.com')) {
-              console.log(`[NoteUserAvatar] Updated image for @${twitterHandle}`);
-              setImageUrl(newUrl);
-            }
-          });
+        if (!url.includes('ui-avatars.com')) {
+          setImageUrl(url);
         }
       } catch (error) {
         console.error(`[NoteUserAvatar] Error loading image for @${twitterHandle}:`, error);
-        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
-        setImageUrl(fallbackUrl);
       }
     };
     
     loadImage();
   }, [twitterHandle]);
   
+  const handleImageError = () => {
+    if (!imageError && !imageUrl.includes('ui-avatars.com')) {
+      setImageError(true);
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+      setImageUrl(fallbackUrl);
+      ProfileImageCacheService.setCachedImage(twitterHandle, fallbackUrl, true, true);
+    }
+  };
+  
   return (
     <img 
       src={imageUrl}
       alt={twitterHandle}
       className="cm-note-user-avatar"
+      onError={handleImageError}
     />
   );
 }
@@ -236,37 +243,44 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
 // Recent user avatar component
 function RecentUserAvatar({ twitterHandle }: { twitterHandle: string }) {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
   
   useEffect(() => {
+    setImageError(false);
+    
     const loadImage = async () => {
       try {
-        const url = await ProfileImageCacheService.loadProfileImage(twitterHandle, false);
-        setImageUrl(url);
+        // Start with fallback
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+        setImageUrl(fallbackUrl);
         
-        // Background refresh for fallback images
-        if (url.includes('ui-avatars.com')) {
-          ProfileImageCacheService.loadProfileImage(twitterHandle, true).then(newUrl => {
-            if (newUrl !== url && !newUrl.includes('ui-avatars.com')) {
-              console.log(`[RecentUserAvatar] Updated image for @${twitterHandle}`);
-              setImageUrl(newUrl);
-            }
-          });
+        const url = await ProfileImageCacheService.loadProfileImage(twitterHandle, false);
+        if (!url.includes('ui-avatars.com')) {
+          setImageUrl(url);
         }
       } catch (error) {
         console.error(`[RecentUserAvatar] Error loading image for @${twitterHandle}:`, error);
-        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
-        setImageUrl(fallbackUrl);
       }
     };
     
     loadImage();
   }, [twitterHandle]);
   
+  const handleImageError = () => {
+    if (!imageError && !imageUrl.includes('ui-avatars.com')) {
+      setImageError(true);
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+      setImageUrl(fallbackUrl);
+      ProfileImageCacheService.setCachedImage(twitterHandle, fallbackUrl, true, true);
+    }
+  };
+  
   return (
     <img 
       src={imageUrl}
       alt={`@${twitterHandle}`}
       className="recent-user-avatar"
+      onError={handleImageError}
     />
   );
 }
@@ -276,8 +290,11 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
+    setImageError(false);
+    
     if (!cmTwitterHandle) {
       // No Twitter handle, use avatar directly
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
@@ -286,39 +303,38 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
       return;
     }
 
+    // Show fallback immediately
+    const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+    setProfileImageUrl(fallbackUrl);
+    setIsLoading(false);
+    
     // First, try to get cached image info
     const cachedInfo = ProfileImageCacheService.getCachedImageInfo(cmTwitterHandle);
     
-    if (cachedInfo) {
+    if (cachedInfo && !cachedInfo.isFallback) {
       setProfileImageUrl(cachedInfo.imageUrl);
-      setIsLoading(false);
-      
-      // Always try to load actual image in background
-      // This is especially important for fallback images
-      ProfileImageCacheService.loadProfileImage(cmTwitterHandle, true).then(newUrl => {
-        // Update if we got a different (better) image
-        if (newUrl !== cachedInfo.imageUrl) {
-          console.log(`[CMCard] Updated profile image for @${cmTwitterHandle}: ${cachedInfo.imageUrl} -> ${newUrl}`);
-          setProfileImageUrl(newUrl);
-        }
-      }).catch(error => {
-        console.error(`[CMCard] Error loading profile image for @${cmTwitterHandle}:`, error);
-      });
     } else {
-      // No cache, show placeholder and load image
-      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
-      setProfileImageUrl(fallbackUrl);
-      setIsLoading(false);
-      
-      // Load actual image (will try real image first, then cache the result)
-      ProfileImageCacheService.loadProfileImage(cmTwitterHandle).then(url => {
-        console.log(`[CMCard] Loaded profile image for @${cmTwitterHandle}: ${url}`);
-        setProfileImageUrl(url);
+      // Load actual image in background
+      ProfileImageCacheService.loadProfileImage(cmTwitterHandle, !cachedInfo).then(url => {
+        if (!url.includes('ui-avatars.com')) {
+          setProfileImageUrl(url);
+        }
       }).catch(error => {
         console.error(`[CMCard] Error loading profile image for @${cmTwitterHandle}:`, error);
       });
     }
   }, [cmTwitterHandle, cmName]);
+
+  const handleImageError = () => {
+    if (!imageError && !profileImageUrl.includes('ui-avatars.com')) {
+      setImageError(true);
+      const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cmName)}&background=d4a574&color=fff&size=64`;
+      setProfileImageUrl(fallbackUrl);
+      if (cmTwitterHandle) {
+        ProfileImageCacheService.setCachedImage(cmTwitterHandle, fallbackUrl, true, true);
+      }
+    }
+  };
 
   // 디버깅: CM 정보 로그
   console.log(`[CMCard] CM: ${cmName}, Twitter Handle: ${cmTwitterHandle}`);
@@ -333,6 +349,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                 src={profileImageUrl}
                 alt={cmName}
                 className={isLoading ? 'loading' : ''}
+                onError={handleImageError}
               />
             )}
           </div>

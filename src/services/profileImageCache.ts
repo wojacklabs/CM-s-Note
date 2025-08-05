@@ -9,7 +9,7 @@ interface ProfileImageCache {
 
 const CACHE_KEY = 'cm-profile-images-cache';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const FALLBACK_RETRY_DURATION = 5 * 60 * 1000; // 5 minutes for fallback images
+const FALLBACK_RETRY_DURATION = 60 * 60 * 1000; // 1 hour for fallback images (reduced from 5 minutes)
 
 export class ProfileImageCacheService {
   private static cache: ProfileImageCache = {};
@@ -91,41 +91,54 @@ export class ProfileImageCacheService {
   static async preloadImage(url: string): Promise<boolean> {
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous'; // CORS 설정 추가
       let resolved = false;
       
+      // 빠른 타임아웃 설정 (3초)
       const timeout = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           console.log(`[ProfileImageCache] Image load timeout for ${url}`);
           resolve(false);
         }
-      }, 5000); // 5초 타임아웃
+      }, 3000);
       
       img.onload = () => {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
-          // unavatar.io의 기본 이미지인지 확인 (너비가 작은 경우가 많음)
-          if (url.includes('unavatar.io') && (img.width < 48 || img.height < 48)) {
-            console.log(`[ProfileImageCache] Detected default avatar for ${url} (${img.width}x${img.height})`);
-            resolve(false);
-          } else {
-            resolve(true);
-          }
+          resolve(true);
         }
       };
       
-      img.onerror = () => {
+      img.onerror = (error) => {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
+          console.log(`[ProfileImageCache] Image load error for ${url}:`, error);
           resolve(false);
         }
       };
       
+      // 이미지 소스 설정
       img.src = url;
     });
+  }
+
+  static async checkImageValidity(url: string): Promise<boolean> {
+    try {
+      // fetch를 통해 HEAD 요청으로 이미지 존재 확인 (서버사이드에서만 작동)
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        mode: 'no-cors' // CORS 에러 방지
+      });
+      
+      // no-cors 모드에서는 response status를 읽을 수 없으므로
+      // 단순히 요청이 완료되었는지만 확인
+      return true;
+    } catch (error) {
+      console.error(`[ProfileImageCache] Error checking image validity for ${url}:`, error);
+      return false;
+    }
   }
 
   static async loadProfileImage(twitterHandle: string, forceRefresh: boolean = false): Promise<string> {
@@ -134,78 +147,62 @@ export class ProfileImageCacheService {
     // Check cache first
     const cached = this.cache[twitterHandle];
     
-    // Log cache status
-    if (cached) {
-      console.log(`[ProfileImageCache] Cache found for @${twitterHandle}: ${cached.imageUrl} (isFallback: ${cached.isFallback}, age: ${Math.round((Date.now() - cached.timestamp) / 1000)}s)`);
-    } else {
-      console.log(`[ProfileImageCache] No cache found for @${twitterHandle}`);
-    }
-    
     // If we have a valid non-fallback cache and not forcing refresh, return it
     if (!forceRefresh && cached && cached.isValid && !cached.isFallback && 
         (Date.now() - cached.timestamp < CACHE_DURATION)) {
-      console.log(`[ProfileImageCache] Returning cached real image for @${twitterHandle}`);
       return cached.imageUrl;
     }
     
     // If we have a fallback cache but it's recent, return it
-    // (unless forceRefresh is true, which happens in background updates)
     if (!forceRefresh && cached && cached.isFallback && 
         (Date.now() - cached.timestamp < FALLBACK_RETRY_DURATION)) {
-      console.log(`[ProfileImageCache] Returning cached fallback image for @${twitterHandle} (too recent to retry)`);
       return cached.imageUrl;
     }
 
-    // Try to load from unavatar.io with multiple fallback options
-    const primaryUrl = `https://unavatar.io/twitter/${twitterHandle}?fallback=false`;
+    // 여러 아바타 서비스를 시도
+    const avatarServices = [
+      `https://unavatar.io/twitter/${twitterHandle}`,
+      // 대체 서비스 추가 가능
+    ];
+    
     const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=200`;
 
-    console.log(`[ProfileImageCache] Attempting to load real image for @${twitterHandle}${forceRefresh ? ' (forceRefresh)' : ''}`);
+    // 캐시가 없거나 오래된 경우에만 로그
+    if (!cached || (Date.now() - cached.timestamp > FALLBACK_RETRY_DURATION)) {
+      console.log(`[ProfileImageCache] Loading profile image for @${twitterHandle}`);
+    }
     
-    try {
-      // First try with no fallback to detect if real image exists
-      const success = await this.preloadImage(primaryUrl);
-      if (success) {
-        console.log(`[ProfileImageCache] Successfully loaded real image for @${twitterHandle}`);
-        this.setCachedImage(twitterHandle, primaryUrl.replace('?fallback=false', ''), true, false);
-        return primaryUrl.replace('?fallback=false', '');
-      } else {
-        console.log(`[ProfileImageCache] Failed to load real image for @${twitterHandle}, trying alternative sources`);
-        
-        // Try without the fallback=false parameter
-        const alternativeUrl = `https://unavatar.io/twitter/${twitterHandle}`;
-        const altSuccess = await this.preloadImage(alternativeUrl);
-        
-        if (altSuccess) {
-          // Double check it's not a default image by checking dimensions
-          const testImg = new Image();
-          testImg.crossOrigin = 'anonymous';
-          await new Promise((resolve) => {
-            testImg.onload = resolve;
-            testImg.onerror = resolve;
-            testImg.src = alternativeUrl;
-          });
-          
-          if (testImg.width >= 48 && testImg.height >= 48) {
-            console.log(`[ProfileImageCache] Found valid alternative image for @${twitterHandle}`);
-            this.setCachedImage(twitterHandle, alternativeUrl, true, false);
-            return alternativeUrl;
-          }
+    // Try each avatar service
+    for (const serviceUrl of avatarServices) {
+      try {
+        const success = await this.preloadImage(serviceUrl);
+        if (success) {
+          // 성공하면 캐시하고 반환
+          this.setCachedImage(twitterHandle, serviceUrl, true, false);
+          return serviceUrl;
         }
+      } catch (error) {
+        // 에러 무시하고 다음 서비스 시도
       }
-    } catch (error) {
-      console.error(`[ProfileImageCache] Error loading image for @${twitterHandle}:`, error);
     }
 
-    // Use fallback
-    console.log(`[ProfileImageCache] Using fallback image for @${twitterHandle}`);
+    // 모든 서비스 실패시 fallback 사용
     this.setCachedImage(twitterHandle, fallbackUrl, true, true);
     return fallbackUrl;
   }
 
   static async preloadAllImages(twitterHandles: string[]): Promise<void> {
-    const promises = twitterHandles.map(handle => this.loadProfileImage(handle, true));
-    await Promise.allSettled(promises);
+    // 병렬 처리하되 동시 요청 수를 제한
+    const batchSize = 5;
+    for (let i = 0; i < twitterHandles.length; i += batchSize) {
+      const batch = twitterHandles.slice(i, i + batchSize);
+      const promises = batch.map(handle => 
+        this.loadProfileImage(handle, true).catch(() => {
+          // 에러 무시
+        })
+      );
+      await Promise.all(promises);
+    }
   }
 
   static clearCache() {
