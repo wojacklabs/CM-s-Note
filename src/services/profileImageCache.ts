@@ -91,6 +91,7 @@ export class ProfileImageCacheService {
   static async preloadImage(url: string): Promise<boolean> {
     return new Promise((resolve) => {
       const img = new Image();
+      // crossOrigin 제거 - CORS 에러 방지
       let resolved = false;
       
       // 빠른 타임아웃 설정 (3초)
@@ -106,6 +107,8 @@ export class ProfileImageCacheService {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
+          // unavatar.io의 기본 이미지는 대부분 작은 크기이지만 CORS로 인해 확인 불가
+          // 대신 URL 패턴으로 판단하거나 로드 성공만 체크
           resolve(true);
         }
       };
@@ -122,23 +125,6 @@ export class ProfileImageCacheService {
       // 이미지 소스 설정
       img.src = url;
     });
-  }
-
-  static async checkImageValidity(url: string): Promise<boolean> {
-    try {
-      // fetch를 통해 HEAD 요청으로 이미지 존재 확인 (서버사이드에서만 작동)
-      const response = await fetch(url, { 
-        method: 'HEAD',
-        mode: 'no-cors' // CORS 에러 방지
-      });
-      
-      // no-cors 모드에서는 response status를 읽을 수 없으므로
-      // 단순히 요청이 완료되었는지만 확인
-      return true;
-    } catch (error) {
-      console.error(`[ProfileImageCache] Error checking image validity for ${url}:`, error);
-      return false;
-    }
   }
 
   static async loadProfileImage(twitterHandle: string, forceRefresh: boolean = false): Promise<string> {
