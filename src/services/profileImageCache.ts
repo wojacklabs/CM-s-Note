@@ -91,8 +91,39 @@ export class ProfileImageCacheService {
   static async preloadImage(url: string): Promise<boolean> {
     return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
+      img.crossOrigin = 'anonymous'; // CORS 설정 추가
+      let resolved = false;
+      
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          console.log(`[ProfileImageCache] Image load timeout for ${url}`);
+          resolve(false);
+        }
+      }, 5000); // 5초 타임아웃
+      
+      img.onload = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          // unavatar.io의 기본 이미지인지 확인 (너비가 작은 경우가 많음)
+          if (url.includes('unavatar.io') && (img.width < 48 || img.height < 48)) {
+            console.log(`[ProfileImageCache] Detected default avatar for ${url} (${img.width}x${img.height})`);
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        }
+      };
+      
+      img.onerror = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          resolve(false);
+        }
+      };
+      
       img.src = url;
     });
   }
@@ -125,20 +156,42 @@ export class ProfileImageCacheService {
       return cached.imageUrl;
     }
 
-    // Try to load from unavatar.io
-    const primaryUrl = `https://unavatar.io/twitter/${twitterHandle}`;
-    const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=56`;
+    // Try to load from unavatar.io with multiple fallback options
+    const primaryUrl = `https://unavatar.io/twitter/${twitterHandle}?fallback=false`;
+    const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=200`;
 
     console.log(`[ProfileImageCache] Attempting to load real image for @${twitterHandle}${forceRefresh ? ' (forceRefresh)' : ''}`);
     
     try {
+      // First try with no fallback to detect if real image exists
       const success = await this.preloadImage(primaryUrl);
       if (success) {
         console.log(`[ProfileImageCache] Successfully loaded real image for @${twitterHandle}`);
-        this.setCachedImage(twitterHandle, primaryUrl, true, false);
-        return primaryUrl;
+        this.setCachedImage(twitterHandle, primaryUrl.replace('?fallback=false', ''), true, false);
+        return primaryUrl.replace('?fallback=false', '');
       } else {
-        console.log(`[ProfileImageCache] Failed to load real image for @${twitterHandle}, using fallback`);
+        console.log(`[ProfileImageCache] Failed to load real image for @${twitterHandle}, trying alternative sources`);
+        
+        // Try without the fallback=false parameter
+        const alternativeUrl = `https://unavatar.io/twitter/${twitterHandle}`;
+        const altSuccess = await this.preloadImage(alternativeUrl);
+        
+        if (altSuccess) {
+          // Double check it's not a default image by checking dimensions
+          const testImg = new Image();
+          testImg.crossOrigin = 'anonymous';
+          await new Promise((resolve) => {
+            testImg.onload = resolve;
+            testImg.onerror = resolve;
+            testImg.src = alternativeUrl;
+          });
+          
+          if (testImg.width >= 48 && testImg.height >= 48) {
+            console.log(`[ProfileImageCache] Found valid alternative image for @${twitterHandle}`);
+            this.setCachedImage(twitterHandle, alternativeUrl, true, false);
+            return alternativeUrl;
+          }
+        }
       }
     } catch (error) {
       console.error(`[ProfileImageCache] Error loading image for @${twitterHandle}:`, error);

@@ -26,6 +26,45 @@ interface CMNotesModalProps {
   onClose: () => void;
 }
 
+// Helper component for user avatars in notes
+function NoteUserAvatar({ twitterHandle }: { twitterHandle: string }) {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        // Use the cache service for consistent behavior
+        const url = await ProfileImageCacheService.loadProfileImage(twitterHandle, false);
+        setImageUrl(url);
+        
+        // If it's a fallback, try to refresh in background
+        if (url.includes('ui-avatars.com')) {
+          ProfileImageCacheService.loadProfileImage(twitterHandle, true).then(newUrl => {
+            if (newUrl !== url && !newUrl.includes('ui-avatars.com')) {
+              console.log(`[NoteUserAvatar] Updated image for @${twitterHandle}`);
+              setImageUrl(newUrl);
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`[NoteUserAvatar] Error loading image for @${twitterHandle}:`, error);
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+        setImageUrl(fallbackUrl);
+      }
+    };
+    
+    loadImage();
+  }, [twitterHandle]);
+  
+  return (
+    <img 
+      src={imageUrl}
+      alt={twitterHandle}
+      className="cm-note-user-avatar"
+    />
+  );
+}
+
 function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [loadingContent, setLoadingContent] = useState<boolean>(false);
@@ -91,15 +130,7 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
                   onClick={() => handleNoteClick(note)}
                 >
                   <div className="cm-note-user">
-                    <img 
-                      src={`https://unavatar.io/twitter/${note.twitterHandle}`}
-                      alt={note.twitterHandle}
-                      className="cm-note-user-avatar"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 
-                          `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=32`;
-                      }}
-                    />
+                    <NoteUserAvatar twitterHandle={note.twitterHandle} />
                     <div className="cm-note-user-info">
                       <span className="cm-note-user-handle">@{note.twitterHandle}</span>
                       <span className="cm-note-timestamp">{formatTimestamp(note.timestamp)}</span>
@@ -202,6 +233,44 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
   );
 }
 
+// Recent user avatar component
+function RecentUserAvatar({ twitterHandle }: { twitterHandle: string }) {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        const url = await ProfileImageCacheService.loadProfileImage(twitterHandle, false);
+        setImageUrl(url);
+        
+        // Background refresh for fallback images
+        if (url.includes('ui-avatars.com')) {
+          ProfileImageCacheService.loadProfileImage(twitterHandle, true).then(newUrl => {
+            if (newUrl !== url && !newUrl.includes('ui-avatars.com')) {
+              console.log(`[RecentUserAvatar] Updated image for @${twitterHandle}`);
+              setImageUrl(newUrl);
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`[RecentUserAvatar] Error loading image for @${twitterHandle}:`, error);
+        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=32`;
+        setImageUrl(fallbackUrl);
+      }
+    };
+    
+    loadImage();
+  }, [twitterHandle]);
+  
+  return (
+    <img 
+      src={imageUrl}
+      alt={`@${twitterHandle}`}
+      className="recent-user-avatar"
+    />
+  );
+}
+
 function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
   const { cmName, cmTwitterHandle, noteCount, recentUsers, recentNotes } = cmInfo;
   const [showNotesModal, setShowNotesModal] = useState(false);
@@ -299,15 +368,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                     onClick={() => onNoteClick?.(note)}
                   >
                     <div className="cm-note-preview-user">
-                      <img 
-                        src={`https://unavatar.io/twitter/${note.twitterHandle}`}
-                        alt={note.twitterHandle}
-                        className="cm-note-preview-avatar"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 
-                            `https://ui-avatars.com/api/?name=${note.twitterHandle}&background=d4a574&color=fff&size=24`;
-                        }}
-                      />
+                      <NoteUserAvatar twitterHandle={note.twitterHandle} />
                       <div className="cm-note-preview-info">
                         <span className="cm-note-preview-handle">@{note.twitterHandle}</span>
                         <span className="cm-note-preview-time">{formatTimestamp(note.timestamp)}</span>
@@ -350,15 +411,7 @@ function CMCard({ cmInfo, onNoteClick }: CMCardProps) {
                     rel="noopener noreferrer"
                     className="recent-user-item"
                   >
-                    <img 
-                      src={`https://unavatar.io/twitter/${user.twitterHandle}`}
-                      alt={`@${user.twitterHandle}`}
-                      className="recent-user-avatar"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 
-                          `https://ui-avatars.com/api/?name=${user.twitterHandle}&background=d4a574&color=fff&size=32`;
-                      }}
-                    />
+                    <RecentUserAvatar twitterHandle={user.twitterHandle} />
                     <span className="recent-user-handle">@{user.twitterHandle}</span>
                   </a>
                 ))}
