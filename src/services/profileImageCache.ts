@@ -125,8 +125,8 @@ export class ProfileImageCacheService {
       return cached.imageUrl;
     }
 
-    // Try to load from unavatar.io
-    const primaryUrl = `https://unavatar.io/twitter/${twitterHandle}`;
+    // Try to load from unavatar.io (using /x/ for Twitter/X)
+    const primaryUrl = `https://unavatar.io/x/${twitterHandle}`;
     const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(twitterHandle)}&background=d4a574&color=fff&size=56`;
 
     console.log(`[ProfileImageCache] Attempting to load real image for @${twitterHandle}${forceRefresh ? ' (forceRefresh)' : ''}`);

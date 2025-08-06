@@ -11,6 +11,7 @@ import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
 import UserProfileCard from '../components/UserProfileCard';
 import { UserCardSkeleton, CMCardSkeleton, UserProfileCardSkeleton } from '../components/SkeletonCard';
+import SocialGraph from '../components/SocialGraph';
 import Marquee from 'react-fast-marquee';
 import './HomePage.css';
 
@@ -572,7 +573,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     <div className="home-page">
 
 {(loading || !hasDataLoaded || recentUsers.length > 0) && (
-        <section className="recent-users-section">
+        <section id="recent-users" className="recent-users-section">
           <h2 className="section-title">Recently Noted Users</h2>
           <div className="marquee-controls">
             <label>
@@ -609,7 +610,15 @@ function HomePage({ selectedProject }: HomePageProps) {
           </div>
         </section>
       )}
-      <section className="users-section">
+      
+      {/* Social Graph Section */}
+      {notes.length > 0 && cmInfos.length > 0 && (
+        <section id="social-network" className="social-graph-section">
+          <SocialGraph notes={notes} cmInfos={cmInfos} />
+        </section>
+      )}
+      
+      <section id="community" className="users-section">
         <h2 className="section-title">Community</h2>
         <div className="status-bar">
         <div className="status-info">
@@ -716,7 +725,7 @@ function HomePage({ selectedProject }: HomePageProps) {
         )}
       </section>
 
-      <section className="cm-section">
+      <section id="cms" className="cm-section">
         <h2 className="section-title">CMs</h2>
         <div className="cm-grid">
           {loading || !hasDataLoaded ? (

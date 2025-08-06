@@ -4,6 +4,14 @@
   padding: 2rem;
 }
 
+/* Sections with anchors */
+#recent-users,
+#social-network,
+#community,
+#cms {
+  scroll-margin-top: 80px;
+}
+
 .status-bar {
   background-color: var(--surface);
   border: 1px solid var(--border);

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './Header.css';
 
 interface HeaderProps {
@@ -9,6 +9,16 @@ interface HeaderProps {
 }
 
 function Header({ projects, selectedProject, onProjectChange, loading }: HeaderProps) {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
+  const handleSectionClick = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-container">
@@ -20,6 +30,35 @@ function Header({ projects, selectedProject, onProjectChange, loading }: HeaderP
             </h1>
           </Link>
         </div>
+        
+        {isHomePage && selectedProject && (
+          <nav className="section-nav">
+            <button 
+              className="section-link" 
+              onClick={() => handleSectionClick('recent-users')}
+            >
+              Recent Users
+            </button>
+            <button 
+              className="section-link" 
+              onClick={() => handleSectionClick('social-network')}
+            >
+              Social Network
+            </button>
+            <button 
+              className="section-link" 
+              onClick={() => handleSectionClick('community')}
+            >
+              Community
+            </button>
+            <button 
+              className="section-link" 
+              onClick={() => handleSectionClick('cms')}
+            >
+              CMs
+            </button>
+          </nav>
+        )}
         
         <div className="project-selector">
           <label htmlFor="project-select">Project:</label>
