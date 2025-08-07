@@ -209,8 +209,6 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
           tilingPaddingHorizontal: 10,
           gravity: 0.25,
           gravityRange: 3.8,
-          // Performance optimizations for large networks
-          initialEnergyOnIncremental: 0.5,
           stop: () => {
             console.log('[SocialGraph] Layout completed');
             setLoading(false);
@@ -224,13 +222,7 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
         } as any,
         minZoom: 0.5,
         maxZoom: 3,
-        wheelSensitivity: 0.2,
-        // Performance settings
-        textureOnViewport: true,
-        motionBlur: false,
-        hideEdgesOnViewport: true,
-        hideLabelsOnViewport: true,
-        pixelRatio: 'auto'
+        wheelSensitivity: 0.2
       });
 
       cyRef.current = cy;
