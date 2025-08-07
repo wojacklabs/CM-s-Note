@@ -57,10 +57,8 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
     ).values()
   );
   
-  // Get unique nicknames from notes (prefer the most recent one)
-  const userNickname = sortedNotes.length > 0 && sortedNotes[0].nickname 
-    ? sortedNotes[0].nickname 
-    : null;
+  // Use displayName from user object which already contains the correct nickname
+  const userNickname = user.displayName !== user.twitterHandle ? user.displayName : null;
   
   // Debug logging
   useEffect(() => {

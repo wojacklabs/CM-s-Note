@@ -281,9 +281,16 @@ function HomePage({ selectedProject }: HomePageProps) {
       if (!userMap.has(key)) {
         userMap.set(key, {
           twitterHandle: note.twitterHandle,
-          displayName: note.twitterHandle,
+          displayName: note.nickname || note.twitterHandle,
           notes: []
         });
+      } else {
+        // Update displayName with the most recent note's nickname
+        const user = userMap.get(key)!;
+        const existingLatestTimestamp = Math.max(...user.notes.map(n => n.timestamp || 0));
+        if ((note.timestamp || 0) > existingLatestTimestamp && note.nickname) {
+          user.displayName = note.nickname;
+        }
       }
       userMap.get(key)!.notes.push(note);
     });
