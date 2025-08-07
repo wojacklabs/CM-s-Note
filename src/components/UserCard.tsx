@@ -57,8 +57,10 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
     ).values()
   );
   
-  // Use displayName from user object which already contains the correct nickname
-  const userNickname = user.displayName !== user.twitterHandle ? user.displayName : null;
+  // Check if this user is a CM by comparing displayName
+  // If displayName is different from twitterHandle and doesn't contain '@', it's likely a CM name
+  const isCM = user.displayName !== user.twitterHandle && !user.displayName.includes('@');
+  const userNickname = isCM ? user.displayName : null;
   
   // Debug logging
   useEffect(() => {

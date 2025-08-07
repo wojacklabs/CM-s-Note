@@ -262,6 +262,15 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   // Process notes data to users
   const processNotesToUsers = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
+    // Create a reverse map: twitterHandle -> cmName
+    const twitterHandleToCM = new Map<string, string>();
+    if (cmTwitterHandlesMap) {
+      cmTwitterHandlesMap.forEach((handle, cmName) => {
+        const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
+        twitterHandleToCM.set(cleanHandle, cmName);
+      });
+    }
+    
     // Enrich notes with CM Twitter handles
     const enrichedNotes = notesData.map(note => {
       if (cmTwitterHandlesMap && cmTwitterHandlesMap.has(note.cmName)) {
@@ -279,18 +288,15 @@ function HomePage({ selectedProject }: HomePageProps) {
     enrichedNotes.forEach(note => {
       const key = note.twitterHandle;
       if (!userMap.has(key)) {
+        // Check if this user is a CM
+        const isCM = twitterHandleToCM.has(note.twitterHandle);
+        const cmName = isCM ? twitterHandleToCM.get(note.twitterHandle) : null;
+        
         userMap.set(key, {
           twitterHandle: note.twitterHandle,
-          displayName: note.nickname || note.twitterHandle,
+          displayName: isCM && cmName ? cmName : note.twitterHandle, // For CMs, use cmName; for users, just handle
           notes: []
         });
-      } else {
-        // Update displayName with the most recent note's nickname
-        const user = userMap.get(key)!;
-        const existingLatestTimestamp = Math.max(...user.notes.map(n => n.timestamp || 0));
-        if ((note.timestamp || 0) > existingLatestTimestamp && note.nickname) {
-          user.displayName = note.nickname;
-        }
       }
       userMap.get(key)!.notes.push(note);
     });
