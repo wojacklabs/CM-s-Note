@@ -225,6 +225,15 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
         wheelSensitivity: 0.2
       });
 
+      // Set transparent background
+      cy.style()
+        .selector('core')
+        .style({
+          'active-bg-opacity': 0,
+          'selection-box-opacity': 0
+        })
+        .update();
+
       cyRef.current = cy;
 
       // Handle node clicks
@@ -282,6 +291,11 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
         </div>
       </div>
       <div className="graph-wrapper">
+        <div className="floating-particles">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="particle"></div>
+          ))}
+        </div>
         <div ref={containerRef} className="cytoscape-container" />
         {loading && (
           <div className="graph-loading">

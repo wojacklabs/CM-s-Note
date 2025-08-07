@@ -41,10 +41,20 @@
   min-width: 0;
 }
 
-.user-handle {
+.user-nickname {
   color: var(--text-primary);
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-handle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

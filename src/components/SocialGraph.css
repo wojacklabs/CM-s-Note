@@ -4,6 +4,14 @@
   border-top: 1px solid var(--border);
 }
 
+.social-graph .section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
 .graph-info {
   display: flex;
   justify-content: space-between;
@@ -53,16 +61,117 @@
 .graph-wrapper {
   position: relative;
   width: 100%;
-  background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Animated wave layers */
+.graph-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 35px,
+      rgba(74, 171, 247, 0.03) 35px,
+      rgba(74, 171, 247, 0.03) 70px
+    );
+  animation: waveMove 20s linear infinite;
+  pointer-events: none;
+}
+
+.graph-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 35px,
+      rgba(255, 107, 107, 0.03) 35px,
+      rgba(255, 107, 107, 0.03) 70px
+    );
+  animation: waveMove 30s linear infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes waveMove {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+/* Floating particles effect */
+.graph-wrapper .floating-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.graph-wrapper .particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(74, 171, 247, 0.3);
+  border-radius: 50%;
+  animation: float 20s infinite;
+}
+
+.graph-wrapper .particle:nth-child(odd) {
+  background: rgba(255, 107, 107, 0.3);
+  animation-duration: 25s;
+}
+
+.graph-wrapper .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.graph-wrapper .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+.graph-wrapper .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+.graph-wrapper .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+.graph-wrapper .particle:nth-child(5) { left: 50%; animation-delay: 8s; }
+.graph-wrapper .particle:nth-child(6) { left: 60%; animation-delay: 10s; }
+.graph-wrapper .particle:nth-child(7) { left: 70%; animation-delay: 12s; }
+.graph-wrapper .particle:nth-child(8) { left: 80%; animation-delay: 14s; }
+.graph-wrapper .particle:nth-child(9) { left: 90%; animation-delay: 16s; }
+.graph-wrapper .particle:nth-child(10) { left: 95%; animation-delay: 18s; }
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(100px);
+    opacity: 0;
+  }
 }
 
 .cytoscape-container {
   width: 100%;
   height: 600px;
   position: relative;
+  z-index: 1;
+  background: transparent;
 }
 
 .graph-loading {
@@ -73,6 +182,11 @@
   text-align: center;
   z-index: 10;
   pointer-events: none;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
 }
 
 .graph-loading .spinner {

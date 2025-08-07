@@ -57,6 +57,11 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
     ).values()
   );
   
+  // Get unique nicknames from notes (prefer the most recent one)
+  const userNickname = sortedNotes.length > 0 && sortedNotes[0].nickname 
+    ? sortedNotes[0].nickname 
+    : null;
+  
   // Debug logging
   useEffect(() => {
     console.log(`[UserCard] User @${user.twitterHandle} has ${uniqueCMs.length} unique CMs:`, uniqueCMs);
@@ -78,6 +83,9 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
           )}
         </div>
         <div className="user-info">
+          {userNickname && (
+            <div className="user-nickname">{userNickname}</div>
+          )}
           <a 
             href={`https://twitter.com/${user.twitterHandle}`}
             target="_blank"
