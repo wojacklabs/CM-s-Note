@@ -225,15 +225,6 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
         wheelSensitivity: 0.2
       });
 
-      // Set transparent background
-      cy.style()
-        .selector('core')
-        .style({
-          'active-bg-opacity': 0,
-          'selection-box-opacity': 0
-        })
-        .update();
-
       cyRef.current = cy;
 
       // Handle node clicks
