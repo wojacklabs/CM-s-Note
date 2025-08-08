@@ -200,16 +200,16 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
           animationDuration: 1000,
           animationEasing: 'ease-out',
           nodeDimensionsIncludeLabels: true,
-          idealEdgeLength: 150,
-          nodeRepulsion: 8000,
-          nodeOverlap: 30,
+          idealEdgeLength: 200,
+          nodeRepulsion: 10000,
+          nodeOverlap: 40,
           numIter: 2500,
           tile: false,
           tilingPaddingVertical: 10,
           tilingPaddingHorizontal: 10,
-          gravity: 0.25,
+          gravity: 0.2,
           gravityRange: 3.8,
-          padding: 50,
+          padding: 100,
           stop: () => {
             console.log('[SocialGraph] Layout completed');
             setLoading(false);
@@ -217,8 +217,7 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
             // Force a render update after layout completes
             setTimeout(() => {
               cy.resize();
-              cy.fit(undefined, 50); // Add 50px padding around the graph
-              cy.zoom(cy.zoom() * 0.8); // Zoom out to 80% of the fitted zoom
+              cy.fit(undefined, 80); // Add 80px padding around the graph for wider view
               cy.center(); // Center the graph
             }, 100);
           }
