@@ -59,7 +59,7 @@
 
 .section-tab.active {
   color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {

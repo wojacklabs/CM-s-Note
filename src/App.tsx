@@ -12,10 +12,46 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'notes' | 'analysis'>('notes');
+  const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Track active section based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = activeTab === 'analysis' 
+        ? ['growth-timeline', 'social-network', 'ranking-correlation']
+        : ['community', 'cms'];
+      
+      const scrollPosition = window.scrollY + 150; // Offset for header/nav
+      
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab]);
+
+  // Reset active section when tab changes
+  useEffect(() => {
+    const sections = activeTab === 'analysis' 
+      ? ['growth-timeline', 'social-network', 'ranking-correlation']
+      : ['community', 'cms'];
+    setActiveSection(sections[0]);
+  }, [activeTab]);
 
   const loadProjects = async () => {
     try {
@@ -51,6 +87,7 @@ function App() {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveSection(sectionId);
     }
   };
 
@@ -71,22 +108,37 @@ function App() {
             <div className="section-tabs-inner">
               {activeTab === 'analysis' ? (
                 <>
-                  <button className="section-tab" onClick={() => handleSectionClick('growth-timeline')}>
+                  <button 
+                    className={`section-tab ${activeSection === 'growth-timeline' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('growth-timeline')}
+                  >
                     Cumulative Numbers
                   </button>
-                  <button className="section-tab" onClick={() => handleSectionClick('social-network')}>
+                  <button 
+                    className={`section-tab ${activeSection === 'social-network' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('social-network')}
+                  >
                     Social Network
                   </button>
-                  <button className="section-tab" onClick={() => handleSectionClick('ranking-correlation')}>
+                  <button 
+                    className={`section-tab ${activeSection === 'ranking-correlation' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('ranking-correlation')}
+                  >
                     InfoFi Correlation
                   </button>
                 </>
               ) : (
                 <>
-                  <button className="section-tab" onClick={() => handleSectionClick('community')}>
+                  <button 
+                    className={`section-tab ${activeSection === 'community' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('community')}
+                  >
                     Community
                   </button>
-                  <button className="section-tab" onClick={() => handleSectionClick('cms')}>
+                  <button 
+                    className={`section-tab ${activeSection === 'cms' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('cms')}
+                  >
                     CMs
                   </button>
                 </>
