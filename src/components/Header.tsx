@@ -21,7 +21,7 @@ function Header({ projects, selectedProject, onProjectChange, loading, activeTab
           <Link to="/" className="logo-link">
             <h1 className="logo">
               <img src="/icon128.png" alt="CM's Notes Logo" className="logo-icon" />
-              CM's Notes
+              <span>CM's Notes</span>
             </h1>
           </Link>
         </div>
