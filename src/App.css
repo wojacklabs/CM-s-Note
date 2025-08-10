@@ -68,7 +68,7 @@
   }
 
   .section-tabs {
-    top: 60px; /* Reduced header height */
+    top: 63px; /* Reduced header height */
     padding: 0 1rem;
   }
 
@@ -86,7 +86,7 @@
 
 @media (max-width: 640px) {
   .section-tabs {
-    top: 48px; /* Further reduced header height */
+    top: 45px; /* Further reduced header height */
     padding: 0 0.75rem;
   }
   
@@ -102,7 +102,7 @@
 
 @media (max-width: 480px) {
   .section-tabs {
-    top: 40px; /* Minimal header height */
+    top: 42px; /* Minimal header height */
     padding: 0 0.5rem;
   }
   
