@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom'; // Added Link import
 
 import { Note, User } from '../types';
 import { queryNotesByProject, loadMultipleNoteContents, queryCMPermissions } from '../services/irysService';
@@ -784,6 +785,22 @@ function HomePage({ selectedProject }: HomePageProps) {
       )}
       {/* Note Modal */}
       {selectedNote && <NoteModal note={selectedNote} onClose={() => setSelectedNote(null)} />}
+      
+      {/* Footer */}
+      <footer className="home-footer">
+        <a 
+          href="https://chromewebstore.google.com/detail/cms-notes/gojmblhkimanjdmooganfebjmcoelmdm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="chrome-extension-link"
+        >
+          Download Extension
+        </a>
+        <span className="footer-separator">•</span>
+        <Link to="/privacy-term" className="privacy-policy-link">
+          Privacy Policy & Terms
+        </Link>
+      </footer>
     </div>
     </>
   );
