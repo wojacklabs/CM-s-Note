@@ -50,10 +50,16 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   // Sort notes by timestamp (most recent first)
   const sortedNotes = [...user.notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Get unique CMs with their Twitter handles
+  // Get unique CMs with their Twitter handles (deduplicated by handle)
   const uniqueCMs = Array.from(
     new Map(
-      user.notes.map(note => [note.cmName, { name: note.cmName, twitterHandle: note.cmTwitterHandle }])
+      user.notes
+        .filter(note => note.cmTwitterHandle) // Only include notes with CM handles
+        .map(note => {
+          const normalizedHandle = (note.cmTwitterHandle!.startsWith('@') ? 
+            note.cmTwitterHandle!.substring(1) : note.cmTwitterHandle!).toLowerCase();
+          return [normalizedHandle, { name: note.cmName, twitterHandle: note.cmTwitterHandle }];
+        })
     ).values()
   );
   

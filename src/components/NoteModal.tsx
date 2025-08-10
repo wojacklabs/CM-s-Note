@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Note } from '../types';
 import { formatTimestamp } from '../utils/dateUtils';
 import { loadNoteContent } from '../services/irysService';
+import { ProfileImageCacheService } from '../services/profileImageCache';
 import './NoteModal.css';
 
 interface NoteModalProps {
@@ -14,6 +15,7 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
   const [content, setContent] = useState<string>(note.content || '');
   const [loadingContent, setLoadingContent] = useState<boolean>(!note.content);
   const [contentError, setContentError] = useState<string>('');
+  const [profileImage, setProfileImage] = useState<string>('');
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -28,6 +30,17 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  // Load profile image
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      const normalizedHandle = (note.twitterHandle.startsWith('@') ? 
+        note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase();
+      const imageUrl = await ProfileImageCacheService.loadProfileImage(normalizedHandle);
+      setProfileImage(imageUrl);
+    };
+    loadProfileImage();
+  }, [note.twitterHandle]);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -93,15 +106,37 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
         <div className="note-modal-content">
           <div className="note-detail-header">
             <img 
-              src={note.iconUrl} 
-              alt="Note icon" 
-              className="note-detail-icon"
+              src={profileImage || `https://unavatar.io/twitter/${note.twitterHandle}`} 
+              alt={`@${note.twitterHandle}`} 
+              className="note-detail-profile"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${note.twitterHandle}`;
+              }}
             />
             <div className="note-detail-title">
-              <h3>{note.nickname || note.user}</h3>
-              <p className="note-detail-subtitle">@{note.twitterHandle}</p>
+              <h3>@{note.twitterHandle}</h3>
+              <p className="note-detail-subtitle">Twitter User</p>
             </div>
           </div>
+          
+          {/* CM's nickname and badge as quote */}
+          {(note.nickname || note.iconUrl) && (
+            <div className="note-nickname-quote">
+              {note.iconUrl && (
+                <img 
+                  src={note.iconUrl} 
+                  alt="Badge" 
+                  className="note-badge-icon"
+                />
+              )}
+              {note.nickname && (
+                <p className="note-nickname-text">"{note.nickname}"</p>
+              )}
+              <p className="note-nickname-author">— {note.cmName}</p>
+            </div>
+          )}
           
           <div className="note-detail-meta">
             <div className="meta-row">
@@ -173,7 +208,7 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
         </div>
       </div>
     </div>
-  );
+    );
 }
 
 export default NoteModal; 

@@ -11,6 +11,7 @@ function App() {
   const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'notes' | 'analysis'>('notes');
 
   useEffect(() => {
     loadProjects();
@@ -33,8 +34,6 @@ function App() {
 
   const handleProjectChange = (newProject: string) => {
     if (newProject !== selectedProject) {
-      // Clear cache for other projects on project change
-      // This helps manage memory usage
       const currentCacheSize = Object.keys(localStorage).filter(key => 
         key.startsWith('cm-notes-cache-')
       ).length;
@@ -48,6 +47,13 @@ function App() {
     }
   };
 
+  const handleSectionClick = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <Router>
       <div className="app">
@@ -56,7 +62,38 @@ function App() {
           selectedProject={selectedProject}
           onProjectChange={handleProjectChange}
           loading={loading}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
+        {/* Section nav - moved from HomePage to be at same level as Header */}
+        {selectedProject && (
+          <div className="section-tabs">
+            <div className="section-tabs-inner">
+              {activeTab === 'analysis' ? (
+                <>
+                  <button className="section-tab" onClick={() => handleSectionClick('growth-timeline')}>
+                    Cumulative Numbers
+                  </button>
+                  <button className="section-tab" onClick={() => handleSectionClick('social-network')}>
+                    Social Network
+                  </button>
+                  <button className="section-tab" onClick={() => handleSectionClick('ranking-correlation')}>
+                    InfoFi Correlation
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="section-tab" onClick={() => handleSectionClick('community')}>
+                    Community
+                  </button>
+                  <button className="section-tab" onClick={() => handleSectionClick('cms')}>
+                    CMs
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
         <main className="main-content">
           <Routes>
             <Route path="/" element={<HomePage selectedProject={selectedProject} />} />

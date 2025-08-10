@@ -38,40 +38,87 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
       
       // Process data
       const elements: cytoscape.ElementDefinition[] = [];
-      const nodeMap = new Map<string, { isCM: boolean; twitterHandle?: string; label: string }>();
+      const nodeMap = new Map<string, { isCM: boolean; twitterHandle?: string; label: string; displayName?: string }>();
       const edgeMap = new Map<string, number>();
 
-      // Create a map of all CMs (by Twitter handle) for quick lookup
-      const cmHandleMap = new Map<string, string>(); // handle -> cmName
+      // Helper function to normalize handles
+      const normalizeHandle = (handle: string): string => {
+        return (handle.startsWith('@') ? handle.substring(1) : handle).toLowerCase();
+      };
+
+      // Create a map of all CMs (by normalized Twitter handle) for quick lookup
+      const cmHandleMap = new Map<string, { cmName: string; cmTwitterHandle: string }>(); // normalized handle -> cmInfo
       cmInfos.forEach(cmInfo => {
-        const handle = cmInfo.cmTwitterHandle || cmInfo.cmName;
-        cmHandleMap.set(handle, cmInfo.cmName);
+        if (cmInfo.cmTwitterHandle) {
+          const normalizedHandle = normalizeHandle(cmInfo.cmTwitterHandle);
+          cmHandleMap.set(normalizedHandle, {
+            cmName: cmInfo.cmName,
+            cmTwitterHandle: normalizedHandle
+          });
+        }
       });
 
       // Track which nodes should be displayed
       const nodesToDisplay = new Set<string>();
 
-      // First pass: identify all nodes that should be displayed
+      // First pass: identify all nodes that should be displayed (using normalized handles)
       notes.forEach(note => {
-        // CM who wrote the note
-        const cmHandle = cmInfos.find(cm => cm.cmName === note.cmName)?.cmTwitterHandle || note.cmName;
-        nodesToDisplay.add(cmHandle);
+        // CM who wrote the note - use cmTwitterHandle from note if available
+        if (note.cmTwitterHandle) {
+          const normalizedCmHandle = normalizeHandle(note.cmTwitterHandle);
+          nodesToDisplay.add(normalizedCmHandle);
+        } else {
+          // Fallback: try to find CM by name (for legacy data)
+          const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+          if (cmInfo && cmInfo.cmTwitterHandle) {
+            const normalizedCmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
+            nodesToDisplay.add(normalizedCmHandle);
+          }
+        }
         
-        // User/CM who received the note
-        nodesToDisplay.add(note.twitterHandle);
+        // User/CM who received the note - they might also be a CM
+        const normalizedUserHandle = normalizeHandle(note.twitterHandle);
+        nodesToDisplay.add(normalizedUserHandle);
+      });
+
+      // Create a set of all CM handles for quick lookup
+      const allCmHandles = new Set<string>();
+      cmInfos.forEach(cmInfo => {
+        if (cmInfo.cmTwitterHandle) {
+          allCmHandles.add(normalizeHandle(cmInfo.cmTwitterHandle));
+        }
       });
 
       // Second pass: create nodes
-      nodesToDisplay.forEach(handle => {
-        if (!nodeMap.has(handle)) {
-          // Check if this handle is a CM
-          const isCM = cmHandleMap.has(handle);
-          const cmName = cmHandleMap.get(handle);
+      nodesToDisplay.forEach(normalizedHandle => {
+        if (!nodeMap.has(normalizedHandle)) {
+          // Check if this handle is a CM (either from cmHandleMap or from the note recipient who is also a CM)
+          const cmInfo = cmHandleMap.get(normalizedHandle);
+          const isCM = !!cmInfo || allCmHandles.has(normalizedHandle);
           
-          nodeMap.set(handle, {
+          // If it's a CM but not in cmHandleMap, find it in cmInfos
+          let label = `@${normalizedHandle}`;
+          let displayName: string | undefined;
+          
+          if (cmInfo) {
+            label = cmInfo.cmName;
+            displayName = cmInfo.cmName;
+          } else if (isCM) {
+            // Find the CM info for this handle
+            const foundCm = cmInfos.find(cm => 
+              cm.cmTwitterHandle && normalizeHandle(cm.cmTwitterHandle) === normalizedHandle
+            );
+            if (foundCm) {
+              label = foundCm.cmName;
+              displayName = foundCm.cmName;
+            }
+          }
+          
+          nodeMap.set(normalizedHandle, {
             isCM,
-            twitterHandle: handle,
-            label: isCM && cmName ? cmName : handle
+            twitterHandle: normalizedHandle,
+            label,
+            displayName
           });
         }
       });
@@ -99,12 +146,26 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
 
       // Process edges
       notes.forEach(note => {
-        const cmId = cmInfos.find(cm => cm.cmName === note.cmName)?.cmTwitterHandle || note.cmName;
-        const userId = note.twitterHandle;
+        let cmId: string | undefined;
         
-        if (cmId !== userId) { // Avoid self-loops
-          const edgeId = `${cmId}-${userId}`;
-          edgeMap.set(edgeId, (edgeMap.get(edgeId) || 0) + 1);
+        // Use cmTwitterHandle from note if available
+        if (note.cmTwitterHandle) {
+          cmId = normalizeHandle(note.cmTwitterHandle);
+        } else {
+          // Fallback: try to find CM by name (for legacy data)
+          const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+          if (cmInfo && cmInfo.cmTwitterHandle) {
+            cmId = normalizeHandle(cmInfo.cmTwitterHandle);
+          }
+        }
+        
+        if (cmId) {
+          const userId = normalizeHandle(note.twitterHandle);
+          
+          if (cmId !== userId) { // Avoid self-loops
+            const edgeId = `${cmId}-${userId}`;
+            edgeMap.set(edgeId, (edgeMap.get(edgeId) || 0) + 1);
+          }
         }
       });
 

@@ -1,0 +1,245 @@
+.interaction-matrix {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--border);
+}
+
+.interaction-matrix .section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.matrix-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.matrix-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.matrix-table {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 100%;
+}
+
+.matrix-table th,
+.matrix-table td {
+  border: 1px solid var(--border);
+  text-align: center;
+  position: relative;
+}
+
+.corner-cell {
+  background: var(--background);
+  min-width: 120px;
+}
+
+.matrix-user-header {
+  background: var(--background);
+  padding: 0.5rem;
+  min-width: 60px;
+  max-width: 60px;
+  height: 30px;
+  vertical-align: middle;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.header-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  transform: none;
+}
+
+.matrix-cm-header {
+  background: var(--background);
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.matrix-cell {
+  width: 60px;
+  height: 40px;
+  padding: 0.25rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.matrix-cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px var(--primary-color);
+  z-index: 10;
+}
+
+.matrix-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.legend-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.legend-gradient {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.gradient-bar {
+  width: 200px;
+  height: 20px;
+  background: linear-gradient(to right, 
+    var(--background) 0%, 
+    hsl(210, 70%, 45%) 100%
+  );
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.matrix-info {
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.interaction-matrix .empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+/* Heatmap styles */
+.heatmap-container {
+  position: relative;
+  padding: 2rem;
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.heatmap-row {
+  display: flex;
+  gap: 2px;
+}
+
+.heatmap-cell {
+  flex: 1;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.heatmap-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.heatmap-ylabel {
+  position: absolute;
+  left: -2rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.heatmap-xlabel {
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .matrix-container {
+    padding: 1rem;
+  }
+  
+  .matrix-user-header {
+    min-width: 50px;
+    max-width: 50px;
+    height: 25px;
+    font-size: 0.7rem;
+  }
+  
+  .header-text {
+    font-size: 0.7rem;
+  }
+  
+  .matrix-cell {
+    width: 50px;
+    height: 35px;
+    font-size: 0.75rem;
+  }
+  
+  .gradient-bar {
+    width: 150px;
+  }
+  
+  .heatmap-container {
+    padding: 1rem;
+  }
+  
+  .heatmap-cell {
+    font-size: 0.6rem;
+  }
+  
+  .heatmap-ylabel,
+  .heatmap-xlabel {
+    font-size: 0.75rem;
+  }
+} 

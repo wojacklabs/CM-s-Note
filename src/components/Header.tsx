@@ -6,18 +6,13 @@ interface HeaderProps {
   selectedProject: string;
   onProjectChange: (project: string) => void;
   loading: boolean;
+  activeTab?: 'notes' | 'analysis';
+  onTabChange?: (tab: 'notes' | 'analysis') => void;
 }
 
-function Header({ projects, selectedProject, onProjectChange, loading }: HeaderProps) {
+function Header({ projects, selectedProject, onProjectChange, loading, activeTab = 'notes', onTabChange }: HeaderProps) {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-
-  const handleSectionClick = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
   return (
     <header className="header">
@@ -31,32 +26,10 @@ function Header({ projects, selectedProject, onProjectChange, loading }: HeaderP
           </Link>
         </div>
         
-        {isHomePage && selectedProject && (
-          <nav className="section-nav">
-            <button 
-              className="section-link" 
-              onClick={() => handleSectionClick('recent-users')}
-            >
-              Recent Users
-            </button>
-            <button 
-              className="section-link" 
-              onClick={() => handleSectionClick('social-network')}
-            >
-              Social Network
-            </button>
-            <button 
-              className="section-link" 
-              onClick={() => handleSectionClick('community')}
-            >
-              Community
-            </button>
-            <button 
-              className="section-link" 
-              onClick={() => handleSectionClick('cms')}
-            >
-              CMs
-            </button>
+        {isHomePage && selectedProject && onTabChange && (
+          <nav className="header-tabs">
+            <button className={`nav-tab ${activeTab === 'notes' ? 'active' : ''}`} onClick={() => { onTabChange('notes'); window.dispatchEvent(new CustomEvent('app:activeTab', { detail: 'notes' })); }}>Notes</button>
+            <button className={`nav-tab ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => { onTabChange('analysis'); window.dispatchEvent(new CustomEvent('app:activeTab', { detail: 'analysis' })); }}>Analysis</button>
           </nav>
         )}
         

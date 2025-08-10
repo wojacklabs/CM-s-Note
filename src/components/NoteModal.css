@@ -99,10 +99,17 @@
 }
 
 .note-detail-icon {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.note-detail-profile {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
+  background-color: var(--background);
 }
 
 .note-detail-title {
@@ -110,15 +117,52 @@
 }
 
 .note-detail-title h3 {
-  margin: 0;
+  margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .note-detail-subtitle {
-  margin: 0.25rem 0 0;
+  margin: 0;
+  font-size: 0.875rem;
   color: var(--text-secondary);
-  font-size: 0.95rem;
+}
+
+/* Nickname quote section */
+.note-nickname-quote {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background-color: rgba(212, 165, 116, 0.05);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.note-badge-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.note-nickname-text {
+  margin: 0;
+  font-size: 1.125rem;
+  font-style: italic;
+  color: var(--text-primary);
+  text-align: center;
+  font-weight: 500;
+}
+
+.note-nickname-author {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  align-self: flex-end;
 }
 
 .note-detail-meta {

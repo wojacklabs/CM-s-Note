@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+
 import { Note, User } from '../types';
 import { queryNotesByProject, loadMultipleNoteContents, queryCMPermissions } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
@@ -9,10 +9,10 @@ import UserCard from '../components/UserCard';
 import CMCard from '../components/CMCard';
 import FilterBar from '../components/FilterBar';
 import NoteModal from '../components/NoteModal';
-import UserProfileCard from '../components/UserProfileCard';
-import { UserCardSkeleton, CMCardSkeleton, UserProfileCardSkeleton } from '../components/SkeletonCard';
+import { UserCardSkeleton, CMCardSkeleton } from '../components/SkeletonCard';
 import SocialGraph from '../components/SocialGraph';
-import Marquee from 'react-fast-marquee';
+import GrowthTimeline from '../components/GrowthTimeline';
+import RankingCorrelation from '../components/RankingCorrelation';
 import './HomePage.css';
 
 interface CMInfo {
@@ -38,7 +38,6 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [displayedUsers, setDisplayedUsers] = useState<User[]>([]);
-  const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
   const [displayedCMs, setDisplayedCMs] = useState<CMInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,12 +57,21 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [selectedSort, setSelectedSort] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Marquee controls
-  const [speed, setSpeed] = useState(50);
-  
   // Auto-refresh interval ref
   const intervalRef = useRef<number | null>(null);
   const contentLoadingRef = useRef<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'notes' | 'analysis'>('notes');
+
+  // Sync activeTab with Header via custom event
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e?.detail === 'notes' || e?.detail === 'analysis') {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener('app:activeTab', handler as EventListener);
+    return () => window.removeEventListener('app:activeTab', handler as EventListener);
+  }, []);
 
   // Mark page refresh on component mount
   useEffect(() => {
@@ -110,7 +118,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     // 노트 데이터를 처리하여 기존 CM에 노트 추가 또는 새로운 CM 생성
     notesData.forEach(note => {
       const cmName = note.cmName;
-      const cmTwitterHandle = note.cmTwitterHandle;
+             const cmTwitterHandle = note.cmTwitterHandle ? (note.cmTwitterHandle.startsWith('@') ? note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase() : undefined;
       
       // 테스트용 CM인지 확인 (cmTwitterHandle 또는 cmName으로 확인)
       const cleanTwitterHandle = cmTwitterHandle ? 
@@ -126,9 +134,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       if (!cmMap.has(cmName)) {
         // 권한 맵에 없는 CM이지만 노트가 있는 경우 (레거시 데이터)
-        const cleanHandle = cmTwitterHandle ? (cmTwitterHandle.startsWith('@') 
-          ? cmTwitterHandle.substring(1) 
-          : cmTwitterHandle) : undefined;
+                 const cleanHandle = cmTwitterHandle;
         
         // 테스트용 CM은 레거시 데이터에서도 제외 (Twitter handle과 CM name 모두 확인)
         if ((cleanHandle && testCMHandles.includes(cleanHandle.toLowerCase())) || 
@@ -156,22 +162,20 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Twitter handle은 이미 권한에서 설정되었으므로 추가 업데이트 불필요
       // 하지만 권한에 없는 경우를 위해 fallback 제공
-      if (!cmInfo.cmTwitterHandle && cmTwitterHandle) {
-        const cleanHandle = cmTwitterHandle.startsWith('@') 
-          ? cmTwitterHandle.substring(1) 
-          : cmTwitterHandle;
-        cmInfo.cmTwitterHandle = cleanHandle;
-        console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
-      }
+             if (!cmInfo.cmTwitterHandle && cmTwitterHandle) {
+         const cleanHandle = cmTwitterHandle;
+         cmInfo.cmTwitterHandle = cleanHandle;
+         console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
+       }
       
       // Add user to recent users if not already present
       const existingUserIndex = cmInfo.recentUsers.findIndex(
-        user => user.twitterHandle === note.twitterHandle
+                 user => user.twitterHandle === ((note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase())
       );
       
       if (existingUserIndex === -1) {
         cmInfo.recentUsers.push({
-          twitterHandle: note.twitterHandle,
+          twitterHandle: (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase(),
           timestamp: note.timestamp
         });
       } else {
@@ -184,14 +188,29 @@ function HomePage({ selectedProject }: HomePageProps) {
     
     // Sort recent users by timestamp and limit to most recent
     // Sort recent notes by timestamp and limit to most recent
-    const cmInfoList = Array.from(cmMap.values()).map(cmInfo => ({
-      ...cmInfo,
-      recentUsers: cmInfo.recentUsers
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 10), // Keep top 10 most recent users
-      recentNotes: cmInfo.recentNotes
-        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-    }));
+         // Merge CMs by twitter handle to ensure one CM per handle
+     const handleToCM = new Map<string, CMInfo>();
+     cmMap.forEach(cm => {
+       const handle = cm.cmTwitterHandle ? cm.cmTwitterHandle.toLowerCase() : undefined;
+       if (!handle) return;
+       if (!handleToCM.has(handle)) {
+         handleToCM.set(handle, { ...cm });
+       } else {
+         const existing = handleToCM.get(handle)!;
+         existing.noteCount += cm.noteCount;
+         existing.recentUsers = [...existing.recentUsers, ...cm.recentUsers];
+         existing.recentNotes = [...existing.recentNotes, ...cm.recentNotes];
+       }
+     });
+
+     const cmInfoList = Array.from((handleToCM.size > 0 ? handleToCM.values() : cmMap.values())).map(cmInfo => ({
+       ...cmInfo,
+       recentUsers: cmInfo.recentUsers
+         .sort((a, b) => b.timestamp - a.timestamp)
+         .slice(0, 10), // Keep top 10 most recent users
+       recentNotes: cmInfo.recentNotes
+         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+     }));
     
     // Sort CMs: 노트가 있는 CM을 먼저, 그 다음 노트 수 기준으로 정렬
     cmInfoList.sort((a, b) => {
@@ -208,6 +227,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     console.log(`[CM Data] CMs without notes: ${cmInfoList.filter(cm => cm.noteCount === 0).length}`);
     
     setCmInfos(cmInfoList);
+    return cmInfoList; // Return merged CM list
   }, []);
 
   // Load note contents in background
@@ -235,13 +255,13 @@ function HomePage({ selectedProject }: HomePageProps) {
       // Update users with loaded content
       const userMap = new Map<string, User>();
       updatedNotes.forEach(note => {
-        const key = note.twitterHandle;
+        const key = (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase();
         if (!userMap.has(key)) {
-          userMap.set(key, {
-            twitterHandle: note.twitterHandle,
-            displayName: note.twitterHandle,
-            notes: []
-          });
+                  userMap.set(key, {
+          twitterHandle: key,
+          displayName: key,
+          notes: []
+        });
         }
         userMap.get(key)!.notes.push(note);
       });
@@ -261,40 +281,35 @@ function HomePage({ selectedProject }: HomePageProps) {
   }, []);
 
   // Process notes data to users
-  const processNotesToUsers = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
-    // Create a reverse map: twitterHandle -> cmName
+  const processNotesToUsers = useCallback((notesData: Note[], mergedCmInfos: CMInfo[]) => {
+    // Create a reverse map: twitterHandle -> cmName using merged CM data
     const twitterHandleToCM = new Map<string, string>();
-    if (cmTwitterHandlesMap) {
-      cmTwitterHandlesMap.forEach((handle, cmName) => {
-        const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
-        twitterHandleToCM.set(cleanHandle, cmName);
-      });
-    }
     
-    // Enrich notes with CM Twitter handles
-    const enrichedNotes = notesData.map(note => {
-      if (cmTwitterHandlesMap && cmTwitterHandlesMap.has(note.cmName)) {
-        return {
-          ...note,
-          cmTwitterHandle: cmTwitterHandlesMap.get(note.cmName)
-        };
+    // Use provided merged CM data
+    mergedCmInfos.forEach(cmInfo => {
+      if (cmInfo.cmTwitterHandle) {
+        const cleanHandle = (cmInfo.cmTwitterHandle.startsWith('@') ? cmInfo.cmTwitterHandle.substring(1) : cmInfo.cmTwitterHandle).toLowerCase();
+        twitterHandleToCM.set(cleanHandle, cmInfo.cmName);
       }
-      return note;
     });
+    
+    // Just use the original notes data since it already has CM Twitter handles
+    const enrichedNotes = notesData;
     
     // Group notes by user
     const userMap = new Map<string, User>();
     
     enrichedNotes.forEach(note => {
-      const key = note.twitterHandle;
+      const key = (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase();
       if (!userMap.has(key)) {
         // Check if this user is a CM
-        const isCM = twitterHandleToCM.has(note.twitterHandle);
-        const cmName = isCM ? twitterHandleToCM.get(note.twitterHandle) : null;
+                 const normalizedHandle = (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase();
+         const isCM = twitterHandleToCM.has(normalizedHandle);
+         const cmName = isCM ? twitterHandleToCM.get(normalizedHandle) : null;
         
         userMap.set(key, {
-          twitterHandle: note.twitterHandle,
-          displayName: isCM && cmName ? cmName : note.twitterHandle, // For CMs, use cmName; for users, just handle
+          twitterHandle: key,
+          displayName: isCM && cmName ? cmName : key, // For CMs, use cmName; for users, just handle
           notes: []
         });
       }
@@ -304,25 +319,11 @@ function HomePage({ selectedProject }: HomePageProps) {
     const userList = Array.from(userMap.values());
     setUsers(userList);
     
-    // Get recent users (sorted by most recent note timestamp)
-    const recentUserList = userList
-      .map(user => ({
-        ...user,
-        latestNoteTimestamp: Math.max(...user.notes.map(note => note.timestamp || 0))
-      }))
-      .sort((a, b) => b.latestNoteTimestamp - a.latestNoteTimestamp)
-      .slice(0, 20);
-    
-    setRecentUsers(recentUserList);
-    
-    // Process CM data
-    processCMData(enrichedNotes, cmTwitterHandlesMap);
-    
     setLastUpdated(new Date());
     
     // Preload profile images in background
     const twitterHandles = userList.map(user => user.twitterHandle);
-    const cmHandles = Array.from(cmTwitterHandlesMap?.values() || [])
+    const cmHandles = Array.from(twitterHandleToCM.keys())
       .filter(handle => handle)
       .map(handle => handle.startsWith('@') ? handle.substring(1) : handle);
     
@@ -337,7 +338,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     setTimeout(() => {
       loadNoteContentsInBackground(enrichedNotes);
     }, 100); // Small delay to ensure UI is rendered first
-  }, [processCMData, loadNoteContentsInBackground]);
+  }, [loadNoteContentsInBackground]);
 
   // Load data from API
   const loadDataFromAPI = useCallback(async (showLoader = true) => {
@@ -370,7 +371,13 @@ function HomePage({ selectedProject }: HomePageProps) {
       });
       
       setNotes(enrichedNotes);
-      processNotesToUsers(enrichedNotes, cmTwitterHandles);
+      
+      // Process CM data first to get merged CM info
+      const mergedCmInfos = processCMData(enrichedNotes, cmTwitterHandles);
+      
+      // Process notes to users with merged CM data
+      processNotesToUsers(enrichedNotes, mergedCmInfos);
+      
       setHasDataLoaded(true);
       
       // Save to cache
@@ -387,7 +394,7 @@ function HomePage({ selectedProject }: HomePageProps) {
         setUpdating(false);
       }
     }
-  }, [selectedProject, processNotesToUsers]);
+  }, [selectedProject, processCMData, processNotesToUsers]);
 
   // Load data with caching strategy
   const loadData = useCallback(async () => {
@@ -403,7 +410,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Load CM permissions even when using cached notes
       queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        processNotesToUsers(cachedNotes, cmTwitterHandles);
+        const mergedCmInfos = processCMData(cachedNotes, cmTwitterHandles);
+        processNotesToUsers(cachedNotes, mergedCmInfos);
       });
       
       setHasDataLoaded(true);
@@ -465,7 +473,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Apply filters and sorting
   useEffect(() => {
     applyFiltersAndSorting();
-  }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery, calculateBadgeCount]);
+  }, [users, selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery, calculateBadgeCount, cmInfos]);
 
   // Apply display limit for users
   useEffect(() => {
@@ -520,9 +528,30 @@ function HomePage({ selectedProject }: HomePageProps) {
 
     // Apply other filters
     if (selectedCM !== 'all') {
-      filtered = filtered.filter(user => 
-        user.notes.some(note => note.cmName === selectedCM)
-      );
+      // Find the CM's Twitter handle for the selected CM name
+      const selectedCmInfo = cmInfos.find(cm => cm.cmName === selectedCM);
+      if (selectedCmInfo && selectedCmInfo.cmTwitterHandle) {
+        const normalizedCmHandle = (selectedCmInfo.cmTwitterHandle.startsWith('@') ? 
+          selectedCmInfo.cmTwitterHandle.substring(1) : selectedCmInfo.cmTwitterHandle).toLowerCase();
+        
+        filtered = filtered.filter(user => 
+          user.notes.some(note => {
+            // Match by Twitter handle if available
+            if (note.cmTwitterHandle) {
+              const normalizedNoteHandle = (note.cmTwitterHandle.startsWith('@') ? 
+                note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase();
+              return normalizedNoteHandle === normalizedCmHandle;
+            }
+            // Fallback to name matching for legacy data
+            return note.cmName === selectedCM;
+          })
+        );
+      } else {
+        // Fallback: filter by name if no handle found
+        filtered = filtered.filter(user => 
+          user.notes.some(note => note.cmName === selectedCM)
+        );
+      }
     }
 
     if (selectedUserType !== 'all') {
@@ -583,225 +612,180 @@ function HomePage({ selectedProject }: HomePageProps) {
   }
 
   return (
+    <>
     <div className="home-page">
+      {/* Tab switcher moved to Header; synced via custom event */}
 
-{(loading || !hasDataLoaded || recentUsers.length > 0) && (
-        <section id="recent-users" className="recent-users-section">
-          <h2 className="section-title">Recently Noted Users</h2>
-          <div className="marquee-controls">
-            <label>
-              Speed: 
-              <input
-                type="range"
-                min="20"
-                max="100"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-              />
-              <span>{speed}</span>
-            </label>
-          </div>
+      
+
+      {activeTab === 'analysis' && (
+        <>
+          <section id="growth-timeline" className="growth-timeline-section">
+            <GrowthTimeline notes={notes} cmInfos={cmInfos} />
+          </section>
+{/* Social Graph Section */}
+{notes.length > 0 && cmInfos.length > 0 && (
+            <section id="social-network" className="social-graph-section">
+              <SocialGraph notes={notes} cmInfos={cmInfos} />
+            </section>
+          )}
+          <section id="ranking-correlation" className="ranking-correlation-section">
+            <RankingCorrelation notes={notes} />
+          </section>
           
-          <div className="marquee-container">
-            <Marquee
-              speed={speed}
-              gradient={true}
-              gradientColor="#faf8f3"
-              gradientWidth={120}
-            >
+          
+        </>
+      )}
+
+      {activeTab === 'notes' && (
+        <>
+          <section id="community" className="users-section">
+            <h2 className="section-title">Community</h2>
+            <div className="status-bar">
+              <div className="status-info">
+                <span className="data-count">
+                  {loading || !hasDataLoaded ? 'Loading...' : `${notes.length} notes loaded`}
+                </span>
+                {lastUpdated && (
+                  <span className="last-updated">
+                    Last updated: {formatLastUpdated(lastUpdated)}
+                  </span>
+                )}
+                {updating && (
+                  <span className="updating-indicator">
+                    <div className="small-spinner"></div>
+                    Updating...
+                  </span>
+                )}
+                {loadingNoteContents && (
+                  <span className="content-loading-indicator">
+                    <div className="small-spinner"></div>
+                    Loading note contents in background...
+                    {noteContentProgress.total > 0 && (
+                      <span className="progress-info">
+                        ({noteContentProgress.loaded}/{noteContentProgress.total})
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+            <FilterBar
+              cms={hasDataLoaded ? getUniqueValues('cmName') : []}
+              userTypes={hasDataLoaded ? getUniqueValues('userType') : []}
+              icons={hasDataLoaded ? notes.map(n => ({ url: n.iconUrl, name: n.iconUrl })).filter((v, i, a) => a.findIndex(t => t.url === v.url) === i) : []}
+              selectedCM={selectedCM}
+              selectedUserType={selectedUserType}
+              selectedIcon={selectedIcon}
+              selectedSort={selectedSort}
+              onCMChange={setSelectedCM}
+              onUserTypeChange={setSelectedUserType}
+              onIconChange={setSelectedIcon}
+              onSortChange={setSelectedSort}
+            />
+
+            <div className="search-area">
+              <div className="search-input-container">
+                <input
+                  type="text"
+                  placeholder="Search users by handle, nickname, or username..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={handleClearSearch}
+                    className="clear-search-button"
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="users-grid">
               {loading || !hasDataLoaded ? (
                 // Show skeleton during loading
                 Array.from({ length: 6 }).map((_, index) => (
-                  <UserProfileCardSkeleton key={`recent-user-skeleton-${index}`} />
+                  <UserCardSkeleton key={`user-skeleton-${index}`} />
+                ))
+              ) : displayedUsers.length === 0 ? (
+                <div className="empty-state">
+                  <p>No users found</p>
+                </div>
+              ) : (
+                displayedUsers.map(user => (
+                  <UserCard
+                    key={user.twitterHandle}
+                    user={user}
+                    onNoteClick={setSelectedNote}
+                  />
+                ))
+              )}
+            </div>
+
+            {!showAllUsers && filteredUsers.length > DEFAULT_USER_LIMIT && (
+              <div className="show-all-container">
+                <button 
+                  onClick={handleShowAllUsers}
+                  className="show-all-button"
+                >
+                  Show All ({filteredUsers.length - DEFAULT_USER_LIMIT} more)
+                </button>
+              </div>
+            )}
+
+            {filteredUsers.length > 0 && (
+              <div className="users-summary">
+                <span className="users-count">
+                  Showing {displayedUsers.length} of {filteredUsers.length} users
+                </span>
+              </div>
+            )}
+          </section>
+
+          <section id="cms" className="cm-section">
+            <h2 className="section-title">CMs</h2>
+            <div className="cm-grid">
+              {loading || !hasDataLoaded ? (
+                // Show skeleton during loading
+                Array.from({ length: 3 }).map((_, index) => (
+                  <CMCardSkeleton key={`cm-skeleton-${index}`} />
+                ))
+              ) : displayedCMs.length > 0 ? (
+                displayedCMs.map(cmInfo => (
+                  <CMCard
+                    key={cmInfo.cmName}
+                    cmInfo={cmInfo}
+                    onNoteClick={setSelectedNote}
+                  />
                 ))
               ) : (
-                recentUsers.map((user, index) => (
-                  <UserProfileCard key={`${user.twitterHandle}-${index}`} user={user} />
-                ))
+                <div className="empty-state">
+                  <p>No CMs found</p>
+                </div>
               )}
-            </Marquee>
-          </div>
-        </section>
-      )}
-      
-      {/* Social Graph Section */}
-      {notes.length > 0 && cmInfos.length > 0 && (
-        <section id="social-network" className="social-graph-section">
-          <SocialGraph notes={notes} cmInfos={cmInfos} />
-        </section>
-      )}
-      
-      <section id="community" className="users-section">
-        <h2 className="section-title">Community</h2>
-        <div className="status-bar">
-        <div className="status-info">
-          <span className="data-count">
-            {loading || !hasDataLoaded ? 'Loading...' : `${notes.length} notes loaded`}
-          </span>
-          {lastUpdated && (
-            <span className="last-updated">
-              Last updated: {formatLastUpdated(lastUpdated)}
-            </span>
-          )}
-          {updating && (
-            <span className="updating-indicator">
-              <div className="small-spinner"></div>
-              Updating...
-            </span>
-          )}
-          {loadingNoteContents && (
-            <span className="content-loading-indicator">
-              <div className="small-spinner"></div>
-              Loading note contents in background...
-              {noteContentProgress.total > 0 && (
-                <span className="progress-info">
-                  ({noteContentProgress.loaded}/{noteContentProgress.total})
-                </span>
-              )}
-            </span>
-          )}
-        </div>
-      </div>
-        <FilterBar
-          cms={hasDataLoaded ? getUniqueValues('cmName') : []}
-          userTypes={hasDataLoaded ? getUniqueValues('userType') : []}
-          icons={hasDataLoaded ? notes.map(n => ({ url: n.iconUrl, name: n.iconUrl })).filter((v, i, a) => a.findIndex(t => t.url === v.url) === i) : []}
-          selectedCM={selectedCM}
-          selectedUserType={selectedUserType}
-          selectedIcon={selectedIcon}
-          selectedSort={selectedSort}
-          onCMChange={setSelectedCM}
-          onUserTypeChange={setSelectedUserType}
-          onIconChange={setSelectedIcon}
-          onSortChange={setSelectedSort}
-        />
+            </div>
 
-        <div className="search-area">
-          <div className="search-input-container">
-            <input
-              type="text"
-              placeholder="Search users by handle, nickname, or username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button 
-                onClick={handleClearSearch}
-                className="clear-search-button"
-                aria-label="Clear search"
-              >
-                ×
-              </button>
+            {!showAllCMs && cmInfos.length > DEFAULT_CM_LIMIT && (
+              <div className="show-all-container">
+                <button 
+                  onClick={handleShowAllCMs}
+                  className="show-all-button"
+                >
+                  Show All ({cmInfos.length - DEFAULT_CM_LIMIT} more)
+                </button>
+              </div>
             )}
-          </div>
-        </div>
-
-        <div className="users-grid">
-          {loading || !hasDataLoaded ? (
-            // Show skeleton during loading
-            Array.from({ length: 6 }).map((_, index) => (
-              <UserCardSkeleton key={`user-skeleton-${index}`} />
-            ))
-          ) : displayedUsers.length === 0 ? (
-            <div className="empty-state">
-              <p>No users found</p>
-            </div>
-          ) : (
-            displayedUsers.map(user => (
-              <UserCard
-                key={user.twitterHandle}
-                user={user}
-                onNoteClick={setSelectedNote}
-              />
-            ))
-          )}
-        </div>
-
-        {!showAllUsers && filteredUsers.length > DEFAULT_USER_LIMIT && (
-          <div className="show-all-container">
-            <button 
-              onClick={handleShowAllUsers}
-              className="show-all-button"
-            >
-              Show All ({filteredUsers.length - DEFAULT_USER_LIMIT} more)
-            </button>
-          </div>
-        )}
-
-        {filteredUsers.length > 0 && (
-          <div className="users-summary">
-            <span className="users-count">
-              Showing {displayedUsers.length} of {filteredUsers.length} users
-            </span>
-          </div>
-        )}
-      </section>
-
-      <section id="cms" className="cm-section">
-        <h2 className="section-title">CMs</h2>
-        <div className="cm-grid">
-          {loading || !hasDataLoaded ? (
-            // Show skeleton during loading
-            Array.from({ length: 3 }).map((_, index) => (
-              <CMCardSkeleton key={`cm-skeleton-${index}`} />
-            ))
-          ) : displayedCMs.length > 0 ? (
-            displayedCMs.map(cmInfo => (
-              <CMCard
-                key={cmInfo.cmName}
-                cmInfo={cmInfo}
-                onNoteClick={setSelectedNote}
-              />
-            ))
-          ) : (
-            <div className="empty-state">
-              <p>No CMs found</p>
-            </div>
-          )}
-        </div>
-        
-        {!showAllCMs && cmInfos.length > DEFAULT_CM_LIMIT && (
-          <div className="show-all-container">
-            <button 
-              onClick={handleShowAllCMs}
-              className="show-all-button"
-            >
-              Show All ({cmInfos.length - DEFAULT_CM_LIMIT} more)
-            </button>
-          </div>
-        )}
-        
-        {cmInfos.length > 0 && (
-          <div className="cms-summary">
-            <span className="cms-count">
-              Showing {displayedCMs.length} of {cmInfos.length} CMs
-            </span>
-          </div>
-        )}
-      </section>
-      <footer className="home-footer">
-        <Link to="/privacy-term" className="privacy-policy-link">
-          Privacy Policy
-        </Link>
-        <span className="footer-separator">|</span>
-        <a 
-          href="https://chromewebstore.google.com/detail/cms-notes/gojmblhkimanjdmooganfebjmcoelmdm"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="chrome-extension-link"
-        >
-          Chrome Extension
-        </a>
-      </footer>
-
-      {selectedNote && (
-        <NoteModal
-          note={selectedNote}
-          onClose={() => setSelectedNote(null)}
-        />
+          </section>
+        </>
       )}
+      {/* Note Modal */}
+      {selectedNote && <NoteModal note={selectedNote} onClose={() => setSelectedNote(null)} />}
     </div>
+    </>
   );
 }
 
