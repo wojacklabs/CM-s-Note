@@ -117,32 +117,48 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
             />
             <div className="note-detail-title">
               <h3>@{note.twitterHandle}</h3>
-              <p className="note-detail-subtitle">Twitter User</p>
             </div>
           </div>
           
-          {/* CM's nickname and badge as quote */}
-          {(note.nickname || note.iconUrl) && (
-            <div className="note-nickname-quote">
-              {note.iconUrl && (
-                <img 
-                  src={note.iconUrl} 
-                  alt="Badge" 
-                  className="note-badge-icon"
-                />
+          {/* CM's nickname, badge, and note content as quote */}
+          <div className="note-nickname-quote">
+            {note.iconUrl && (
+              <img 
+                src={note.iconUrl} 
+                alt="Badge" 
+                className="note-badge-icon"
+              />
+            )}
+            {note.nickname && (
+              <p className="note-nickname-text">"{note.nickname}"</p>
+            )}
+            
+            {/* Note Content */}
+            <div className="note-content-section">
+              {loadingContent ? (
+                <div className="content-loading-inline">
+                  <div className="loading-spinner-small"></div>
+                  <span>Loading note content...</span>
+                </div>
+              ) : contentError ? (
+                <div className="content-error-inline">
+                  <p>{contentError}</p>
+                </div>
+              ) : (
+                <div className="content-text-inline">
+                  {content ? (
+                    <p>{content}</p>
+                  ) : (
+                    <p className="no-content">No content available</p>
+                  )}
+                </div>
               )}
-              {note.nickname && (
-                <p className="note-nickname-text">"{note.nickname}"</p>
-              )}
-              <p className="note-nickname-author">— {note.cmName}</p>
             </div>
-          )}
+            
+            <p className="note-nickname-author">— {note.cmName}</p>
+          </div>
           
           <div className="note-detail-meta">
-            <div className="meta-row">
-              <span className="meta-label">CM:</span>
-              <span className="meta-value">{note.cmName}</span>
-            </div>
             {note.userType && (
               <div className="meta-row">
                 <span className="meta-label">User Type:</span>
@@ -150,47 +166,9 @@ function NoteModal({ note, onClose, onBack }: NoteModalProps) {
               </div>
             )}
             <div className="meta-row">
-              <span className="meta-label">Project:</span>
-              <span className="meta-value">{note.project}</span>
-            </div>
-            <div className="meta-row">
               <span className="meta-label">Date:</span>
               <span className="meta-value">{formatTimestamp(note.timestamp)}</span>
             </div>
-            <div className="meta-row">
-              <span className="meta-label">Status:</span>
-              <span className={`meta-value status-${note.status}`}>
-                {note.status}
-              </span>
-            </div>
-          </div>
-          
-          <div className="note-detail-content">
-            <h4>Note Content:</h4>
-            {loadingContent ? (
-              <div className="content-loading">
-                <div className="loading-spinner"></div>
-                <p>Loading note content...</p>
-              </div>
-            ) : contentError ? (
-              <div className="content-error">
-                <p>{contentError}</p>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="retry-button"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div className="content-text">
-                {content ? (
-                  <p>{content}</p>
-                ) : (
-                  <p className="no-content">No content available</p>
-                )}
-              </div>
-            )}
           </div>
           
           {note.dataUrl && (

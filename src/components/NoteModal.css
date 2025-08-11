@@ -158,6 +158,52 @@
   font-weight: 500;
 }
 
+/* Note content within quote section */
+.note-content-section {
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.content-loading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  padding: 1rem;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.content-error-inline {
+  text-align: center;
+  padding: 0.75rem;
+  color: var(--error-color, #ef4444);
+}
+
+.content-text-inline {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+.content-text-inline p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+}
+
 .note-nickname-author {
   margin: 0;
   font-size: 0.875rem;
@@ -208,81 +254,10 @@
   color: var(--warning-color, #f59e0b);
 }
 
-.note-detail-content {
-  margin-bottom: 1.5rem;
-}
-
-.note-detail-content h4 {
-  margin: 0 0 1rem;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.content-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 2rem;
-  color: var(--text-secondary);
-  background: var(--background);
-  border-radius: var(--radius-sm);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
-}
-
-.content-error {
-  text-align: center;
-  padding: 2rem;
-  color: var(--error-color, #ef4444);
-  background: var(--background);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-
-.retry-button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.2s ease;
-}
-
-.retry-button:hover {
-  background: var(--primary-color-hover, #2563eb);
-}
-
-.content-text {
-  background: var(--background);
-  border-radius: var(--radius-sm);
-  padding: 1.25rem;
-  border: 1px solid var(--border);
-}
-
-.content-text p {
-  margin: 0;
-  line-height: 1.6;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .no-content {
@@ -374,23 +349,16 @@
     font-size: 0.85rem;
   }
   
-  .note-detail-content h4 {
-    font-size: 1rem;
-  }
-  
-  .content-loading {
-    padding: 1.5rem;
-  }
-  
-  .content-error {
-    padding: 1.5rem;
-  }
-  
-  .content-text {
+  .note-nickname-quote {
+    margin: 1rem 0;
     padding: 1rem;
   }
   
-  .content-text p {
+  .content-text-inline {
+    padding: 0.75rem;
+  }
+  
+  .content-text-inline p {
     font-size: 0.9rem;
   }
 } 
