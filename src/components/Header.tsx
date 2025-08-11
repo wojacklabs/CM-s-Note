@@ -10,7 +10,7 @@ interface HeaderProps {
   onTabChange?: (tab: 'notes' | 'analysis') => void;
 }
 
-function Header({ projects, selectedProject, onProjectChange, loading, activeTab = 'notes', onTabChange }: HeaderProps) {
+function Header({ selectedProject, activeTab = 'notes', onTabChange }: HeaderProps) {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
@@ -32,30 +32,6 @@ function Header({ projects, selectedProject, onProjectChange, loading, activeTab
             <button className={`nav-tab ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => { onTabChange('analysis'); window.dispatchEvent(new CustomEvent('app:activeTab', { detail: 'analysis' })); }}>Analysis</button>
           </nav>
         )}
-        
-        <div className="project-selector">
-          <label htmlFor="project-select">Project:</label>
-          {loading ? (
-            <span className="loading-text">Loading...</span>
-          ) : (
-            <select
-              id="project-select"
-              value={selectedProject}
-              onChange={(e) => onProjectChange(e.target.value)}
-              disabled={projects.length === 0}
-            >
-              {projects.length === 0 ? (
-                <option>No projects available</option>
-              ) : (
-                projects.map(project => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))
-              )}
-            </select>
-          )}
-        </div>
       </div>
     </header>
   );

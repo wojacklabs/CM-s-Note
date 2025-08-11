@@ -112,19 +112,19 @@ function App() {
                     className={`section-tab ${activeSection === 'growth-timeline' ? 'active' : ''}`}
                     onClick={() => handleSectionClick('growth-timeline')}
                   >
-                    Cumulative Numbers
+                    Cumulative
                   </button>
                   <button 
                     className={`section-tab ${activeSection === 'social-network' ? 'active' : ''}`}
                     onClick={() => handleSectionClick('social-network')}
                   >
-                    Social Network
+                    Network
                   </button>
                   <button 
                     className={`section-tab ${activeSection === 'ranking-correlation' ? 'active' : ''}`}
                     onClick={() => handleSectionClick('ranking-correlation')}
                   >
-                    InfoFi Correlation
+                    Correlation
                   </button>
                 </>
               ) : (
