@@ -274,13 +274,6 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
           stop: () => {
             console.log('[SocialGraph] Layout completed');
             setLoading(false);
-            
-            // Force a render update after layout completes
-            setTimeout(() => {
-              cy.resize();
-              cy.fit(undefined, 80); // Add 80px padding around the graph for wider view
-              cy.center(); // Center the graph
-            }, 100);
           }
         } as any,
         minZoom: 0.3,
