@@ -2,6 +2,7 @@ import { User, Note } from '../types';
 import './UserCard.css';
 import { useState, useEffect } from 'react';
 import { ProfileImageCacheService } from '../services/profileImageCache';
+import { cmDataService } from '../services/cmDataService';
 
 interface UserCardProps {
   user: User;
@@ -54,12 +55,25 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   const uniqueCMs = Array.from(
     new Map(
       user.notes
-        .filter(note => note.cmTwitterHandle) // Only include notes with CM handles
         .map(note => {
-          const normalizedHandle = (note.cmTwitterHandle!.startsWith('@') ? 
-            note.cmTwitterHandle!.substring(1) : note.cmTwitterHandle!).toLowerCase();
-          return [normalizedHandle, { name: note.cmName, twitterHandle: note.cmTwitterHandle }];
+          // Try to get handle from note or from CM data service
+          let handle = note.cmTwitterHandle;
+          if (!handle) {
+            handle = cmDataService.getHandleByName(note.cmName);
+          }
+          
+          if (handle) {
+            const normalizedHandle = (handle.startsWith('@') ? 
+              handle.substring(1) : handle).toLowerCase();
+            
+            // Get current name from CM data service
+            const currentName = cmDataService.getCurrentNameByHandle(normalizedHandle) || note.cmName;
+            
+            return [normalizedHandle, { name: currentName, twitterHandle: handle }];
+          }
+          return null;
         })
+        .filter((item): item is [string, { name: string; twitterHandle: string }] => item !== null)
     ).values()
   );
   

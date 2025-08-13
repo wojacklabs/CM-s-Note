@@ -5,6 +5,7 @@ import { Note, User } from '../types';
 import { queryNotesByProject, loadMultipleNoteContents, queryCMPermissions } from '../services/irysService';
 import { CacheService } from '../services/cacheService';
 import { ProfileImageCacheService } from '../services/profileImageCache';
+import { cmDataService } from '../services/cmDataService';
 import { formatLastUpdated } from '../utils/dateUtils';
 import UserCard from '../components/UserCard';
 import CMCard from '../components/CMCard';
@@ -106,8 +107,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     // 테스트용 CM 계정들 (CM으로서는 노출하지 않음)
     const testCMHandles = ['0xrahulk']; // 소문자로 저장
     
-    // dApp 프리셋 (소문자로 저장)
-    const dappPresets = ['playhirys'];
+    // CM data service will be used to check for dApps
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
     if (cmTwitterHandlesMap) {
@@ -122,8 +122,8 @@ function HomePage({ selectedProject }: HomePageProps) {
           return;
         }
         
-        // dApp 프리셋 체크
-        if (dappPresets.includes(cleanHandle.toLowerCase())) {
+        // Check if this is a dApp using CM data service
+        if (cmDataService.isDApp(cleanHandle)) {
           dappMap.set(cmName, {
             dappName: cmName,
             dappTwitterHandle: cleanHandle,
@@ -163,7 +163,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
       
       // dApp인지 확인
-      const isDApp = dappPresets.includes(cleanTwitterHandle) || 
+      const isDApp = cmDataService.isDApp(cleanTwitterHandle) || 
                      (dappMap.has(cmName));
       
       if (isDApp) {
@@ -392,27 +392,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
     });
     
-    // Create a map from CM Twitter handle to latest CM name
-    const cmHandleToLatestName = new Map<string, string>();
-    mergedCmInfos.forEach(cmInfo => {
-      if (cmInfo.cmTwitterHandle) {
-        const cleanHandle = (cmInfo.cmTwitterHandle.startsWith('@') ? cmInfo.cmTwitterHandle.substring(1) : cmInfo.cmTwitterHandle).toLowerCase();
-        cmHandleToLatestName.set(cleanHandle, cmInfo.cmName);
-      }
-    });
-    
-    // Enrich notes with latest CM names
-    const enrichedNotes = notesData.map(note => {
-      if (note.cmTwitterHandle) {
-        const cleanHandle = (note.cmTwitterHandle.startsWith('@') ? note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase();
-        const latestCmName = cmHandleToLatestName.get(cleanHandle);
-        if (latestCmName && latestCmName !== note.cmName) {
-          console.log(`[processNotesToUsers] Updating CM name from "${note.cmName}" to "${latestCmName}" for handle @${cleanHandle}`);
-          return { ...note, cmName: latestCmName };
-        }
-      }
-      return note;
-    });
+    // Update notes to use current CM names
+    const enrichedNotes = cmDataService.updateNotesToCurrentNames(notesData);
     
     // Group notes by user
     const userMap = new Map<string, User>();
@@ -477,49 +458,15 @@ function HomePage({ selectedProject }: HomePageProps) {
         queryCMPermissions(selectedProject)
       ]);
       
-      // First pass: Enrich notes with CM Twitter handles from permissions
-      let enrichedNotes = projectNotes.map(note => {
-        if (cmTwitterHandles && cmTwitterHandles.has(note.cmName)) {
-          return {
-            ...note,
-            cmTwitterHandle: cmTwitterHandles.get(note.cmName)
-          };
-        }
-        return note;
-      });
+      // Initialize CM data service with permissions and notes
+      const dappPresets = ['playhirys']; // dApp presets
+      cmDataService.initializeMappings(cmTwitterHandles || new Map(), projectNotes, dappPresets);
       
-      // Process CM data to get all CM info including handle mappings
+      // Enrich notes with CM Twitter handles
+      let enrichedNotes = cmDataService.enrichNotes(projectNotes);
+      
+      // Process CM data to get all CM info
       const { cmInfoList: mergedCmInfos } = processCMData(enrichedNotes, cmTwitterHandles);
-      
-      // Create a map of all CM names to their Twitter handles
-      const allCmNameToHandle = new Map<string, string>();
-      mergedCmInfos.forEach(cmInfo => {
-        if (cmInfo.cmTwitterHandle) {
-          // Add mapping for current name
-          allCmNameToHandle.set(cmInfo.cmName, cmInfo.cmTwitterHandle);
-          
-          // Also check notes to find any other names used by this CM
-          enrichedNotes.forEach(note => {
-            if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName && cmInfo.cmTwitterHandle) {
-              // This CM used a different name in the past
-              allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
-              console.log(`[HomePage] Found alternate CM name: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
-            }
-          });
-        }
-      });
-      
-      // Second pass: Enrich any remaining notes that didn't get handles in first pass
-      enrichedNotes = enrichedNotes.map(note => {
-        if (!note.cmTwitterHandle && allCmNameToHandle.has(note.cmName)) {
-          console.log(`[HomePage] Adding missing handle for CM "${note.cmName}": @${allCmNameToHandle.get(note.cmName)}`);
-          return {
-            ...note,
-            cmTwitterHandle: allCmNameToHandle.get(note.cmName)
-          };
-        }
-        return note;
-      });
       
       setNotes(enrichedNotes);
       
@@ -558,47 +505,15 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Load CM permissions even when using cached notes
       queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        // First pass: Enrich cached notes with CM Twitter handles
-        let enrichedCachedNotes = cachedNotes.map(note => {
-          if (cmTwitterHandles && cmTwitterHandles.has(note.cmName)) {
-            return {
-              ...note,
-              cmTwitterHandle: cmTwitterHandles.get(note.cmName)
-            };
-          }
-          return note;
-        });
+        // Initialize CM data service
+        const dappPresets = ['playhirys'];
+        cmDataService.initializeMappings(cmTwitterHandles || new Map(), cachedNotes, dappPresets);
+        
+        // Enrich cached notes with CM Twitter handles
+        const enrichedCachedNotes = cmDataService.enrichNotes(cachedNotes);
         
         // Process CM data to get all CM info
         const { cmInfoList: mergedCmInfos } = processCMData(enrichedCachedNotes, cmTwitterHandles);
-        
-        // Create a map of all CM names to their Twitter handles
-        const allCmNameToHandle = new Map<string, string>();
-        mergedCmInfos.forEach(cmInfo => {
-          if (cmInfo.cmTwitterHandle) {
-            allCmNameToHandle.set(cmInfo.cmName, cmInfo.cmTwitterHandle);
-            
-            // Find alternate names
-            enrichedCachedNotes.forEach(note => {
-              if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName && cmInfo.cmTwitterHandle) {
-                allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
-                console.log(`[HomePage] Found alternate CM name in cache: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
-              }
-            });
-          }
-        });
-        
-        // Second pass: Enrich any remaining notes
-        enrichedCachedNotes = enrichedCachedNotes.map(note => {
-          if (!note.cmTwitterHandle && allCmNameToHandle.has(note.cmName)) {
-            console.log(`[HomePage] Adding missing handle for cached CM "${note.cmName}": @${allCmNameToHandle.get(note.cmName)}`);
-            return {
-              ...note,
-              cmTwitterHandle: allCmNameToHandle.get(note.cmName)
-            };
-          }
-          return note;
-        });
         
         setNotes(enrichedCachedNotes);
         processNotesToUsers(enrichedCachedNotes, mergedCmInfos);

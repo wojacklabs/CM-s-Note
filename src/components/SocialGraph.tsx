@@ -3,6 +3,7 @@ import cytoscape, { Core } from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 import { Note } from '../types';
 import { ProfileImageCacheService } from '../services/profileImageCache';
+import { cmDataService } from '../services/cmDataService';
 import './SocialGraph.css';
 
 // Register the fcose layout
@@ -68,21 +69,6 @@ function SocialGraph({ notes, cmInfos, dappInfos = [] }: SocialGraphProps) {
       // Track which nodes should be displayed
       const nodesToDisplay = new Set<string>();
 
-      // Create a map from CM name to Twitter handle for fallback
-      const cmNameToHandle = new Map<string, string>();
-      cmInfos.forEach(cmInfo => {
-        if (cmInfo.cmTwitterHandle) {
-          cmNameToHandle.set(cmInfo.cmName, normalizeHandle(cmInfo.cmTwitterHandle));
-        }
-      });
-      
-      // Also check dApps
-      dappInfos.forEach(dappInfo => {
-        if (dappInfo.dappTwitterHandle) {
-          cmNameToHandle.set(dappInfo.dappName, normalizeHandle(dappInfo.dappTwitterHandle));
-        }
-      });
-
       // First pass: identify all nodes that should be displayed (using normalized handles)
       notes.forEach(note => {
         // CM who wrote the note - use cmTwitterHandle from note if available
@@ -90,10 +76,10 @@ function SocialGraph({ notes, cmInfos, dappInfos = [] }: SocialGraphProps) {
           const normalizedCmHandle = normalizeHandle(note.cmTwitterHandle);
           nodesToDisplay.add(normalizedCmHandle);
         } else {
-          // Fallback: try to find CM by name
-          const cmHandle = cmNameToHandle.get(note.cmName);
+          // Fallback: try to find CM by name using CM data service
+          const cmHandle = cmDataService.getHandleByName(note.cmName);
           if (cmHandle) {
-            nodesToDisplay.add(cmHandle);
+            nodesToDisplay.add(normalizeHandle(cmHandle));
             console.log(`[SocialGraph] Found CM handle by name: ${note.cmName} -> ${cmHandle}`);
           } else {
             console.log(`[SocialGraph] Warning: No handle found for CM: ${note.cmName}`);
@@ -137,45 +123,46 @@ function SocialGraph({ notes, cmInfos, dappInfos = [] }: SocialGraphProps) {
       // Second pass: create nodes
       nodesToDisplay.forEach(normalizedHandle => {
         if (!nodeMap.has(normalizedHandle)) {
-          // Check if this handle is a dApp
-          const dappInfo = dappHandleMap.get(normalizedHandle);
-          const isDapp = !!dappInfo || allDappHandles.has(normalizedHandle);
-          
-          // Check if this handle is a CM
-          const cmInfo = cmHandleMap.get(normalizedHandle);
-          const isCM = !!cmInfo || allCmHandles.has(normalizedHandle);
-          
           let label = `@${normalizedHandle}`;
           let displayName: string | undefined;
           let nodeType = 'user';
           
-          if (dappInfo) {
-            label = dappInfo.dappName;
-            displayName = dappInfo.dappName;
-            nodeType = 'dapp';
-          } else if (cmInfo) {
-            label = cmInfo.cmName;
-            displayName = cmInfo.cmName;
-            nodeType = 'cm';
-          } else if (isDapp) {
-            // Find the dApp info for this handle
-            const foundDapp = dappInfos.find(dapp => 
-              dapp.dappTwitterHandle && normalizeHandle(dapp.dappTwitterHandle) === normalizedHandle
-            );
-            if (foundDapp) {
-              label = foundDapp.dappName;
-              displayName = foundDapp.dappName;
+          // Check using CM data service
+          if (cmDataService.isDApp(normalizedHandle)) {
+            // It's a dApp
+            const currentName = cmDataService.getCurrentNameByHandle(normalizedHandle);
+            if (currentName) {
+              label = currentName;
+              displayName = currentName;
               nodeType = 'dapp';
+            } else {
+              // Fallback to dappInfos
+              const foundDapp = dappInfos.find(dapp => 
+                dapp.dappTwitterHandle && normalizeHandle(dapp.dappTwitterHandle) === normalizedHandle
+              );
+              if (foundDapp) {
+                label = foundDapp.dappName;
+                displayName = foundDapp.dappName;
+                nodeType = 'dapp';
+              }
             }
-          } else if (isCM) {
-            // Find the CM info for this handle
-            const foundCm = cmInfos.find(cm => 
-              cm.cmTwitterHandle && normalizeHandle(cm.cmTwitterHandle) === normalizedHandle
-            );
-            if (foundCm) {
-              label = foundCm.cmName;
-              displayName = foundCm.cmName;
+          } else if (cmDataService.isCM(normalizedHandle)) {
+            // It's a CM
+            const currentName = cmDataService.getCurrentNameByHandle(normalizedHandle);
+            if (currentName) {
+              label = currentName;
+              displayName = currentName;
               nodeType = 'cm';
+            } else {
+              // Fallback to cmInfos
+              const foundCm = cmInfos.find(cm => 
+                cm.cmTwitterHandle && normalizeHandle(cm.cmTwitterHandle) === normalizedHandle
+              );
+              if (foundCm) {
+                label = foundCm.cmName;
+                displayName = foundCm.cmName;
+                nodeType = 'cm';
+              }
             }
           }
           
