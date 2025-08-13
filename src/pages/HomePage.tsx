@@ -477,8 +477,8 @@ function HomePage({ selectedProject }: HomePageProps) {
         queryCMPermissions(selectedProject)
       ]);
       
-      // Enrich notes with CM Twitter handles
-      const enrichedNotes = projectNotes.map(note => {
+      // First pass: Enrich notes with CM Twitter handles from permissions
+      let enrichedNotes = projectNotes.map(note => {
         if (cmTwitterHandles && cmTwitterHandles.has(note.cmName)) {
           return {
             ...note,
@@ -488,10 +488,40 @@ function HomePage({ selectedProject }: HomePageProps) {
         return note;
       });
       
-      setNotes(enrichedNotes);
-      
-      // Process CM data first to get merged CM info
+      // Process CM data to get all CM info including handle mappings
       const { cmInfoList: mergedCmInfos } = processCMData(enrichedNotes, cmTwitterHandles);
+      
+      // Create a map of all CM names to their Twitter handles
+      const allCmNameToHandle = new Map<string, string>();
+      mergedCmInfos.forEach(cmInfo => {
+        if (cmInfo.cmTwitterHandle) {
+          // Add mapping for current name
+          allCmNameToHandle.set(cmInfo.cmName, cmInfo.cmTwitterHandle);
+          
+          // Also check notes to find any other names used by this CM
+          enrichedNotes.forEach(note => {
+            if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName) {
+              // This CM used a different name in the past
+              allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
+              console.log(`[HomePage] Found alternate CM name: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
+            }
+          });
+        }
+      });
+      
+      // Second pass: Enrich any remaining notes that didn't get handles in first pass
+      enrichedNotes = enrichedNotes.map(note => {
+        if (!note.cmTwitterHandle && allCmNameToHandle.has(note.cmName)) {
+          console.log(`[HomePage] Adding missing handle for CM "${note.cmName}": @${allCmNameToHandle.get(note.cmName)}`);
+          return {
+            ...note,
+            cmTwitterHandle: allCmNameToHandle.get(note.cmName)
+          };
+        }
+        return note;
+      });
+      
+      setNotes(enrichedNotes);
       
       // Process notes to users with merged CM data
       processNotesToUsers(enrichedNotes, mergedCmInfos);
@@ -528,8 +558,50 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Load CM permissions even when using cached notes
       queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        const { cmInfoList: mergedCmInfos } = processCMData(cachedNotes, cmTwitterHandles);
-        processNotesToUsers(cachedNotes, mergedCmInfos);
+        // First pass: Enrich cached notes with CM Twitter handles
+        let enrichedCachedNotes = cachedNotes.map(note => {
+          if (cmTwitterHandles && cmTwitterHandles.has(note.cmName)) {
+            return {
+              ...note,
+              cmTwitterHandle: cmTwitterHandles.get(note.cmName)
+            };
+          }
+          return note;
+        });
+        
+        // Process CM data to get all CM info
+        const { cmInfoList: mergedCmInfos } = processCMData(enrichedCachedNotes, cmTwitterHandles);
+        
+        // Create a map of all CM names to their Twitter handles
+        const allCmNameToHandle = new Map<string, string>();
+        mergedCmInfos.forEach(cmInfo => {
+          if (cmInfo.cmTwitterHandle) {
+            allCmNameToHandle.set(cmInfo.cmName, cmInfo.cmTwitterHandle);
+            
+            // Find alternate names
+            enrichedCachedNotes.forEach(note => {
+              if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName) {
+                allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
+                console.log(`[HomePage] Found alternate CM name in cache: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
+              }
+            });
+          }
+        });
+        
+        // Second pass: Enrich any remaining notes
+        enrichedCachedNotes = enrichedCachedNotes.map(note => {
+          if (!note.cmTwitterHandle && allCmNameToHandle.has(note.cmName)) {
+            console.log(`[HomePage] Adding missing handle for cached CM "${note.cmName}": @${allCmNameToHandle.get(note.cmName)}`);
+            return {
+              ...note,
+              cmTwitterHandle: allCmNameToHandle.get(note.cmName)
+            };
+          }
+          return note;
+        });
+        
+        setNotes(enrichedCachedNotes);
+        processNotesToUsers(enrichedCachedNotes, mergedCmInfos);
       });
       
       setHasDataLoaded(true);
@@ -758,7 +830,7 @@ function HomePage({ selectedProject }: HomePageProps) {
 {/* Social Graph Section */}
 {notes.length > 0 && cmInfos.length > 0 && (
             <section id="social-network" className="social-graph-section">
-              <SocialGraph notes={notes} cmInfos={cmInfos} />
+              <SocialGraph notes={notes} cmInfos={cmInfos} dappInfos={dappInfos} />
             </section>
           )}
           <section id="ranking-correlation" className="ranking-correlation-section">

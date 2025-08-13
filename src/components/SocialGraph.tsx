@@ -15,9 +15,14 @@ interface SocialGraphProps {
     cmTwitterHandle?: string;
     noteCount: number;
   }>;
+  dappInfos?: Array<{
+    dappName: string;
+    dappTwitterHandle: string;
+    noteCount: number;
+  }>;
 }
 
-function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
+function SocialGraph({ notes, cmInfos, dappInfos = [] }: SocialGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +53,9 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
 
       // Create a map of all CMs (by normalized Twitter handle) for quick lookup
       const cmHandleMap = new Map<string, { cmName: string; cmTwitterHandle: string }>(); // normalized handle -> cmInfo
+      console.log('[SocialGraph] Processing CM infos:', cmInfos.length);
       cmInfos.forEach(cmInfo => {
+        console.log(`[SocialGraph] CM: ${cmInfo.cmName}, handle: ${cmInfo.cmTwitterHandle}, notes: ${cmInfo.noteCount}`);
         if (cmInfo.cmTwitterHandle) {
           const normalizedHandle = normalizeHandle(cmInfo.cmTwitterHandle);
           cmHandleMap.set(normalizedHandle, {
@@ -61,6 +68,21 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
       // Track which nodes should be displayed
       const nodesToDisplay = new Set<string>();
 
+      // Create a map from CM name to Twitter handle for fallback
+      const cmNameToHandle = new Map<string, string>();
+      cmInfos.forEach(cmInfo => {
+        if (cmInfo.cmTwitterHandle) {
+          cmNameToHandle.set(cmInfo.cmName, normalizeHandle(cmInfo.cmTwitterHandle));
+        }
+      });
+      
+      // Also check dApps
+      dappInfos.forEach(dappInfo => {
+        if (dappInfo.dappTwitterHandle) {
+          cmNameToHandle.set(dappInfo.dappName, normalizeHandle(dappInfo.dappTwitterHandle));
+        }
+      });
+
       // First pass: identify all nodes that should be displayed (using normalized handles)
       notes.forEach(note => {
         // CM who wrote the note - use cmTwitterHandle from note if available
@@ -68,17 +90,32 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
           const normalizedCmHandle = normalizeHandle(note.cmTwitterHandle);
           nodesToDisplay.add(normalizedCmHandle);
         } else {
-          // Fallback: try to find CM by name (for legacy data)
-          const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
-          if (cmInfo && cmInfo.cmTwitterHandle) {
-            const normalizedCmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
-            nodesToDisplay.add(normalizedCmHandle);
+          // Fallback: try to find CM by name
+          const cmHandle = cmNameToHandle.get(note.cmName);
+          if (cmHandle) {
+            nodesToDisplay.add(cmHandle);
+            console.log(`[SocialGraph] Found CM handle by name: ${note.cmName} -> ${cmHandle}`);
+          } else {
+            console.log(`[SocialGraph] Warning: No handle found for CM: ${note.cmName}`);
           }
         }
         
         // User/CM who received the note - they might also be a CM
         const normalizedUserHandle = normalizeHandle(note.twitterHandle);
         nodesToDisplay.add(normalizedUserHandle);
+      });
+
+      // Create dApp handle map
+      const dappHandleMap = new Map<string, { dappName: string; dappTwitterHandle: string }>();
+      dappInfos.forEach(dappInfo => {
+        if (dappInfo.dappTwitterHandle) {
+          const normalizedHandle = normalizeHandle(dappInfo.dappTwitterHandle);
+          dappHandleMap.set(normalizedHandle, {
+            dappName: dappInfo.dappName,
+            dappTwitterHandle: normalizedHandle
+          });
+          console.log(`[SocialGraph] dApp: ${dappInfo.dappName}, handle: ${dappInfo.dappTwitterHandle}`);
+        }
       });
 
       // Create a set of all CM handles for quick lookup
@@ -88,21 +125,48 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
           allCmHandles.add(normalizeHandle(cmInfo.cmTwitterHandle));
         }
       });
+      
+      // Create a set of all dApp handles
+      const allDappHandles = new Set<string>();
+      dappInfos.forEach(dappInfo => {
+        if (dappInfo.dappTwitterHandle) {
+          allDappHandles.add(normalizeHandle(dappInfo.dappTwitterHandle));
+        }
+      });
 
       // Second pass: create nodes
       nodesToDisplay.forEach(normalizedHandle => {
         if (!nodeMap.has(normalizedHandle)) {
-          // Check if this handle is a CM (either from cmHandleMap or from the note recipient who is also a CM)
+          // Check if this handle is a dApp
+          const dappInfo = dappHandleMap.get(normalizedHandle);
+          const isDapp = !!dappInfo || allDappHandles.has(normalizedHandle);
+          
+          // Check if this handle is a CM
           const cmInfo = cmHandleMap.get(normalizedHandle);
           const isCM = !!cmInfo || allCmHandles.has(normalizedHandle);
           
-          // If it's a CM but not in cmHandleMap, find it in cmInfos
           let label = `@${normalizedHandle}`;
           let displayName: string | undefined;
+          let nodeType = 'user';
           
-          if (cmInfo) {
+          if (dappInfo) {
+            label = dappInfo.dappName;
+            displayName = dappInfo.dappName;
+            nodeType = 'dapp';
+          } else if (cmInfo) {
             label = cmInfo.cmName;
             displayName = cmInfo.cmName;
+            nodeType = 'cm';
+          } else if (isDapp) {
+            // Find the dApp info for this handle
+            const foundDapp = dappInfos.find(dapp => 
+              dapp.dappTwitterHandle && normalizeHandle(dapp.dappTwitterHandle) === normalizedHandle
+            );
+            if (foundDapp) {
+              label = foundDapp.dappName;
+              displayName = foundDapp.dappName;
+              nodeType = 'dapp';
+            }
           } else if (isCM) {
             // Find the CM info for this handle
             const foundCm = cmInfos.find(cm => 
@@ -111,11 +175,14 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
             if (foundCm) {
               label = foundCm.cmName;
               displayName = foundCm.cmName;
+              nodeType = 'cm';
             }
           }
           
+          console.log(`[SocialGraph] Creating node: ${normalizedHandle}, type: ${nodeType}, label: ${label}`);
+          
           nodeMap.set(normalizedHandle, {
-            isCM,
+            isCM: nodeType === 'cm' || nodeType === 'dapp',
             twitterHandle: normalizedHandle,
             label,
             displayName
@@ -320,7 +387,7 @@ function SocialGraph({ notes, cmInfos }: SocialGraphProps) {
         cyRef.current = null;
       }
     };
-  }, [notes, cmInfos]);
+  }, [notes, cmInfos, dappInfos]);
 
   return (
     <div className="social-graph">
