@@ -392,8 +392,27 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
     });
     
-    // Just use the original notes data since it already has CM Twitter handles
-    const enrichedNotes = notesData;
+    // Create a map from CM Twitter handle to latest CM name
+    const cmHandleToLatestName = new Map<string, string>();
+    mergedCmInfos.forEach(cmInfo => {
+      if (cmInfo.cmTwitterHandle) {
+        const cleanHandle = (cmInfo.cmTwitterHandle.startsWith('@') ? cmInfo.cmTwitterHandle.substring(1) : cmInfo.cmTwitterHandle).toLowerCase();
+        cmHandleToLatestName.set(cleanHandle, cmInfo.cmName);
+      }
+    });
+    
+    // Enrich notes with latest CM names
+    const enrichedNotes = notesData.map(note => {
+      if (note.cmTwitterHandle) {
+        const cleanHandle = (note.cmTwitterHandle.startsWith('@') ? note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase();
+        const latestCmName = cmHandleToLatestName.get(cleanHandle);
+        if (latestCmName && latestCmName !== note.cmName) {
+          console.log(`[processNotesToUsers] Updating CM name from "${note.cmName}" to "${latestCmName}" for handle @${cleanHandle}`);
+          return { ...note, cmName: latestCmName };
+        }
+      }
+      return note;
+    });
     
     // Group notes by user
     const userMap = new Map<string, User>();
