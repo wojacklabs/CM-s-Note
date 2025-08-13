@@ -27,6 +27,17 @@ interface CMInfo {
   recentNotes: Note[];
 }
 
+interface DAppInfo {
+  dappName: string;
+  dappTwitterHandle: string;
+  noteCount: number;
+  recentUsers: Array<{
+    twitterHandle: string;
+    timestamp: number;
+  }>;
+  recentNotes: Note[];
+}
+
 interface HomePageProps {
   selectedProject: string;
 }
@@ -41,6 +52,8 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [displayedUsers, setDisplayedUsers] = useState<User[]>([]);
   const [cmInfos, setCmInfos] = useState<CMInfo[]>([]);
   const [displayedCMs, setDisplayedCMs] = useState<CMInfo[]>([]);
+  const [dappInfos, setDappInfos] = useState<DAppInfo[]>([]);
+  const [displayedDApps, setDisplayedDApps] = useState<DAppInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [hasDataLoaded, setHasDataLoaded] = useState(false);
@@ -48,6 +61,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [showAllCMs, setShowAllCMs] = useState(false);
+  const [showAllDApps, setShowAllDApps] = useState(false);
   const [loadingNoteContents, setLoadingNoteContents] = useState(false);
   const [noteContentProgress, setNoteContentProgress] = useState({ loaded: 0, total: 0 });
   
@@ -87,9 +101,13 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Process CM data
   const processCMData = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
     const cmMap = new Map<string, CMInfo>();
+    const dappMap = new Map<string, DAppInfo>();
     
     // 테스트용 CM 계정들 (CM으로서는 노출하지 않음)
     const testCMHandles = ['0xrahulk']; // 소문자로 저장
+    
+    // dApp 프리셋 (소문자로 저장)
+    const dappPresets = ['playhirys'];
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
     if (cmTwitterHandlesMap) {
@@ -104,19 +122,30 @@ function HomePage({ selectedProject }: HomePageProps) {
           return;
         }
         
-        cmMap.set(cmName, {
-          cmName,
-          cmTwitterHandle: cleanHandle,
-          noteCount: 0,
-          recentUsers: [],
-          recentNotes: []
-        });
-        
-        console.log(`[CM Data] Added CM from permissions: ${cmName} -> ${cleanHandle}`);
+        // dApp 프리셋 체크
+        if (dappPresets.includes(cleanHandle.toLowerCase())) {
+          dappMap.set(cmName, {
+            dappName: cmName,
+            dappTwitterHandle: cleanHandle,
+            noteCount: 0,
+            recentUsers: [],
+            recentNotes: []
+          });
+          console.log(`[CM Data] Added as dApp from permissions: ${cmName} -> ${cleanHandle}`);
+        } else {
+          cmMap.set(cmName, {
+            cmName,
+            cmTwitterHandle: cleanHandle,
+            noteCount: 0,
+            recentUsers: [],
+            recentNotes: []
+          });
+          console.log(`[CM Data] Added CM from permissions: ${cmName} -> ${cleanHandle}`);
+        }
       });
     }
     
-    // 노트 데이터를 처리하여 기존 CM에 노트 추가 또는 새로운 CM 생성
+    // 노트 데이터를 처리하여 기존 CM/dApp에 노트 추가 또는 새로운 CM/dApp 생성
     notesData.forEach(note => {
       const cmName = note.cmName;
              const cmTwitterHandle = note.cmTwitterHandle ? (note.cmTwitterHandle.startsWith('@') ? note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase() : undefined;
@@ -133,56 +162,108 @@ function HomePage({ selectedProject }: HomePageProps) {
         return;
       }
       
-      if (!cmMap.has(cmName)) {
-        // 권한 맵에 없는 CM이지만 노트가 있는 경우 (레거시 데이터)
-                 const cleanHandle = cmTwitterHandle;
-        
-        // 테스트용 CM은 레거시 데이터에서도 제외 (Twitter handle과 CM name 모두 확인)
-        if ((cleanHandle && testCMHandles.includes(cleanHandle.toLowerCase())) || 
-            testCMHandles.includes(cmName.toLowerCase())) {
-          console.log(`[CM Data] Skipping test CM from legacy data: ${cmName} -> ${cleanHandle}`);
-          return;
+      // dApp인지 확인
+      const isDApp = dappPresets.includes(cleanTwitterHandle) || 
+                     (dappMap.has(cmName));
+      
+      if (isDApp) {
+        if (!dappMap.has(cmName)) {
+          // 권한 맵에 없는 dApp이지만 노트가 있는 경우 (레거시 데이터)
+          const cleanHandle = cmTwitterHandle;
+          
+          dappMap.set(cmName, {
+            dappName: cmName,
+            dappTwitterHandle: cleanHandle || '',
+            noteCount: 0,
+            recentUsers: [],
+            recentNotes: []
+          });
+          
+          console.log(`[CM Data] Added dApp from note data: ${cmName}`);
         }
         
-        cmMap.set(cmName, {
-          cmName,
-          cmTwitterHandle: cleanHandle,
-          noteCount: 0,
-          recentUsers: [],
-          recentNotes: []
-        });
+        const dappInfo = dappMap.get(cmName)!;
+        dappInfo.noteCount++;
         
-        console.log(`[CM Data] Added CM from note data: ${cmName}`);
-      }
-      
-      const cmInfo = cmMap.get(cmName)!;
-      cmInfo.noteCount++;
-      
-      // Add note to recent notes
-      cmInfo.recentNotes.push(note);
-      
-      // Twitter handle은 이미 권한에서 설정되었으므로 추가 업데이트 불필요
-      // 하지만 권한에 없는 경우를 위해 fallback 제공
-             if (!cmInfo.cmTwitterHandle && cmTwitterHandle) {
-         const cleanHandle = cmTwitterHandle;
-         cmInfo.cmTwitterHandle = cleanHandle;
-         console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
-       }
-      
-      // Add user to recent users if not already present
-      const existingUserIndex = cmInfo.recentUsers.findIndex(
-                 user => user.twitterHandle === ((note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase())
-      );
-      
-      if (existingUserIndex === -1) {
-        cmInfo.recentUsers.push({
-          twitterHandle: (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase(),
-          timestamp: note.timestamp
-        });
+        // Add note to recent notes
+        dappInfo.recentNotes.push(note);
+        
+        // Twitter handle은 이미 권한에서 설정되었으므로 추가 업데이트 불필요
+        // 하지만 권한에 없는 경우를 위해 fallback 제공
+        if (!dappInfo.dappTwitterHandle && cmTwitterHandle) {
+          const cleanHandle = cmTwitterHandle;
+          dappInfo.dappTwitterHandle = cleanHandle;
+          console.log(`[CM Data] Found Twitter handle from note for dApp ${cmName}: ${cleanHandle}`);
+        }
+        
+        // Add user to recent users if not already present
+        const existingUserIndex = dappInfo.recentUsers.findIndex(
+          user => user.twitterHandle === ((note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase())
+        );
+        
+        if (existingUserIndex === -1) {
+          dappInfo.recentUsers.push({
+            twitterHandle: (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase(),
+            timestamp: note.timestamp
+          });
+        } else {
+          // Update timestamp if this note is more recent
+          if (note.timestamp > dappInfo.recentUsers[existingUserIndex].timestamp) {
+            dappInfo.recentUsers[existingUserIndex].timestamp = note.timestamp;
+          }
+        }
       } else {
-        // Update timestamp if this note is more recent
-        if (note.timestamp > cmInfo.recentUsers[existingUserIndex].timestamp) {
-          cmInfo.recentUsers[existingUserIndex].timestamp = note.timestamp;
+        if (!cmMap.has(cmName)) {
+          // 권한 맵에 없는 CM이지만 노트가 있는 경우 (레거시 데이터)
+                   const cleanHandle = cmTwitterHandle;
+          
+          // 테스트용 CM은 레거시 데이터에서도 제외 (Twitter handle과 CM name 모두 확인)
+          if ((cleanHandle && testCMHandles.includes(cleanHandle.toLowerCase())) || 
+              testCMHandles.includes(cmName.toLowerCase())) {
+            console.log(`[CM Data] Skipping test CM from legacy data: ${cmName} -> ${cleanHandle}`);
+            return;
+          }
+          
+          cmMap.set(cmName, {
+            cmName,
+            cmTwitterHandle: cleanHandle,
+            noteCount: 0,
+            recentUsers: [],
+            recentNotes: []
+          });
+          
+          console.log(`[CM Data] Added CM from note data: ${cmName}`);
+        }
+        
+        const cmInfo = cmMap.get(cmName)!;
+        cmInfo.noteCount++;
+        
+        // Add note to recent notes
+        cmInfo.recentNotes.push(note);
+        
+        // Twitter handle은 이미 권한에서 설정되었으므로 추가 업데이트 불필요
+        // 하지만 권한에 없는 경우를 위해 fallback 제공
+               if (!cmInfo.cmTwitterHandle && cmTwitterHandle) {
+           const cleanHandle = cmTwitterHandle;
+           cmInfo.cmTwitterHandle = cleanHandle;
+           console.log(`[CM Data] Found Twitter handle from note for ${cmName}: ${cleanHandle}`);
+         }
+        
+        // Add user to recent users if not already present
+        const existingUserIndex = cmInfo.recentUsers.findIndex(
+                   user => user.twitterHandle === ((note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase())
+        );
+        
+        if (existingUserIndex === -1) {
+          cmInfo.recentUsers.push({
+            twitterHandle: (note.twitterHandle.startsWith('@') ? note.twitterHandle.substring(1) : note.twitterHandle).toLowerCase(),
+            timestamp: note.timestamp
+          });
+        } else {
+          // Update timestamp if this note is more recent
+          if (note.timestamp > cmInfo.recentUsers[existingUserIndex].timestamp) {
+            cmInfo.recentUsers[existingUserIndex].timestamp = note.timestamp;
+          }
         }
       }
     });
@@ -227,8 +308,25 @@ function HomePage({ selectedProject }: HomePageProps) {
     console.log(`[CM Data] CMs with notes: ${cmInfoList.filter(cm => cm.noteCount > 0).length}`);
     console.log(`[CM Data] CMs without notes: ${cmInfoList.filter(cm => cm.noteCount === 0).length}`);
     
+    // Process dApps similarly
+    const dappInfoList = Array.from(dappMap.values()).map(dappInfo => ({
+      ...dappInfo,
+      recentUsers: dappInfo.recentUsers
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 10), // Keep top 10 most recent users
+      recentNotes: dappInfo.recentNotes
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+    }));
+    
+    // Sort dApps by note count
+    dappInfoList.sort((a, b) => b.noteCount - a.noteCount);
+    
+    console.log(`[CM Data] Total dApps processed: ${dappInfoList.length}`);
+    console.log(`[CM Data] dApps with notes: ${dappInfoList.filter(dapp => dapp.noteCount > 0).length}`);
+    
     setCmInfos(cmInfoList);
-    return cmInfoList; // Return merged CM list
+    setDappInfos(dappInfoList);
+    return { cmInfoList, dappInfoList }; // Return both lists
   }, []);
 
   // Load note contents in background
@@ -374,7 +472,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       setNotes(enrichedNotes);
       
       // Process CM data first to get merged CM info
-      const mergedCmInfos = processCMData(enrichedNotes, cmTwitterHandles);
+      const { cmInfoList: mergedCmInfos } = processCMData(enrichedNotes, cmTwitterHandles);
       
       // Process notes to users with merged CM data
       processNotesToUsers(enrichedNotes, mergedCmInfos);
@@ -411,7 +509,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Load CM permissions even when using cached notes
       queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        const mergedCmInfos = processCMData(cachedNotes, cmTwitterHandles);
+        const { cmInfoList: mergedCmInfos } = processCMData(cachedNotes, cmTwitterHandles);
         processNotesToUsers(cachedNotes, mergedCmInfos);
       });
       
@@ -494,10 +592,20 @@ function HomePage({ selectedProject }: HomePageProps) {
     }
   }, [cmInfos, showAllCMs]);
 
-  // Reset showAllUsers and showAllCMs when filters change
+  // Apply display limit for dApps
+  useEffect(() => {
+    if (showAllDApps) {
+      setDisplayedDApps(dappInfos);
+    } else {
+      setDisplayedDApps(dappInfos.slice(0, DEFAULT_CM_LIMIT));
+    }
+  }, [dappInfos, showAllDApps]);
+
+  // Reset showAllUsers, showAllCMs, and showAllDApps when filters change
   useEffect(() => {
     setShowAllUsers(false);
     setShowAllCMs(false);
+    setShowAllDApps(false);
   }, [selectedCM, selectedUserType, selectedIcon, selectedSort, searchQuery]);
 
   // Cleanup interval on unmount
@@ -594,6 +702,10 @@ function HomePage({ selectedProject }: HomePageProps) {
 
   const handleShowAllCMs = () => {
     setShowAllCMs(true);
+  };
+
+  const handleShowAllDApps = () => {
+    setShowAllDApps(true);
   };
 
   const handleClearSearch = () => {
@@ -781,6 +893,50 @@ function HomePage({ selectedProject }: HomePageProps) {
               </div>
             )}
           </section>
+
+          {/* dApp Section */}
+          {dappInfos.length > 0 && (
+            <section id="dapps" className="cm-section">
+              <h2 className="section-title">dApps</h2>
+              <div className="cm-grid">
+                {loading || !hasDataLoaded ? (
+                  // Show skeleton during loading
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <CMCardSkeleton key={`dapp-skeleton-${index}`} />
+                  ))
+                ) : displayedDApps.length > 0 ? (
+                  displayedDApps.map(dappInfo => (
+                    <CMCard
+                      key={dappInfo.dappName}
+                      cmInfo={{
+                        cmName: dappInfo.dappName,
+                        cmTwitterHandle: dappInfo.dappTwitterHandle,
+                        noteCount: dappInfo.noteCount,
+                        recentUsers: dappInfo.recentUsers,
+                        recentNotes: dappInfo.recentNotes
+                      }}
+                      onNoteClick={setSelectedNote}
+                    />
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <p>No dApps found</p>
+                  </div>
+                )}
+              </div>
+
+              {!showAllDApps && dappInfos.length > DEFAULT_CM_LIMIT && (
+                <div className="show-all-container">
+                  <button 
+                    onClick={handleShowAllDApps}
+                    className="show-all-button"
+                  >
+                    Show All ({dappInfos.length - DEFAULT_CM_LIMIT} more)
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
         </>
       )}
       {/* Note Modal */}
