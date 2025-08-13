@@ -878,41 +878,6 @@ function HomePage({ selectedProject }: HomePageProps) {
             )}
           </section>
 
-          <section id="cms" className="cm-section">
-            <h2 className="section-title">CMs</h2>
-            <div className="cm-grid">
-              {loading || !hasDataLoaded ? (
-                // Show skeleton during loading
-                Array.from({ length: 3 }).map((_, index) => (
-                  <CMCardSkeleton key={`cm-skeleton-${index}`} />
-                ))
-              ) : displayedCMs.length > 0 ? (
-                displayedCMs.map(cmInfo => (
-                  <CMCard
-                    key={cmInfo.cmName}
-                    cmInfo={cmInfo}
-                    onNoteClick={setSelectedNote}
-                  />
-                ))
-              ) : (
-                <div className="empty-state">
-                  <p>No CMs found</p>
-                </div>
-              )}
-            </div>
-
-            {!showAllCMs && cmInfos.length > DEFAULT_CM_LIMIT && (
-              <div className="show-all-container">
-                <button 
-                  onClick={handleShowAllCMs}
-                  className="show-all-button"
-                >
-                  Show All ({cmInfos.length - DEFAULT_CM_LIMIT} more)
-                </button>
-              </div>
-            )}
-          </section>
-
           {/* dApp Section */}
           {dappInfos.length > 0 && (
             <section id="dapps" className="cm-section">
@@ -956,6 +921,41 @@ function HomePage({ selectedProject }: HomePageProps) {
               )}
             </section>
           )}
+
+          <section id="cms" className="cm-section">
+            <h2 className="section-title">CMs</h2>
+            <div className="cm-grid">
+              {loading || !hasDataLoaded ? (
+                // Show skeleton during loading
+                Array.from({ length: 3 }).map((_, index) => (
+                  <CMCardSkeleton key={`cm-skeleton-${index}`} />
+                ))
+              ) : displayedCMs.length > 0 ? (
+                displayedCMs.map(cmInfo => (
+                  <CMCard
+                    key={cmInfo.cmName}
+                    cmInfo={cmInfo}
+                    onNoteClick={setSelectedNote}
+                  />
+                ))
+              ) : (
+                <div className="empty-state">
+                  <p>No CMs found</p>
+                </div>
+              )}
+            </div>
+
+            {!showAllCMs && cmInfos.length > DEFAULT_CM_LIMIT && (
+              <div className="show-all-container">
+                <button 
+                  onClick={handleShowAllCMs}
+                  className="show-all-button"
+                >
+                  Show All ({cmInfos.length - DEFAULT_CM_LIMIT} more)
+                </button>
+              </div>
+            )}
+          </section>
         </>
       )}
       {/* Note Modal */}
