@@ -81,26 +81,55 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       // First pass: identify all nodes that should be displayed (using normalized handles)
       const notesWithMissingCM: string[] = [];
       notes.forEach(note => {
-        // CM who wrote the note - use cmTwitterHandle from note if available
+        // CM/dApp who wrote the note - use cmTwitterHandle from note if available
         if (note.cmTwitterHandle) {
           const normalizedCmHandle = normalizeHandle(note.cmTwitterHandle);
           nodesToDisplay.add(normalizedCmHandle);
         } else {
-          // Fallback: try to find CM by name (for legacy data)
-          // First check the cmNameToHandleMap which includes all historical names
-          if (cmNameToHandleMap && cmNameToHandleMap.has(note.cmName)) {
-            const handle = cmNameToHandleMap.get(note.cmName)!;
-            const normalizedCmHandle = normalizeHandle(handle);
-            nodesToDisplay.add(normalizedCmHandle);
-            console.log(`[SocialGraph] Found CM handle for "${note.cmName}" from permissions: @${handle}`);
+          // Check if it's a dApp
+          const dAppInfo = dAppInfos.find(dApp => dApp.name === note.cmName);
+          if (dAppInfo) {
+            const normalizedDAppHandle = normalizeHandle(dAppInfo.twitterHandle);
+            nodesToDisplay.add(normalizedDAppHandle);
+            console.log(`[SocialGraph] Found dApp handle for "${note.cmName}": @${dAppInfo.twitterHandle}`);
           } else {
-            // Then try cmInfos
-            const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
-            if (cmInfo && cmInfo.cmTwitterHandle) {
-              const normalizedCmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
-              nodesToDisplay.add(normalizedCmHandle);
+            // Fallback: try to find CM by name (for legacy data)
+            // First check the cmNameToHandleMap which includes all historical names
+            if (cmNameToHandleMap) {
+              if (cmNameToHandleMap.has(note.cmName)) {
+                const handle = cmNameToHandleMap.get(note.cmName)!;
+                const normalizedCmHandle = normalizeHandle(handle);
+                nodesToDisplay.add(normalizedCmHandle);
+                console.log(`[SocialGraph] Found CM handle for "${note.cmName}" from permissions: @${handle}`);
+              } else {
+                // Log what's available in the map for debugging
+                console.log(`[SocialGraph] "${note.cmName}" not found in cmNameToHandleMap. Map size: ${cmNameToHandleMap.size}`);
+                // Try lowercase version
+                if (cmNameToHandleMap.has(note.cmName.toLowerCase())) {
+                  const handle = cmNameToHandleMap.get(note.cmName.toLowerCase())!;
+                  const normalizedCmHandle = normalizeHandle(handle);
+                  nodesToDisplay.add(normalizedCmHandle);
+                  console.log(`[SocialGraph] Found CM handle for "${note.cmName}" (lowercase) from permissions: @${handle}`);
+                } else {
+                  // Then try cmInfos
+                  const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+                  if (cmInfo && cmInfo.cmTwitterHandle) {
+                    const normalizedCmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
+                    nodesToDisplay.add(normalizedCmHandle);
+                  } else {
+                    notesWithMissingCM.push(`CM: ${note.cmName}, User: @${note.twitterHandle}`);
+                  }
+                }
+              }
             } else {
-              notesWithMissingCM.push(`CM: ${note.cmName}, User: @${note.twitterHandle}`);
+              // No cmNameToHandleMap available, try cmInfos
+              const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+              if (cmInfo && cmInfo.cmTwitterHandle) {
+                const normalizedCmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
+                nodesToDisplay.add(normalizedCmHandle);
+              } else {
+                notesWithMissingCM.push(`CM: ${note.cmName}, User: @${note.twitterHandle}`);
+              }
             }
           }
         }
@@ -198,10 +227,22 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         if (note.cmTwitterHandle) {
           cmId = normalizeHandle(note.cmTwitterHandle);
         } else {
-          // Fallback: try to find CM by name (for legacy data)
-          const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
-          if (cmInfo && cmInfo.cmTwitterHandle) {
-            cmId = normalizeHandle(cmInfo.cmTwitterHandle);
+          // Check if it's a dApp
+          const dAppInfo = dAppInfos.find(dApp => dApp.name === note.cmName);
+          if (dAppInfo) {
+            cmId = normalizeHandle(dAppInfo.twitterHandle);
+          } else {
+            // Fallback: try to find CM by name (for legacy data)
+            // First check the cmNameToHandleMap which includes all historical names
+            if (cmNameToHandleMap && cmNameToHandleMap.has(note.cmName)) {
+              const handle = cmNameToHandleMap.get(note.cmName)!;
+              cmId = normalizeHandle(handle);
+            } else {
+              const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+              if (cmInfo && cmInfo.cmTwitterHandle) {
+                cmId = normalizeHandle(cmInfo.cmTwitterHandle);
+              }
+            }
           }
         }
         

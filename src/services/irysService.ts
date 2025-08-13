@@ -389,10 +389,10 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
       const timestamp = parseIrysTimestamp(node.timestamp);
 
       if (cmName && twitterHandle) {
-        // Remove @ prefix if present
-        const cleanHandle = twitterHandle.startsWith('@') 
+        // Remove @ prefix if present and convert to lowercase for consistency
+        const cleanHandle = (twitterHandle.startsWith('@') 
           ? twitterHandle.substring(1) 
-          : twitterHandle;
+          : twitterHandle).toLowerCase();
         
         // Track all names used by this handle
         if (!handleToAllNames.has(cleanHandle)) {

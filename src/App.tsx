@@ -23,7 +23,7 @@ function App() {
     const handleScroll = () => {
       const sections = activeTab === 'analysis' 
         ? ['growth-timeline', 'social-network', 'ranking-correlation']
-        : ['community', 'cms'];
+        : ['community', 'dapps', 'cms'];
       
       const scrollPosition = window.scrollY + 150; // Offset for header/nav
       
@@ -49,7 +49,7 @@ function App() {
   useEffect(() => {
     const sections = activeTab === 'analysis' 
       ? ['growth-timeline', 'social-network', 'ranking-correlation']
-      : ['community', 'cms'];
+      : ['community', 'dapps', 'cms'];
     setActiveSection(sections[0]);
   }, [activeTab]);
 
@@ -134,6 +134,12 @@ function App() {
                     onClick={() => handleSectionClick('community')}
                   >
                     Community
+                  </button>
+                  <button 
+                    className={`section-tab ${activeSection === 'dapps' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('dapps')}
+                  >
+                    dApps
                   </button>
                   <button 
                     className={`section-tab ${activeSection === 'cms' ? 'active' : ''}`}

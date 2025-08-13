@@ -111,10 +111,20 @@ function HomePage({ selectedProject }: HomePageProps) {
     const testCMHandles = ['0xrahulk']; // 소문자로 저장
     
     // dApp로 분류할 트위터 핸들들
-    const dAppHandles = ['playirys']; // 소문자로 저장
+    const dAppHandles = ['playhirys']; // 소문자로 저장, @ 없이, 정확한 철자
+    console.log(`[dApp Data] dApp handles configured:`, dAppHandles);
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
     if (cmTwitterHandlesMap) {
+      console.log(`[CM Data] CM permissions map size: ${cmTwitterHandlesMap.size}`);
+      // Log first 10 entries
+      let count = 0;
+      cmTwitterHandlesMap.forEach((handle, name) => {
+        if (count < 10) {
+          console.log(`[CM Data] Permission entry: "${name}" -> @${handle}`);
+          count++;
+        }
+      });
       cmTwitterHandlesMap.forEach((twitterHandle, cmName) => {
         const cleanHandle = twitterHandle.startsWith('@') 
           ? twitterHandle.substring(1) 
@@ -123,6 +133,12 @@ function HomePage({ selectedProject }: HomePageProps) {
         // 테스트용 CM 계정은 제외 (Twitter handle과 CM name 모두 확인)
         if (testCMHandles.includes(cleanHandle.toLowerCase()) || testCMHandles.includes(cmName.toLowerCase())) {
           console.log(`[CM Data] Skipping test CM account: ${cmName} -> ${cleanHandle}`);
+          return;
+        }
+        
+        // dApp 계정은 제외
+        if (dAppHandles.includes(cleanHandle.toLowerCase()) || dAppHandles.includes(cmName.toLowerCase())) {
+          console.log(`[CM Data] Skipping dApp account from CM list: ${cmName} -> ${cleanHandle}`);
           return;
         }
         
@@ -137,6 +153,28 @@ function HomePage({ selectedProject }: HomePageProps) {
         // Track handle to name mapping
         cmNameToHandleMap.set(cmName, cleanHandle.toLowerCase());
         
+        // Also add simplified versions of the name for better matching
+        const simplifiedName = cmName
+          .replace(/\s*\(.*?\)\s*/g, '') // Remove anything in parentheses
+          .replace(/\s*\$.*$/g, '') // Remove $M or similar suffixes
+          .trim();
+        
+        if (simplifiedName !== cmName) {
+          cmNameToHandleMap.set(simplifiedName, cleanHandle.toLowerCase());
+          console.log(`[CM Data] Also added simplified name: ${simplifiedName} -> ${cleanHandle}`);
+        }
+        
+        // Also add version with special chars removed
+        const baseName = simplifiedName
+          .replace(/[^\w!]/g, '') // Keep only alphanumeric and !
+          .toLowerCase();
+        
+        if (baseName !== simplifiedName.toLowerCase() && baseName !== cmName.toLowerCase()) {
+          cmNameToHandleMap.set(baseName, cleanHandle.toLowerCase());
+          cmNameToHandleMap.set(simplifiedName.toLowerCase(), cleanHandle.toLowerCase());
+          console.log(`[CM Data] Also added base name variations: ${baseName}, ${simplifiedName.toLowerCase()} -> ${cleanHandle}`);
+        }
+        
         console.log(`[CM Data] Added CM from permissions: ${cmName} -> ${cleanHandle}`);
       });
     }
@@ -144,7 +182,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     // 노트 데이터를 처리하여 기존 CM에 노트 추가 또는 새로운 CM 생성
     notesData.forEach(note => {
       const cmName = note.cmName;
-             const cmTwitterHandle = note.cmTwitterHandle ? (note.cmTwitterHandle.startsWith('@') ? note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase() : undefined;
+      const cmTwitterHandle = note.cmTwitterHandle;
       
       // 테스트용 CM인지 확인 (cmTwitterHandle 또는 cmName으로 확인)
       const cleanTwitterHandle = cmTwitterHandle ? 
@@ -159,9 +197,32 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
       
       // dApp인지 확인
+      console.log(`[CM Data] Checking if dApp - cmName: "${cmName}", cleanTwitterHandle: "${cleanTwitterHandle}", cleanCMName: "${cleanCMName}"`);
       const isDApp = dAppHandles.includes(cleanTwitterHandle) || dAppHandles.includes(cleanCMName);
       
+      // Check if we have this CM name in our permissions map (for debugging missing CMs)
+      if (!cmTwitterHandle && cmTwitterHandlesMap) {
+        if (cmTwitterHandlesMap.has(cmName)) {
+          console.log(`[CM Data] Found "${cmName}" in permissions map with handle: @${cmTwitterHandlesMap.get(cmName)}`);
+        } else {
+          console.log(`[CM Data] "${cmName}" NOT found in permissions map`);
+          // Log similar names in permissions map for debugging
+          let similarNames: string[] = [];
+          for (const [permName, permHandle] of cmTwitterHandlesMap) {
+            if (permName.toLowerCase().includes(cmName.toLowerCase()) || 
+                cmName.toLowerCase().includes(permName.toLowerCase()) ||
+                permName.toLowerCase().replace(/[^\w]/g, '') === cmName.toLowerCase().replace(/[^\w]/g, '')) {
+              similarNames.push(`${permName} (@${permHandle})`);
+            }
+          }
+          if (similarNames.length > 0) {
+            console.log(`[CM Data] Similar names in permissions: ${similarNames.join(', ')}`);
+          }
+        }
+      }
+      
       if (isDApp) {
+        console.log(`[dApp Data] Processing note from dApp: ${cmName} (${cleanTwitterHandle})`);
         // dApp으로 처리
         if (!dAppMap.has(cmName)) {
           dAppMap.set(cmName, {
@@ -295,7 +356,65 @@ function HomePage({ selectedProject }: HomePageProps) {
             existing.recentNotes = [...existing.recentNotes, ...cm.recentNotes];
           }
         } else {
-          console.warn(`[CM Data] CM "${cm.cmName}" has no Twitter handle and none found in notes`);
+          // Try to match by base name (without emojis/special characters)
+          const baseName = cm.cmName
+            .replace(/\s*\(.*?\)\s*/g, '') // Remove anything in parentheses
+            .replace(/\s*\$.*$/g, '') // Remove $M or similar suffixes
+            .replace(/[^\w!]/g, '') // Keep only alphanumeric and !
+            .trim()
+            .toLowerCase();
+          let foundHandle: string | undefined;
+          
+          // Check against cmTwitterHandlesMap from permissions
+          if (cmTwitterHandlesMap) {
+            for (const [permName, permHandle] of cmTwitterHandlesMap) {
+              // Extract base name from permission CM name (remove emojis, special chars, etc)
+              const permBaseName = permName
+                .replace(/\s*\(.*?\)\s*/g, '') // Remove anything in parentheses
+                .replace(/\s*\$.*$/g, '') // Remove $M or similar suffixes
+                .replace(/[^\w!]/g, '') // Keep only alphanumeric and !
+                .trim()
+                .toLowerCase();
+              
+              // Also try matching with the original CM name for cases like "나옹 Meowth"
+              const originalBaseName = cm.cmName
+                .replace(/\s*\(.*?\)\s*/g, '')
+                .replace(/\s*\$.*$/g, '')
+                .trim()
+                .toLowerCase();
+              
+              // Check if either the simplified name matches or if the permission name contains the CM name
+              if (baseName === permBaseName || 
+                  permBaseName.includes(baseName) || 
+                  permName.toLowerCase().includes(originalBaseName) ||
+                  // Special case for "나옹 Meowth" matching "meowth"
+                  (originalBaseName === 'meowth' && permName.toLowerCase().includes('meowth'))) {
+                
+                foundHandle = permHandle.toLowerCase();
+                if (foundHandle.startsWith('@')) {
+                  foundHandle = foundHandle.substring(1);
+                }
+                console.log(`[CM Data] Matched CM "${cm.cmName}" to permission CM "${permName}" (@${foundHandle})`);
+                // Add this mapping
+                cmNameToHandleMap.set(cm.cmName, foundHandle);
+                cm.cmTwitterHandle = foundHandle;
+                break;
+              }
+            }
+          }
+          
+          if (foundHandle) {
+            if (!handleToCM.has(foundHandle)) {
+              handleToCM.set(foundHandle, { ...cm });
+            } else {
+              const existing = handleToCM.get(foundHandle)!;
+              existing.noteCount += cm.noteCount;
+              existing.recentUsers = [...existing.recentUsers, ...cm.recentUsers];
+              existing.recentNotes = [...existing.recentNotes, ...cm.recentNotes];
+            }
+          } else {
+            console.warn(`[CM Data] CM "${cm.cmName}" has no Twitter handle and none found in notes or permissions`);
+          }
         }
         return;
       }
@@ -321,9 +440,21 @@ function HomePage({ selectedProject }: HomePageProps) {
         if (permissionCMName) {
           existing.cmName = permissionCMName;
           console.log(`[CM Data] Using latest name from permissions for @${handle}: ${permissionCMName}`);
-        } else if (cm.noteCount > existing.noteCount) {
-          existing.cmName = cm.cmName;
-          console.log(`[CM Data] Using name with more notes for @${handle}: ${cm.cmName}`);
+        } else {
+          // If no permission data, use the most recent CM name based on note timestamps
+          const existingLatestNote = existing.recentNotes.length > 0 
+            ? Math.max(...existing.recentNotes.map(n => n.timestamp)) 
+            : 0;
+          const cmLatestNote = cm.recentNotes.length > 0 
+            ? Math.max(...cm.recentNotes.map(n => n.timestamp)) 
+            : 0;
+          
+          if (cmLatestNote > existingLatestNote) {
+            existing.cmName = cm.cmName;
+            console.log(`[CM Data] Using more recent name for @${handle}: ${cm.cmName} (timestamp: ${cmLatestNote})`);
+          } else {
+            console.log(`[CM Data] Keeping existing name for @${handle}: ${existing.cmName} (timestamp: ${existingLatestNote})`);
+          }
         }
         
         existing.noteCount += cm.noteCount;
@@ -403,10 +534,11 @@ function HomePage({ selectedProject }: HomePageProps) {
     dAppInfoList.sort((a, b) => b.noteCount - a.noteCount);
     
     console.log(`[dApp Data] Total dApps processed: ${dAppInfoList.length}`);
+    console.log(`[dApp Data] dApp list:`, dAppInfoList.map(d => ({ name: d.name, handle: d.twitterHandle, noteCount: d.noteCount })));
     
     setCmInfos(cmInfoList);
     setDAppInfos(dAppInfoList);
-    return { cmInfoList, dAppInfoList }; // Return both lists
+    return { cmInfoList, dAppInfoList, cmNameToHandleMap }; // Return both lists and mapping
   }, []);
 
   // Load note contents in background
@@ -666,8 +798,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       // Notes already have CM Twitter handles from unified data
       console.log(`[HomePage] CM Twitter handles from permissions (for comparison):`, Array.from(cmTwitterHandles?.entries() || []));
       
-      // Store the CM name to handle mapping for use in SocialGraph
-      setCmNameToHandleMap(cmTwitterHandles);
+      // CM name to handle mapping will be set by processCMData
       
       // Count notes with and without CM Twitter handles
       const notesWithHandles = projectNotes.filter(note => note.cmTwitterHandle).length;
@@ -681,7 +812,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       setNotes(enrichedNotes);
       
       // Process CM data first to get merged CM info
-      const { cmInfoList, dAppInfoList } = processCMData(enrichedNotes, cmTwitterHandles);
+      const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(enrichedNotes, cmTwitterHandles);
+      setCmNameToHandleMap(cmNameToHandleMap);
       
       // Process notes to users with merged CM data
       processNotesToUsers(enrichedNotes, cmInfoList, dAppInfoList);
@@ -718,8 +850,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       
       // Load CM permissions even when using cached notes
       queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        setCmNameToHandleMap(cmTwitterHandles);
-        const { cmInfoList, dAppInfoList } = processCMData(cachedNotes, cmTwitterHandles);
+        const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(cachedNotes, cmTwitterHandles);
+        setCmNameToHandleMap(cmNameToHandleMap);
         processNotesToUsers(cachedNotes, cmInfoList, dAppInfoList);
       });
       
