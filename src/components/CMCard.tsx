@@ -127,55 +127,21 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
             <div className="cm-notes-modal-content note-detail-view">
               <div className="note-detail-header">
                 <img 
-                  src={`https://unavatar.io/twitter/${selectedNote.twitterHandle}`}
-                  alt={`@${selectedNote.twitterHandle}`} 
-                  className="note-detail-profile"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedNote.twitterHandle}`;
-                  }}
+                  src={selectedNote.iconUrl} 
+                  alt="Note icon" 
+                  className="note-detail-icon"
                 />
                 <div className="note-detail-title">
-                  <h3>@{selectedNote.twitterHandle}</h3>
+                  <h3>{selectedNote.nickname || selectedNote.user}</h3>
+                  <p className="note-detail-subtitle">@{selectedNote.twitterHandle}</p>
                 </div>
-              </div>
-              
-              {/* CM's nickname, badge, and note content as quote */}
-              <div className="note-nickname-quote">
-                {selectedNote.iconUrl && (
-                  <img 
-                    src={selectedNote.iconUrl} 
-                    alt="Badge" 
-                    className="note-badge-icon"
-                  />
-                )}
-                {selectedNote.nickname && (
-                  <p className="note-nickname-text">"{selectedNote.nickname}"</p>
-                )}
-                
-                {/* Note Content */}
-                <div className="note-content-section">
-                  {loadingContent ? (
-                    <div className="content-loading-inline">
-                      <div className="loading-spinner-small"></div>
-                      <span>Loading note content...</span>
-                    </div>
-                  ) : (
-                    <div className="content-text-inline">
-                      {selectedNote.content ? (
-                        <p>{selectedNote.content}</p>
-                      ) : (
-                        <p className="no-content">No content available</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <p className="note-nickname-author">— {selectedNote.cmName}</p>
               </div>
               
               <div className="note-detail-meta">
+                <div className="meta-row">
+                  <span className="meta-label">CM:</span>
+                  <span className="meta-value">{selectedNote.cmName}</span>
+                </div>
                 {selectedNote.userType && (
                   <div className="meta-row">
                     <span className="meta-label">User Type:</span>
@@ -183,9 +149,37 @@ function CMNotesModal({ cmInfo, onClose }: CMNotesModalProps) {
                   </div>
                 )}
                 <div className="meta-row">
+                  <span className="meta-label">Project:</span>
+                  <span className="meta-value">{selectedNote.project}</span>
+                </div>
+                <div className="meta-row">
                   <span className="meta-label">Date:</span>
                   <span className="meta-value">{formatTimestamp(selectedNote.timestamp)}</span>
                 </div>
+                <div className="meta-row">
+                  <span className="meta-label">Status:</span>
+                  <span className={`meta-value status-${selectedNote.status}`}>
+                    {selectedNote.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="note-detail-content">
+                <h4>Note Content:</h4>
+                {loadingContent ? (
+                  <div className="content-loading">
+                    <div className="loading-spinner"></div>
+                    <p>Loading note content...</p>
+                  </div>
+                ) : (
+                  <div className="content-text">
+                    {selectedNote.content ? (
+                      <p>{selectedNote.content}</p>
+                    ) : (
+                      <p className="no-content">No content available</p>
+                    )}
+                  </div>
+                )}
               </div>
               
               {selectedNote.dataUrl && (

@@ -41,6 +41,11 @@
   background-color: #4dabf7;
 }
 
+.legend-dot.dapp-dot {
+  border-color: #9775fa;
+  background-color: #9775fa;
+}
+
 .graph-description {
   font-size: 0.875rem;
   color: var(--text-secondary);

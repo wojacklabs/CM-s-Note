@@ -136,12 +136,6 @@ function App() {
                     Community
                   </button>
                   <button 
-                    className={`section-tab ${activeSection === 'dapps' ? 'active' : ''}`}
-                    onClick={() => handleSectionClick('dapps')}
-                  >
-                    dApps
-                  </button>
-                  <button 
                     className={`section-tab ${activeSection === 'cms' ? 'active' : ''}`}
                     onClick={() => handleSectionClick('cms')}
                   >

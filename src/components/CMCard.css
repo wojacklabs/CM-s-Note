@@ -365,14 +365,6 @@
   border: 2px solid var(--border);
 }
 
-.note-detail-profile {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: var(--background);
-}
-
 .note-detail-title h3 {
   margin: 0;
   font-size: 1.25rem;
@@ -489,82 +481,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Nickname quote section */
-.note-nickname-quote {
-  margin: 1.5rem 0;
-  padding: 1.25rem;
-  background-color: rgba(212, 165, 116, 0.05);
-  border-left: 4px solid var(--primary-color);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  position: relative;
-}
-
-.note-badge-icon {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
-
-.note-nickname-text {
-  margin: 0;
-  font-size: 1.125rem;
-  font-style: italic;
-  color: var(--text-primary);
-  text-align: center;
-  font-weight: 500;
-}
-
-/* Note content within quote section */
-.note-content-section {
-  width: 100%;
-  margin: 0.75rem 0;
-}
-
-.content-loading-inline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-  padding: 1rem;
-}
-
-.loading-spinner-small {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.content-text-inline {
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-sm);
-  padding: 1rem;
-  margin: 0.5rem 0;
-}
-
-.content-text-inline p {
-  margin: 0;
-  line-height: 1.6;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
-  text-align: left;
-}
-
-.note-nickname-author {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  align-self: flex-end;
 }
 
 .cm-recent-users {

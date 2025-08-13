@@ -17,6 +17,7 @@ interface UnifiedUserData {
       cms: {
         [cmName: string]: {
           name: string;
+          twitterHandle?: string; // CM's Twitter handle
           notes: Array<{
             id: string;
             twitterHandle: string;
@@ -143,6 +144,13 @@ export async function queryUnifiedUserData(project: string): Promise<Note[]> {
           for (const cmName in projectData.cms) {
             const cmData = projectData.cms[cmName];
             
+            // Extract CM Twitter handle from the CM data
+            const cmTwitterHandle = cmData.twitterHandle ? 
+              (cmData.twitterHandle.startsWith('@') ? cmData.twitterHandle.substring(1) : cmData.twitterHandle) : 
+              undefined;
+            
+            console.log(`[IrysService] CM "${cmName}" has Twitter handle: @${cmTwitterHandle || 'N/A'}`);
+            
             if (cmData.notes && Array.isArray(cmData.notes)) {
               // Process only active notes
               const activeNotes = cmData.notes.filter(note => note.status !== 'removed');
@@ -162,6 +170,7 @@ export async function queryUnifiedUserData(project: string): Promise<Note[]> {
                   status: noteData.status || 'added',
                   timestamp: Math.floor(new Date(noteData.updatedAt || noteData.createdAt).getTime() / 1000),
                   cmName: cmName,
+                  cmTwitterHandle: cmTwitterHandle, // Use the CM's Twitter handle from unified data
                   dataUrl: mutableAddress
                 };
                 
@@ -364,8 +373,10 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
     const edges = response.data?.data?.transactions?.edges || [];
     const cmTwitterHandles = new Map<string, string>();
 
-    // Get the most recent permission entry for each CM
-    const cmLatestTimestamp = new Map<string, number>();
+    // Get the most recent permission entry for each Twitter handle
+    const handleToLatestCM = new Map<string, { cmName: string; timestamp: number }>();
+    // Also track all CM names that have been used by each handle
+    const handleToAllNames = new Map<string, Set<string>>();
 
     for (const edge of edges) {
       const node = edge.node;
@@ -378,19 +389,32 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
       const timestamp = parseIrysTimestamp(node.timestamp);
 
       if (cmName && twitterHandle) {
-        // Only update if this is the most recent entry for this CM
-        if (!cmLatestTimestamp.has(cmName) || timestamp > cmLatestTimestamp.get(cmName)!) {
-          // Remove @ prefix if present
-          const cleanHandle = twitterHandle.startsWith('@') 
-            ? twitterHandle.substring(1) 
-            : twitterHandle;
-          
-          cmTwitterHandles.set(cmName, cleanHandle);
-          cmLatestTimestamp.set(cmName, timestamp);
-          console.log(`[IrysService] Found Twitter handle for CM ${cmName}: @${cleanHandle}`);
+        // Remove @ prefix if present
+        const cleanHandle = twitterHandle.startsWith('@') 
+          ? twitterHandle.substring(1) 
+          : twitterHandle;
+        
+        // Track all names used by this handle
+        if (!handleToAllNames.has(cleanHandle)) {
+          handleToAllNames.set(cleanHandle, new Set());
+        }
+        handleToAllNames.get(cleanHandle)!.add(cmName);
+        
+        // Check if this is the most recent entry for this Twitter handle
+        if (!handleToLatestCM.has(cleanHandle) || timestamp > handleToLatestCM.get(cleanHandle)!.timestamp) {
+          handleToLatestCM.set(cleanHandle, { cmName, timestamp });
+          console.log(`[IrysService] Updated CM name for @${cleanHandle}: ${cmName} (timestamp: ${timestamp})`);
         }
       }
     }
+    
+    // Convert to cmName -> handle map for ALL CM names (including old ones)
+    handleToAllNames.forEach((names, handle) => {
+      names.forEach(name => {
+        cmTwitterHandles.set(name, handle);
+        console.log(`[IrysService] Mapping CM name: ${name} -> @${handle}`);
+      });
+    });
 
     console.log(`[IrysService] Found ${cmTwitterHandles.size} CM Twitter handles`);
     return cmTwitterHandles;

@@ -2,7 +2,6 @@ import { User, Note } from '../types';
 import './UserCard.css';
 import { useState, useEffect } from 'react';
 import { ProfileImageCacheService } from '../services/profileImageCache';
-import { cmDataService } from '../services/cmDataService';
 
 interface UserCardProps {
   user: User;
@@ -51,29 +50,21 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   // Sort notes by timestamp (most recent first)
   const sortedNotes = [...user.notes].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Get unique CMs with their Twitter handles (deduplicated by handle)
+  // Get unique CMs with their Twitter handles (deduplicated by handle or name)
   const uniqueCMs = Array.from(
-    new Map(
+    new Map<string, { name: string; twitterHandle?: string }>(
       user.notes
         .map(note => {
-          // Try to get handle from note or from CM data service
-          let handle = note.cmTwitterHandle;
-          if (!handle) {
-            handle = cmDataService.getHandleByName(note.cmName);
+          if (note.cmTwitterHandle) {
+            // If we have a Twitter handle, use it as the key
+            const normalizedHandle = (note.cmTwitterHandle.startsWith('@') ? 
+              note.cmTwitterHandle.substring(1) : note.cmTwitterHandle).toLowerCase();
+            return [normalizedHandle, { name: note.cmName, twitterHandle: note.cmTwitterHandle }];
+          } else {
+            // If no Twitter handle, use the CM name as the key
+            return [note.cmName.toLowerCase(), { name: note.cmName, twitterHandle: undefined }];
           }
-          
-          if (handle) {
-            const normalizedHandle = (handle.startsWith('@') ? 
-              handle.substring(1) : handle).toLowerCase();
-            
-            // Get current name from CM data service
-            const currentName = cmDataService.getCurrentNameByHandle(normalizedHandle) || note.cmName;
-            
-            return [normalizedHandle, { name: currentName, twitterHandle: handle }];
-          }
-          return null;
         })
-        .filter((item): item is [string, { name: string; twitterHandle: string }] => item !== null)
     ).values()
   );
   
@@ -84,11 +75,17 @@ function UserCard({ user, onNoteClick }: UserCardProps) {
   
   // Debug logging
   useEffect(() => {
-    console.log(`[UserCard] User @${user.twitterHandle} has ${uniqueCMs.length} unique CMs:`, uniqueCMs);
+    console.log(`[UserCard] User @${user.twitterHandle} has ${user.notes.length} notes from ${uniqueCMs.length} unique CMs`);
+    
+    // Log all CM names in notes
+    const allCMNames = user.notes.map(note => `${note.cmName} (${note.cmTwitterHandle || 'no handle'})`);
+    console.log(`[UserCard] All CMs in notes: ${allCMNames.join(', ')}`);
+    
+    // Log unique CMs
     uniqueCMs.forEach(cm => {
-      console.log(`[UserCard] CM: ${cm.name}, Twitter: ${cm.twitterHandle || 'N/A'}`);
+      console.log(`[UserCard] Unique CM: ${cm.name}, Twitter: ${cm.twitterHandle || 'N/A'}`);
     });
-  }, [user.twitterHandle, uniqueCMs]);
+  }, [user.twitterHandle, user.notes.length]);
 
   return (
     <div className="user-card">
