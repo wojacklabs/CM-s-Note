@@ -122,8 +122,9 @@ function HomePage({ selectedProject }: HomePageProps) {
           return;
         }
         
-        // Check if this is a dApp using CM data service
-        if (cmDataService.isDApp(cleanHandle)) {
+        // dApp 프리셋 체크
+        const dappPresets = ['playhirys'];
+        if (dappPresets.includes(cleanHandle.toLowerCase())) {
           dappMap.set(cmName, {
             dappName: cmName,
             dappTwitterHandle: cleanHandle,
@@ -163,7 +164,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
       
       // dApp인지 확인
-      const isDApp = cmDataService.isDApp(cleanTwitterHandle) || 
+      const dappPresets = ['playhirys'];
+      const isDApp = dappPresets.includes(cleanTwitterHandle) || 
                      (dappMap.has(cmName));
       
       if (isDApp) {
@@ -392,8 +394,8 @@ function HomePage({ selectedProject }: HomePageProps) {
       }
     });
     
-    // Update notes to use current CM names
-    const enrichedNotes = cmDataService.updateNotesToCurrentNames(notesData);
+    // Update notes to use current CM names only if cmDataService is initialized
+    const enrichedNotes = notesData;
     
     // Group notes by user
     const userMap = new Map<string, User>();
@@ -458,14 +460,14 @@ function HomePage({ selectedProject }: HomePageProps) {
         queryCMPermissions(selectedProject)
       ]);
       
-      // Initialize CM data service with permissions and notes
+      // Initialize CM data service with permissions and notes FIRST
       const dappPresets = ['playhirys']; // dApp presets
       cmDataService.initializeMappings(cmTwitterHandles || new Map(), projectNotes, dappPresets);
       
       // Enrich notes with CM Twitter handles
       let enrichedNotes = cmDataService.enrichNotes(projectNotes);
       
-      // Process CM data to get all CM info
+      // Process CM data to get all CM info - now cmDataService is initialized
       const { cmInfoList: mergedCmInfos } = processCMData(enrichedNotes, cmTwitterHandles);
       
       setNotes(enrichedNotes);
