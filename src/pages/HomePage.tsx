@@ -500,7 +500,7 @@ function HomePage({ selectedProject }: HomePageProps) {
           
           // Also check notes to find any other names used by this CM
           enrichedNotes.forEach(note => {
-            if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName) {
+            if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName && cmInfo.cmTwitterHandle) {
               // This CM used a different name in the past
               allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
               console.log(`[HomePage] Found alternate CM name: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
@@ -580,7 +580,7 @@ function HomePage({ selectedProject }: HomePageProps) {
             
             // Find alternate names
             enrichedCachedNotes.forEach(note => {
-              if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName) {
+              if (note.cmTwitterHandle === cmInfo.cmTwitterHandle && note.cmName !== cmInfo.cmName && cmInfo.cmTwitterHandle) {
                 allCmNameToHandle.set(note.cmName, cmInfo.cmTwitterHandle);
                 console.log(`[HomePage] Found alternate CM name in cache: "${note.cmName}" -> @${cmInfo.cmTwitterHandle}`);
               }
