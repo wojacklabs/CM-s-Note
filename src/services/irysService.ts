@@ -338,7 +338,7 @@ export function filterActiveNotes(notes: Note[]): Note[] {
 }
 
 // Query CM permissions to get CM Twitter handles
-export async function queryCMPermissions(project: string): Promise<Map<string, string>> {
+export async function queryCMPermissions(project: string): Promise<{ cmNameToHandle: Map<string, string>; handleToLatestName: Map<string, string> }> {
   const query = `
     query getCMPermissions($project: String!, $cursor: String) {
       transactions(
@@ -418,6 +418,18 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
           ? twitterHandle.substring(1) 
           : twitterHandle).toLowerCase();
         
+        // Filter out known bad data entries
+        // xaitoshi should not be associated with wojacklabs
+        if (cmName.toLowerCase() === 'xaitoshi' && cleanHandle === 'wojacklabs') {
+          console.warn(`[IrysService] Filtering out incorrect permission entry: CM "${cmName}" should not be associated with @${cleanHandle}`);
+          continue;
+        }
+        
+        // Special logging for problematic accounts
+        if (cleanHandle === 'wojacklabs' || cmName.toLowerCase().includes('xaitoshi')) {
+          console.log(`[IrysService] DEBUG: Found permission - CM: "${cmName}", Handle: @${cleanHandle}, Timestamp: ${timestamp}`);
+        }
+        
         // Track all names used by this handle
         if (!handleToAllNames.has(cleanHandle)) {
           handleToAllNames.set(cleanHandle, new Set());
@@ -435,16 +447,27 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
     // Convert to cmName -> handle map for ALL CM names (including old ones)
     handleToAllNames.forEach((names, handle) => {
       names.forEach(name => {
+        // Skip adding the filtered out bad mappings
+        if (name.toLowerCase() === 'xaitoshi' && handle === 'wojacklabs') {
+          return;
+        }
         cmTwitterHandles.set(name, handle);
         console.log(`[IrysService] Mapping CM name: ${name} -> @${handle}`);
       });
     });
 
     console.log(`[IrysService] Found ${cmTwitterHandles.size} CM Twitter handles`);
-    return cmTwitterHandles;
+    
+    // Also return the latest CM name for each handle
+    const handleToLatestName = new Map<string, string>();
+    handleToLatestCM.forEach((data, handle) => {
+      handleToLatestName.set(handle, data.cmName);
+    });
+    
+    return { cmNameToHandle: cmTwitterHandles, handleToLatestName };
   } catch (error) {
     console.error('Error querying CM permissions:', error);
-    return new Map();
+    return { cmNameToHandle: new Map(), handleToLatestName: new Map() };
   }
 }
 

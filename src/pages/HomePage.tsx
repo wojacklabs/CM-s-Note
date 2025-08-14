@@ -100,7 +100,7 @@ function HomePage({ selectedProject }: HomePageProps) {
   }, []);
 
   // Process CM data
-  const processCMData = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>) => {
+  const processCMData = useCallback((notesData: Note[], cmTwitterHandlesMap?: Map<string, string>, handleToLatestName?: Map<string, string>) => {
     const cmMap = new Map<string, CMInfo>();
     const dAppMap = new Map<string, DAppInfo>();
     
@@ -425,16 +425,10 @@ function HomePage({ selectedProject }: HomePageProps) {
         const existing = handleToCM.get(handle)!;
         console.log(`[CM Data] Merging duplicate CM entries for @${handle}: "${existing.cmName}" + "${cm.cmName}"`);
         
-        // Always prefer the name from permissions for this handle
+        // Always prefer the latest name from permissions for this handle
         let permissionCMName: string | undefined;
-        if (cmTwitterHandlesMap) {
-          // Find the CM name that maps to this handle in permissions
-          for (const [name, permHandle] of cmTwitterHandlesMap.entries()) {
-            if (permHandle.toLowerCase() === handle) {
-              permissionCMName = name;
-              break;
-            }
-          }
+        if (handleToLatestName && handleToLatestName.has(handle)) {
+          permissionCMName = handleToLatestName.get(handle);
         }
         
         if (permissionCMName) {
@@ -871,10 +865,13 @@ function HomePage({ selectedProject }: HomePageProps) {
       console.log(`[HomePage] Loading data from API for project: ${selectedProject}`);
       
       // Load both notes and CM permissions in parallel
-      const [projectNotes, cmTwitterHandles] = await Promise.all([
+      const [projectNotes, permissionData] = await Promise.all([
         queryNotesByProject(selectedProject),
         queryCMPermissions(selectedProject)
       ]);
+      
+      const cmTwitterHandles = permissionData.cmNameToHandle;
+      const handleToLatestName = permissionData.handleToLatestName;
       
       // Notes already have CM Twitter handles from unified data
       console.log(`[HomePage] CM Twitter handles from permissions (for comparison):`, Array.from(cmTwitterHandles?.entries() || []));
@@ -893,7 +890,7 @@ function HomePage({ selectedProject }: HomePageProps) {
       setNotes(enrichedNotes);
       
       // Process CM data first to get merged CM info
-      const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(enrichedNotes, cmTwitterHandles);
+      const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(enrichedNotes, cmTwitterHandles, handleToLatestName);
       setCmNameToHandleMap(cmNameToHandleMap);
       
       // Process notes to users with merged CM data
@@ -930,8 +927,12 @@ function HomePage({ selectedProject }: HomePageProps) {
       setNotes(cachedNotes);
       
       // Load CM permissions even when using cached notes
-      queryCMPermissions(selectedProject).then(cmTwitterHandles => {
-        const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(cachedNotes, cmTwitterHandles);
+      queryCMPermissions(selectedProject).then(permissionData => {
+        const { cmInfoList, dAppInfoList, cmNameToHandleMap } = processCMData(
+          cachedNotes, 
+          permissionData.cmNameToHandle, 
+          permissionData.handleToLatestName
+        );
         setCmNameToHandleMap(cmNameToHandleMap);
         processNotesToUsers(cachedNotes, cmInfoList, dAppInfoList);
       });
