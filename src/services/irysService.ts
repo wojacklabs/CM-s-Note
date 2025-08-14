@@ -340,15 +340,20 @@ export function filterActiveNotes(notes: Note[]): Note[] {
 // Query CM permissions to get CM Twitter handles
 export async function queryCMPermissions(project: string): Promise<Map<string, string>> {
   const query = `
-    query getCMPermissions($project: String!) {
+    query getCMPermissions($project: String!, $cursor: String) {
       transactions(
         tags: [
           { name: "App-Name", values: ["irys-cm-note-permission"] }
           { name: "irys-cm-note-project", values: [$project] }
         ],
         first: 100,
+        after: $cursor,
         order: DESC
       ) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         edges {
           node {
             id
@@ -365,12 +370,31 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
 
   try {
     console.log(`[IrysService] Querying CM permissions for project: ${project}`);
-    const response = await axios.post(IRYS_GRAPHQL_URL, {
-      query,
-      variables: { project }
-    });
+    
+    let allEdges: any[] = [];
+    let cursor: string | null = null;
+    let hasNextPage = true;
+    let pageCount = 0;
+    
+    // Fetch all pages
+    while (hasNextPage && pageCount < 10) { // Limit to 10 pages for safety
+      const response: any = await axios.post(IRYS_GRAPHQL_URL, {
+        query,
+        variables: { project, cursor }
+      });
 
-    const edges = response.data?.data?.transactions?.edges || [];
+      const data: any = response.data?.data?.transactions;
+      const edges = data?.edges || [];
+      allEdges = [...allEdges, ...edges];
+      
+      hasNextPage = data?.pageInfo?.hasNextPage || false;
+      cursor = data?.pageInfo?.endCursor || null;
+      pageCount++;
+      
+      console.log(`[IrysService] Fetched page ${pageCount}, got ${edges.length} entries, hasNextPage: ${hasNextPage}`);
+    }
+    
+    console.log(`[IrysService] Total permission entries fetched: ${allEdges.length}`);
     const cmTwitterHandles = new Map<string, string>();
 
     // Get the most recent permission entry for each Twitter handle
@@ -378,7 +402,7 @@ export async function queryCMPermissions(project: string): Promise<Map<string, s
     // Also track all CM names that have been used by each handle
     const handleToAllNames = new Map<string, Set<string>>();
 
-    for (const edge of edges) {
+    for (const edge of allEdges) {
       const node = edge.node;
       const tags = node.tags || [];
       

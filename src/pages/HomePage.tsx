@@ -536,6 +536,87 @@ function HomePage({ selectedProject }: HomePageProps) {
     console.log(`[dApp Data] Total dApps processed: ${dAppInfoList.length}`);
     console.log(`[dApp Data] dApp list:`, dAppInfoList.map(d => ({ name: d.name, handle: d.twitterHandle, noteCount: d.noteCount })));
     
+    // Add CMs from note data to cmNameToHandleMap
+    cmInfoList.forEach(cm => {
+      if (cm.cmTwitterHandle && !cmNameToHandleMap.has(cm.cmName)) {
+        cmNameToHandleMap.set(cm.cmName, cm.cmTwitterHandle.toLowerCase());
+        console.log(`[CM Data] Added CM to name map from processed data: ${cm.cmName} -> ${cm.cmTwitterHandle}`);
+        
+        // Also add simplified versions
+        const simplifiedName = cm.cmName
+          .replace(/\s*\(.*?\)\s*/g, '') // Remove anything in parentheses
+          .replace(/\s*\$.*$/g, '') // Remove $M or similar suffixes
+          .trim();
+        
+        if (simplifiedName !== cm.cmName && !cmNameToHandleMap.has(simplifiedName)) {
+          cmNameToHandleMap.set(simplifiedName, cm.cmTwitterHandle.toLowerCase());
+          console.log(`[CM Data] Also added simplified name to map: ${simplifiedName} -> ${cm.cmTwitterHandle}`);
+        }
+        
+        // Also add lowercase version
+        if (simplifiedName.toLowerCase() !== simplifiedName && !cmNameToHandleMap.has(simplifiedName.toLowerCase())) {
+          cmNameToHandleMap.set(simplifiedName.toLowerCase(), cm.cmTwitterHandle.toLowerCase());
+        }
+        
+        // For names with Korean/multi-language, also add the English part
+        const parts = simplifiedName.split(/\s+/);
+        if (parts.length > 1) {
+          // Try each part individually
+          parts.forEach(part => {
+            if (part && !cmNameToHandleMap.has(part) && cm.cmTwitterHandle) {
+              cmNameToHandleMap.set(part, cm.cmTwitterHandle.toLowerCase());
+              console.log(`[CM Data] Also added name part to map: ${part} -> ${cm.cmTwitterHandle}`);
+            }
+            if (part && part.toLowerCase() !== part && !cmNameToHandleMap.has(part.toLowerCase()) && cm.cmTwitterHandle) {
+              cmNameToHandleMap.set(part.toLowerCase(), cm.cmTwitterHandle.toLowerCase());
+            }
+          });
+        }
+      }
+    });
+    
+    // Also add CMs without Twitter handles but with consistent names from notes
+    cmMap.forEach((cmInfo, cmName) => {
+      if (!cmInfo.cmTwitterHandle && !cmNameToHandleMap.has(cmName)) {
+        // Try to find handle from notes
+        const noteWithHandle = notesData.find(note => 
+          note.cmName === cmName && note.cmTwitterHandle
+        );
+        
+        if (noteWithHandle && noteWithHandle.cmTwitterHandle) {
+          cmNameToHandleMap.set(cmName, noteWithHandle.cmTwitterHandle.toLowerCase());
+          console.log(`[CM Data] Found handle for ${cmName} from notes: ${noteWithHandle.cmTwitterHandle}`);
+          
+          // Add simplified versions
+          const simplifiedName = cmName
+            .replace(/\s*\(.*?\)\s*/g, '')
+            .replace(/\s*\$.*$/g, '')
+            .trim();
+          
+          if (simplifiedName !== cmName) {
+            cmNameToHandleMap.set(simplifiedName, noteWithHandle.cmTwitterHandle.toLowerCase());
+          }
+          
+          if (simplifiedName.toLowerCase() !== simplifiedName) {
+            cmNameToHandleMap.set(simplifiedName.toLowerCase(), noteWithHandle.cmTwitterHandle.toLowerCase());
+          }
+          
+          // For names with Korean/multi-language, also add the English part
+          const parts = simplifiedName.split(/\s+/);
+          if (parts.length > 1) {
+            parts.forEach(part => {
+              if (part && !cmNameToHandleMap.has(part) && noteWithHandle.cmTwitterHandle) {
+                cmNameToHandleMap.set(part, noteWithHandle.cmTwitterHandle.toLowerCase());
+              }
+              if (part && part.toLowerCase() !== part && !cmNameToHandleMap.has(part.toLowerCase()) && noteWithHandle.cmTwitterHandle) {
+                cmNameToHandleMap.set(part.toLowerCase(), noteWithHandle.cmTwitterHandle.toLowerCase());
+              }
+            });
+          }
+        }
+      }
+    });
+    
     setCmInfos(cmInfoList);
     setDAppInfos(dAppInfoList);
     return { cmInfoList, dAppInfoList, cmNameToHandleMap }; // Return both lists and mapping
