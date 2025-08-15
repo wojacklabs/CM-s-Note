@@ -60,7 +60,10 @@ function GrowthTimeline({ notes, cmInfos }: GrowthTimelineProps) {
     
     // Get date range
     const startDate = new Date((sortedNotes[0].timestamp || 0) * 1000);
-    const endDate = new Date((sortedNotes[sortedNotes.length - 1].timestamp || 0) * 1000);
+    // Use current date as end date if it's more recent than the last note
+    const lastNoteDate = new Date((sortedNotes[sortedNotes.length - 1].timestamp || 0) * 1000);
+    const today = new Date();
+    const endDate = today > lastNoteDate ? today : lastNoteDate;
     
     // Create weekly or monthly data points based on date range
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -157,8 +160,16 @@ function GrowthTimeline({ notes, cmInfos }: GrowthTimelineProps) {
     // Return only every nth point if still too many
     if (data.length > 50) {
       const step = Math.ceil(data.length / 50);
+      const filteredData = data.filter((_, index) => index % step === 0);
+      
+      // Always include the last data point if it's not already included
+      const lastDataPoint = data[data.length - 1];
+      if (filteredData[filteredData.length - 1] !== lastDataPoint) {
+        filteredData.push(lastDataPoint);
+      }
+      
       return { 
-        chartData: data.filter((_, index) => index % step === 0),
+        chartData: filteredData,
         topUsers: userNoteCounts.slice(0, 50)
       };
     }
