@@ -27,9 +27,184 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [currentTimestamp, setCurrentTimestamp] = useState<number | null>(null);
+  const [animationSpeed, setAnimationSpeed] = useState(1000); // milliseconds per step
+  const animationIntervalRef = useRef<number | null>(null);
+  const [minTimestamp, setMinTimestamp] = useState<number>(0);
+  const [maxTimestamp, setMaxTimestamp] = useState<number>(0);
+  const [isGraphInitialized, setIsGraphInitialized] = useState(false);
 
+  // Helper function to normalize handles
+  const normalizeHandle = (handle: string): string => {
+    return (handle.startsWith('@') ? handle.substring(1) : handle).toLowerCase();
+  };
+
+  // Initialize timestamp range
   useEffect(() => {
-    if (!containerRef.current || notes.length === 0) {
+    if (notes.length > 0) {
+      const timestamps = notes.map(note => note.timestamp || 0).filter(ts => ts > 0);
+      if (timestamps.length > 0) {
+        const min = Math.min(...timestamps);
+        const max = Math.max(...timestamps);
+        setMinTimestamp(min);
+        setMaxTimestamp(max);
+        setCurrentTimestamp(max); // Start with full graph
+      }
+    }
+  }, [notes]);
+
+  // Update graph visibility based on timestamp
+  const updateGraphVisibility = () => {
+    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) return;
+
+    const cy = cyRef.current;
+    
+    // First, hide all elements
+    cy.elements().addClass('hidden-element');
+    
+    // Determine which elements should be visible based on timestamp
+    const visibleNodes = new Set<string>();
+    const visibleEdges = new Set<string>();
+    
+    notes.forEach(note => {
+      if ((note.timestamp || 0) <= currentTimestamp) {
+        // Add user node
+        const userHandle = normalizeHandle(note.twitterHandle);
+        visibleNodes.add(userHandle);
+        
+        // Add CM/dApp node
+        let cmHandle: string | undefined;
+        if (note.cmTwitterHandle) {
+          cmHandle = normalizeHandle(note.cmTwitterHandle);
+        } else {
+          // Handle legacy data
+          const dAppInfo = dAppInfos.find(dApp => dApp.name === note.cmName);
+          if (dAppInfo) {
+            cmHandle = normalizeHandle(dAppInfo.twitterHandle);
+          } else if (cmNameToHandleMap?.has(note.cmName)) {
+            const handle = cmNameToHandleMap.get(note.cmName)!;
+            cmHandle = normalizeHandle(handle);
+          } else {
+            const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
+            if (cmInfo?.cmTwitterHandle) {
+              cmHandle = normalizeHandle(cmInfo.cmTwitterHandle);
+            }
+          }
+        }
+        
+        if (cmHandle) {
+          visibleNodes.add(cmHandle);
+          
+          // Add edge
+          if (cmHandle !== userHandle) {
+            const edgeId = `${cmHandle}-${userHandle}`;
+            visibleEdges.add(edgeId);
+          }
+        }
+      }
+    });
+    
+    // Show visible nodes
+    visibleNodes.forEach(nodeId => {
+      const node = cy.getElementById(nodeId);
+      if (node.length > 0) {
+        node.removeClass('hidden-element');
+      }
+    });
+    
+    // Show visible edges
+    visibleEdges.forEach(edgeId => {
+      const edge = cy.getElementById(edgeId);
+      if (edge.length > 0) {
+        edge.removeClass('hidden-element');
+      }
+    });
+    
+    // Run layout on visible elements only if animating
+    if (isAnimating) {
+      const visibleElements = cy.elements(':visible');
+      if (visibleElements.length > 0) {
+        visibleElements.layout({
+          name: 'fcose',
+          animate: true,
+          animationDuration: Math.min(animationSpeed * 0.8, 800), // Adjust based on animation speed
+          animationEasing: 'ease-out',
+          fit: false,
+          padding: 50,
+          nodeRepulsion: 8000,
+          idealEdgeLength: 150,
+          randomize: false,
+          gravity: 0.25,
+          gravityRange: 3.8,
+          numIter: 500 // Reduce iterations for faster layout
+        } as any).run();
+      }
+    }
+  };
+
+  // Update visibility when timestamp changes
+  useEffect(() => {
+    updateGraphVisibility();
+  }, [currentTimestamp, isGraphInitialized]);
+
+  // Animation control functions
+  const startAnimation = () => {
+    if (notes.length === 0) return;
+    
+    setIsAnimating(true);
+    
+    // Sort notes by timestamp
+    const sortedNotes = [...notes].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const noteTimestamps = sortedNotes.map(note => note.timestamp || 0);
+    
+    // Start from the first note
+    setCurrentTimestamp(noteTimestamps[0]);
+    
+    // Calculate 10% of total notes
+    const notesPerStep = Math.max(1, Math.floor(notes.length * 0.1));
+    let currentIndex = 0;
+    
+    animationIntervalRef.current = setInterval(() => {
+      currentIndex += notesPerStep;
+      
+      if (currentIndex >= noteTimestamps.length - 1) {
+        // Show all notes at the end
+        setCurrentTimestamp(maxTimestamp);
+        stopAnimation();
+      } else {
+        // Set timestamp to include notes up to current index
+        const timestamp = noteTimestamps[Math.min(currentIndex, noteTimestamps.length - 1)];
+        setCurrentTimestamp(timestamp);
+      }
+    }, animationSpeed);
+  };
+
+  const stopAnimation = () => {
+    setIsAnimating(false);
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current);
+      animationIntervalRef.current = null;
+    }
+  };
+
+  const resetAnimation = () => {
+    stopAnimation();
+    setCurrentTimestamp(maxTimestamp);
+  };
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Create graph only once with all elements
+  useEffect(() => {
+    if (!containerRef.current || notes.length === 0 || isGraphInitialized) {
       setLoading(false);
       return;
     }
@@ -47,11 +222,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       const elements: cytoscape.ElementDefinition[] = [];
       const nodeMap = new Map<string, { type: 'cm' | 'user' | 'dapp'; twitterHandle?: string; label: string; displayName?: string }>();
       const edgeMap = new Map<string, number>();
-
-      // Helper function to normalize handles
-      const normalizeHandle = (handle: string): string => {
-        return (handle.startsWith('@') ? handle.substring(1) : handle).toLowerCase();
-      };
 
       // Create a map of all CMs (by normalized Twitter handle) for quick lookup
       const cmHandleMap = new Map<string, { cmName: string; cmTwitterHandle: string }>(); // normalized handle -> cmInfo
@@ -78,7 +248,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       // Track which nodes should be displayed
       const nodesToDisplay = new Set<string>();
 
-      // First pass: identify all nodes that should be displayed (using normalized handles)
+      // First pass: identify all nodes from ALL notes
       const notesWithMissingCM: string[] = [];
       notes.forEach(note => {
         // CM/dApp who wrote the note - use cmTwitterHandle from note if available
@@ -91,25 +261,19 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           if (dAppInfo) {
             const normalizedDAppHandle = normalizeHandle(dAppInfo.twitterHandle);
             nodesToDisplay.add(normalizedDAppHandle);
-            console.log(`[SocialGraph] Found dApp handle for "${note.cmName}": @${dAppInfo.twitterHandle}`);
           } else {
             // Fallback: try to find CM by name (for legacy data)
-            // First check the cmNameToHandleMap which includes all historical names
             if (cmNameToHandleMap) {
               if (cmNameToHandleMap.has(note.cmName)) {
                 const handle = cmNameToHandleMap.get(note.cmName)!;
                 const normalizedCmHandle = normalizeHandle(handle);
                 nodesToDisplay.add(normalizedCmHandle);
-                console.log(`[SocialGraph] Found CM handle for "${note.cmName}" from permissions: @${handle}`);
               } else {
-                // Log what's available in the map for debugging
-                console.log(`[SocialGraph] "${note.cmName}" not found in cmNameToHandleMap. Map size: ${cmNameToHandleMap.size}`);
                 // Try lowercase version
                 if (cmNameToHandleMap.has(note.cmName.toLowerCase())) {
                   const handle = cmNameToHandleMap.get(note.cmName.toLowerCase())!;
                   const normalizedCmHandle = normalizeHandle(handle);
                   nodesToDisplay.add(normalizedCmHandle);
-                  console.log(`[SocialGraph] Found CM handle for "${note.cmName}" (lowercase) from permissions: @${handle}`);
                 } else {
                   // Then try cmInfos
                   const cmInfo = cmInfos.find(cm => cm.cmName === note.cmName);
@@ -212,14 +376,14 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             twitterHandle: handle,
             image: imageUrl
           },
-          classes: nodeInfo.type === 'cm' ? 'cm-node' : nodeInfo.type === 'dapp' ? 'dapp-node' : 'user-node'
+          classes: `${nodeInfo.type === 'cm' ? 'cm-node' : nodeInfo.type === 'dapp' ? 'dapp-node' : 'user-node'} hidden-element`
         };
       });
 
       const nodeElements = await Promise.all(nodePromises);
       elements.push(...nodeElements);
 
-      // Process edges
+      // Process edges from ALL notes
       notes.forEach(note => {
         let cmId: string | undefined;
         
@@ -233,7 +397,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             cmId = normalizeHandle(dAppInfo.twitterHandle);
           } else {
             // Fallback: try to find CM by name (for legacy data)
-            // First check the cmNameToHandleMap which includes all historical names
             if (cmNameToHandleMap && cmNameToHandleMap.has(note.cmName)) {
               const handle = cmNameToHandleMap.get(note.cmName)!;
               cmId = normalizeHandle(handle);
@@ -266,7 +429,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             target,
             weight: count
           },
-          classes: 'note-edge'
+          classes: 'note-edge hidden-element'
         });
       });
 
@@ -293,7 +456,11 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
               'text-margin-y': 5,
               'border-width': 3,
               'border-opacity': 1,
-              'shape': 'ellipse'
+              'shape': 'ellipse',
+              'opacity': 1,
+              'transition-property': 'opacity',
+              'transition-duration': 300,
+              'transition-timing-function': 'ease-in-out'
             }
           },
           {
@@ -334,7 +501,18 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
               'line-color': '#999999',
               'line-opacity': 0.5,
               'curve-style': 'bezier',
-              'target-arrow-shape': 'none'
+              'target-arrow-shape': 'none',
+              'opacity': 1,
+              'transition-property': 'opacity',
+              'transition-duration': 300,
+              'transition-timing-function': 'ease-in-out'
+            }
+          },
+          {
+            selector: '.hidden-element',
+            style: {
+              'opacity': 0,
+              'events': 'no'
             }
           },
           {
@@ -370,8 +548,11 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           gravityRange: 3.8,
           padding: 100,
           stop: () => {
-            console.log('[SocialGraph] Layout completed');
+            console.log('[SocialGraph] Initial layout completed');
             setLoading(false);
+            setIsGraphInitialized(true);
+            // Update visibility after initial layout
+            updateGraphVisibility();
           }
         } as any,
         minZoom: 0.3,
@@ -418,11 +599,93 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         cyRef.current = null;
       }
     };
-  }, [notes, cmInfos]);
+  }, [notes, cmInfos, dAppInfos, cmNameToHandleMap]);
+
+  // Format timestamp to date string
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="social-graph">
       <h2 className="section-title">Social Network</h2>
+      
+      {/* Timeline Controls */}
+      <div className="timeline-controls">
+        <div className="timeline-header">
+          <div className="timeline-buttons">
+            <button 
+              className="timeline-button"
+              onClick={startAnimation}
+              disabled={isAnimating || minTimestamp === 0}
+            >
+              {isAnimating ? '⏸ Pause' : '▶ Play Timeline'}
+            </button>
+            <button 
+              className="timeline-button secondary"
+              onClick={resetAnimation}
+              disabled={isAnimating}
+            >
+              ⏹ Reset
+            </button>
+          </div>
+          <div className="speed-control">
+            <label>Speed:</label>
+            <select 
+              className="speed-select"
+              value={animationSpeed} 
+              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+              disabled={isAnimating}
+            >
+              <option value={3000}>0.3x</option>
+              <option value={2000}>0.5x</option>
+              <option value={1000}>1x</option>
+              <option value={500}>2x</option>
+              <option value={250}>4x</option>
+              <option value={100}>10x</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="timeline-progress">
+          <div className="timeline-slider">
+            <div className="slider-track">
+              <div 
+                className="slider-fill" 
+                style={{ 
+                  width: currentTimestamp && maxTimestamp > minTimestamp
+                    ? `${((currentTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) * 100}%`
+                    : '100%'
+                }}
+              />
+              <input
+                type="range"
+                className="slider-input"
+                min={minTimestamp || 0}
+                max={maxTimestamp || 0}
+                value={currentTimestamp || maxTimestamp}
+                onChange={(e) => {
+                  stopAnimation();
+                  setCurrentTimestamp(Number(e.target.value));
+                }}
+                disabled={minTimestamp === 0}
+              />
+            </div>
+            <div className="timeline-dates">
+              <span>{minTimestamp ? formatDate(minTimestamp) : '-'}</span>
+              <span className="current-date">
+                {currentTimestamp ? `${formatDate(currentTimestamp)} (${notes.filter(n => (n.timestamp || 0) <= currentTimestamp).length}/${notes.length} notes)` : '-'}
+              </span>
+              <span>{maxTimestamp ? formatDate(maxTimestamp) : '-'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div className="graph-info">
         <div className="legend">
           <div className="legend-item">
@@ -459,4 +722,4 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   );
 }
 
-export default SocialGraph; 
+export default SocialGraph;
