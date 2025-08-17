@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import cytoscape, { Core } from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 import { Note } from '../types';
@@ -55,18 +55,10 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   }, [notes]);
 
   // Update graph visibility based on timestamp
-  const updateGraphVisibility = useCallback(() => {
-    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) {
-      console.log('[SocialGraph] updateGraphVisibility early return:', {
-        cy: !!cyRef.current,
-        isGraphInitialized,
-        currentTimestamp
-      });
-      return;
-    }
+  const updateGraphVisibility = () => {
+    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) return;
 
     const cy = cyRef.current;
-    console.log('[SocialGraph] Updating visibility for timestamp:', currentTimestamp, 'max:', maxTimestamp);
     
     // First, hide all elements
     cy.elements().addClass('hidden-element');
@@ -106,14 +98,12 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           
           // Add edge
           if (cmHandle !== userHandle) {
-            const edgeId = `${cmHandle}-${userHandle}`;
+            const edgeId = `edge_${cmHandle}_to_${userHandle}`;
             visibleEdges.add(edgeId);
           }
         }
       }
     });
-    
-    console.log('[SocialGraph] Visible nodes:', visibleNodes.size, 'Visible edges:', visibleEdges.size);
     
     // Show visible nodes
     visibleNodes.forEach(nodeId => {
@@ -131,15 +121,17 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       }
     });
     
-    // If at max timestamp, ensure all elements are visible
-    if (currentTimestamp === maxTimestamp) {
-      console.log('[SocialGraph] At max timestamp, showing all elements');
+    // If at max timestamp but no elements are visible, or very few elements are visible, show all
+    const visibleElementCount = cy.elements(':visible').length;
+    const totalElementCount = cy.elements().length;
+    
+    if (currentTimestamp >= maxTimestamp && visibleElementCount < totalElementCount * 0.5) {
       cy.elements().removeClass('hidden-element');
     }
     
     // Run layout on visible elements only if animating
     if (isAnimating) {
-      const visibleElements = cy.elements().not('.hidden-element');
+      const visibleElements = cy.elements(':visible');
       if (visibleElements.length > 0) {
         visibleElements.layout({
           name: 'fcose',
@@ -157,12 +149,12 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         } as any).run();
       }
     }
-  }, [currentTimestamp, isGraphInitialized, notes, cmInfos, dAppInfos, cmNameToHandleMap, maxTimestamp, isAnimating, animationSpeed]);
+  };
 
   // Update visibility when timestamp changes
   useEffect(() => {
     updateGraphVisibility();
-  }, [updateGraphVisibility]);
+  }, [currentTimestamp, isGraphInitialized]);
 
   // Animation control functions
   const startAnimation = () => {
@@ -207,10 +199,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     if (animationIntervalRef.current) {
       clearInterval(animationIntervalRef.current);
       animationIntervalRef.current = null;
-    }
-    // Ensure graph is fully visible when animation stops
-    if (cyRef.current && currentTimestamp === maxTimestamp) {
-      cyRef.current.elements().removeClass('hidden-element');
     }
   };
 
@@ -445,7 +433,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           const userId = normalizeHandle(note.twitterHandle);
           
           if (cmId !== userId) { // Avoid self-loops
-            const edgeId = `${cmId}-${userId}`;
+            const edgeId = `edge_${cmId}_to_${userId}`;
             edgeMap.set(edgeId, (edgeMap.get(edgeId) || 0) + 1);
           }
         }
@@ -453,16 +441,20 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
       // Create edge elements
       edgeMap.forEach((count, edgeId) => {
-        const [source, target] = edgeId.split('-');
-        elements.push({
-          data: {
-            id: edgeId,
-            source,
-            target,
-            weight: count
-          },
-          classes: 'note-edge hidden-element'
-        });
+        // Parse edge ID: edge_source_to_target
+        const match = edgeId.match(/^edge_(.+)_to_(.+)$/);
+        if (match) {
+          const [, source, target] = match;
+          elements.push({
+            data: {
+              id: edgeId,
+              source,
+              target,
+              weight: count
+            },
+            classes: 'note-edge hidden-element'
+          });
+        }
       });
 
       console.log('[SocialGraph] Creating cytoscape instance with', elements.length, 'elements');
@@ -543,7 +535,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           {
             selector: '.hidden-element',
             style: {
-              'display': 'none'
+              'opacity': 0,
+              'events': 'no'
             }
           },
           {
