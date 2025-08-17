@@ -34,6 +34,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   const [minTimestamp, setMinTimestamp] = useState<number>(0);
   const [maxTimestamp, setMaxTimestamp] = useState<number>(0);
   const [isGraphInitialized, setIsGraphInitialized] = useState(false);
+  const isMountedRef = useRef(true);
 
   // Helper function to normalize handles
   const normalizeHandle = (handle: string): string => {
@@ -174,6 +175,11 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     let currentIndex = 0;
     
     animationIntervalRef.current = setInterval(() => {
+      if (!isMountedRef.current) {
+        stopAnimation();
+        return;
+      }
+      
       currentIndex += notesPerStep;
       
       if (currentIndex >= noteTimestamps.length - 1) {
@@ -182,7 +188,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         stopAnimation();
         // Ensure all elements are visible after animation completes
         setTimeout(() => {
-          if (cyRef.current && isGraphInitialized) {
+          if (cyRef.current && isGraphInitialized && isMountedRef.current) {
             cyRef.current.elements().removeClass('hidden-element');
           }
         }, 100);
@@ -207,31 +213,87 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     setCurrentTimestamp(maxTimestamp);
     // Force update visibility after reset
     setTimeout(() => {
-      if (cyRef.current && isGraphInitialized) {
+      if (cyRef.current && isGraphInitialized && isMountedRef.current) {
         cyRef.current.elements().removeClass('hidden-element');
       }
     }, 100);
   };
 
-  // Cleanup animation on unmount
+  // Track component mount state and cleanup animation on unmount
   useEffect(() => {
+    isMountedRef.current = true;
+    
     return () => {
+      isMountedRef.current = false;
       if (animationIntervalRef.current) {
         clearInterval(animationIntervalRef.current);
       }
     };
   }, []);
 
+  // Handle page visibility changes and tab switches
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden (tab switched)
+        console.log('[SocialGraph] Page hidden, pausing animation');
+        if (animationIntervalRef.current) {
+          clearInterval(animationIntervalRef.current);
+          animationIntervalRef.current = null;
+        }
+      } else {
+        // Page is visible again
+        console.log('[SocialGraph] Page visible again');
+        if (cyRef.current && isGraphInitialized) {
+          // Ensure all elements are visible if at max timestamp
+          if (currentTimestamp >= maxTimestamp) {
+            cyRef.current.elements().removeClass('hidden-element');
+          } else {
+            updateGraphVisibility();
+          }
+        }
+      }
+    };
+
+    // Listen for tab changes within the app
+    const handleTabChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail === 'notes') {
+        // Switching away from analysis tab
+        if (animationIntervalRef.current) {
+          clearInterval(animationIntervalRef.current);
+          animationIntervalRef.current = null;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('app:activeTab', handleTabChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('app:activeTab', handleTabChange);
+    };
+  }, [currentTimestamp, maxTimestamp, isGraphInitialized]);
+
   // Create graph only once with all elements
   useEffect(() => {
-    if (!containerRef.current || notes.length === 0 || isGraphInitialized) {
+    if (!containerRef.current || notes.length === 0) {
       setLoading(false);
+      return;
+    }
+
+    // Don't recreate if already initialized
+    if (isGraphInitialized && cyRef.current) {
+      console.log('[SocialGraph] Graph already initialized, skipping recreation');
       return;
     }
 
     // Destroy previous instance
     if (cyRef.current) {
       cyRef.current.destroy();
+      cyRef.current = null;
+      setIsGraphInitialized(false);
     }
 
     const createGraph = async () => {
@@ -623,9 +685,10 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       if (cyRef.current) {
         cyRef.current.destroy();
         cyRef.current = null;
+        setIsGraphInitialized(false);
       }
     };
-  }, [notes, cmInfos, dAppInfos, cmNameToHandleMap]);
+  }, [notes.length]); // Only recreate when number of notes changes
 
   // Format timestamp to date string
   const formatDate = (timestamp: number) => {
