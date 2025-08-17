@@ -34,7 +34,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   const [minTimestamp, setMinTimestamp] = useState<number>(0);
   const [maxTimestamp, setMaxTimestamp] = useState<number>(0);
   const [isGraphInitialized, setIsGraphInitialized] = useState(false);
-  const animationTimeoutRef = useRef<number | null>(null);
 
   // Helper function to normalize handles
   const normalizeHandle = (handle: string): string => {
@@ -57,20 +56,9 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
   // Update graph visibility based on timestamp
   const updateGraphVisibility = () => {
-    if (!cyRef.current || !isGraphInitialized) return;
+    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) return;
 
     const cy = cyRef.current;
-    
-    // If no timestamp is set, don't change visibility
-    if (currentTimestamp === null) {
-      return;
-    }
-    
-    // Track previously visible nodes
-    const previouslyVisible = new Set<string>();
-    cy.elements(':visible').nodes().forEach(node => {
-      previouslyVisible.add(node.id());
-    });
     
     // First, hide all elements
     cy.elements().addClass('hidden-element');
@@ -78,16 +66,12 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     // Determine which elements should be visible based on timestamp
     const visibleNodes = new Set<string>();
     const visibleEdges = new Set<string>();
-    const newlyVisible = new Set<string>();
     
     notes.forEach(note => {
       if ((note.timestamp || 0) <= currentTimestamp) {
         // Add user node
         const userHandle = normalizeHandle(note.twitterHandle);
         visibleNodes.add(userHandle);
-        if (!previouslyVisible.has(userHandle)) {
-          newlyVisible.add(userHandle);
-        }
         
         // Add CM/dApp node
         let cmHandle: string | undefined;
@@ -111,9 +95,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         
         if (cmHandle) {
           visibleNodes.add(cmHandle);
-          if (!previouslyVisible.has(cmHandle)) {
-            newlyVisible.add(cmHandle);
-          }
           
           // Add edge
           if (cmHandle !== userHandle) {
@@ -123,29 +104,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         }
       }
     });
-    
-    // Set initial positions for newly visible nodes to avoid overlap
-    if (newlyVisible.size > 0 && previouslyVisible.size > 0) {
-      const existingNodes = cy.nodes(':visible');
-      const boundingBox = existingNodes.boundingBox();
-      const centerX = (boundingBox.x1 + boundingBox.x2) / 2;
-      const centerY = (boundingBox.y1 + boundingBox.y2) / 2;
-      const radius = Math.max(boundingBox.w, boundingBox.h) / 2 + 80; // 더 가까운 거리
-      
-      let angleStep = (2 * Math.PI) / newlyVisible.size;
-      let currentAngle = 0;
-      
-      newlyVisible.forEach(nodeId => {
-        const node = cy.getElementById(nodeId);
-        if (node.length > 0) {
-          // Position new nodes in a circle around existing nodes
-          const x = centerX + radius * Math.cos(currentAngle);
-          const y = centerY + radius * Math.sin(currentAngle);
-          node.position({ x, y });
-          currentAngle += angleStep;
-        }
-      });
-    }
     
     // Show visible nodes
     visibleNodes.forEach(nodeId => {
@@ -163,80 +121,29 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       }
     });
     
+    // If no elements are visible (shouldn't happen), show all elements
+    if (visibleNodes.size === 0 && visibleEdges.size === 0 && currentTimestamp === maxTimestamp) {
+      cy.elements().removeClass('hidden-element');
+    }
+    
     // Run layout on visible elements only if animating
     if (isAnimating) {
       const visibleElements = cy.elements(':visible');
       if (visibleElements.length > 0) {
-        // Get positions of hidden nodes to avoid overlap
-        const fixedPositions = new Map<string, { x: number; y: number }>();
-        cy.elements('.hidden-element').forEach(el => {
-          if (el.isNode() && el.position()) {
-            fixedPositions.set(el.id(), el.position());
-          }
-        });
-        
-        // Apply incremental layout with balanced parameters
-        const layout = visibleElements.layout({
+        visibleElements.layout({
           name: 'fcose',
           animate: true,
-          animationDuration: Math.min(animationSpeed * 0.8, 800),
+          animationDuration: Math.min(animationSpeed * 0.8, 800), // Adjust based on animation speed
           animationEasing: 'ease-out',
           fit: false,
           padding: 50,
-          nodeRepulsion: 8500, // 적당한 반발력
-          idealEdgeLength: 120, // 적절한 엣지 길이
-          edgeElasticity: 0.45,
-          nodeOverlap: 20, // 최소한의 오버랩 방지
+          nodeRepulsion: 8000,
+          idealEdgeLength: 150,
           randomize: false,
-          gravity: 0.25, // 적당한 중력
+          gravity: 0.25,
           gravityRange: 3.8,
-          numIter: 500,
-          initialEnergyOnIncremental: 0.5,
-          quality: 'default',
-          nestingFactor: 0.1,
-          uniformNodeDimensions: false,
-          packComponents: false,
-          tile: false, // 타일링 비활성화
-          // 새로 추가된 노드들이 기존 노드들로부터 멀리 배치되도록
-          fixedNodeConstraint: previouslyVisible.size > 0 ? Array.from(previouslyVisible).map(nodeId => ({
-            nodeId,
-            position: cy.getElementById(nodeId).position()
-          })) : undefined,
-          stop: () => {
-            // 레이아웃 완료 후 간단한 충돌 검사
-            const nodes = cy.nodes(':visible');
-            const positions = nodes.map(node => ({
-              id: node.id(),
-              pos: node.position(),
-              width: node.width(),
-              height: node.height()
-            }));
-            
-            // 최소한의 충돌 해결
-            for (let i = 0; i < positions.length; i++) {
-              for (let j = i + 1; j < positions.length; j++) {
-                const node1 = positions[i];
-                const node2 = positions[j];
-                const dx = node2.pos.x - node1.pos.x;
-                const dy = node2.pos.y - node1.pos.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const minDistance = (node1.width + node2.width) / 2 + 10; // 최소 간격만 유지
-                
-                if (distance < minDistance) {
-                  // 노드들을 살짝만 밀어냄
-                  const pushDistance = (minDistance - distance) / 2;
-                  const angle = Math.atan2(dy, dx);
-                  cy.getElementById(node2.id).position({
-                    x: node2.pos.x + Math.cos(angle) * pushDistance,
-                    y: node2.pos.y + Math.sin(angle) * pushDistance
-                  });
-                }
-              }
-            }
-          }
-        } as any);
-        
-        layout.run();
+          numIter: 500 // Reduce iterations for faster layout
+        } as any).run();
       }
     }
   };
@@ -245,24 +152,10 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   useEffect(() => {
     updateGraphVisibility();
   }, [currentTimestamp, isGraphInitialized]);
-  
-  // Show all elements when graph is first initialized
-  useEffect(() => {
-    if (isGraphInitialized && cyRef.current && currentTimestamp === maxTimestamp) {
-      console.log('[SocialGraph] Showing all elements on initial load');
-      cyRef.current.elements().removeClass('hidden-element');
-    }
-  }, [isGraphInitialized, maxTimestamp, currentTimestamp]);
 
   // Animation control functions
   const startAnimation = () => {
     if (notes.length === 0) return;
-    
-    // If animation is already running, pause it
-    if (isAnimating) {
-      stopAnimation();
-      return;
-    }
     
     setIsAnimating(true);
     
@@ -270,52 +163,32 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     const sortedNotes = [...notes].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     const noteTimestamps = sortedNotes.map(note => note.timestamp || 0);
     
+    // Start from the first note
+    setCurrentTimestamp(noteTimestamps[0]);
+    
     // Calculate 10% of total notes
     const notesPerStep = Math.max(1, Math.floor(notes.length * 0.1));
     let currentIndex = 0;
     
-    console.log('[Animation] Starting animation with', notes.length, 'notes, step size:', notesPerStep);
-    
-    // If at the end, restart from beginning
-    if (currentTimestamp === maxTimestamp || currentTimestamp === null) {
-      console.log('[Animation] Restarting from beginning');
-      // Hide all elements first
-      if (cyRef.current) {
-        cyRef.current.elements().addClass('hidden-element');
-      }
-      // Start from the beginning with a small delay
-      setCurrentTimestamp(noteTimestamps[0]);
-      currentIndex = 0;
-    } else {
-      // Continue from current position
-      currentIndex = noteTimestamps.findIndex(ts => ts >= (currentTimestamp || 0));
-      if (currentIndex === -1) currentIndex = 0;
-      console.log('[Animation] Continuing from index:', currentIndex);
-    }
-    
-    // Start interval after a short delay to ensure state updates
-    animationTimeoutRef.current = setTimeout(() => {
-      animationIntervalRef.current = setInterval(() => {
-        currentIndex += notesPerStep;
-        console.log('[Animation] Current index:', currentIndex, '/', noteTimestamps.length);
-        
-        if (currentIndex >= noteTimestamps.length - 1) {
-          // Show all notes at the end
-          console.log('[Animation] Reached end, showing all elements');
-          setCurrentTimestamp(maxTimestamp);
-          stopAnimation();
-          // Ensure all elements are visible at the end
-          if (cyRef.current) {
+    animationIntervalRef.current = setInterval(() => {
+      currentIndex += notesPerStep;
+      
+      if (currentIndex >= noteTimestamps.length - 1) {
+        // Show all notes at the end
+        setCurrentTimestamp(maxTimestamp);
+        stopAnimation();
+        // Ensure all elements are visible after animation completes
+        setTimeout(() => {
+          if (cyRef.current && isGraphInitialized) {
             cyRef.current.elements().removeClass('hidden-element');
           }
-        } else {
-          // Set timestamp to include notes up to current index
-          const timestamp = noteTimestamps[Math.min(currentIndex, noteTimestamps.length - 1)];
-          console.log('[Animation] Setting timestamp to:', new Date(timestamp * 1000).toLocaleDateString());
-          setCurrentTimestamp(timestamp);
-        }
-      }, animationSpeed);
-    }, 100); // Small delay to allow initial state to settle
+        }, 100);
+      } else {
+        // Set timestamp to include notes up to current index
+        const timestamp = noteTimestamps[Math.min(currentIndex, noteTimestamps.length - 1)];
+        setCurrentTimestamp(timestamp);
+      }
+    }, animationSpeed);
   };
 
   const stopAnimation = () => {
@@ -324,19 +197,17 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       clearInterval(animationIntervalRef.current);
       animationIntervalRef.current = null;
     }
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
   };
 
   const resetAnimation = () => {
     stopAnimation();
     setCurrentTimestamp(maxTimestamp);
-    // Force update visibility to show all elements
-    if (cyRef.current && isGraphInitialized) {
-      cyRef.current.elements().removeClass('hidden-element');
-    }
+    // Force update visibility after reset
+    setTimeout(() => {
+      if (cyRef.current && isGraphInitialized) {
+        cyRef.current.elements().removeClass('hidden-element');
+      }
+    }, 100);
   };
 
   // Cleanup animation on unmount
@@ -344,9 +215,6 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     return () => {
       if (animationIntervalRef.current) {
         clearInterval(animationIntervalRef.current);
-      }
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
       }
     };
   }, []);
@@ -617,8 +485,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#ffe4e4',
               'border-color': '#ff6b6b',
-              'width': 60,
-              'height': 60,
+              'width': 50,
+              'height': 50,
               'font-weight': 'bold',
               'font-size': '14px'
             }
@@ -628,8 +496,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#e4f2ff',
               'border-color': '#4dabf7',
-              'width': 50,
-              'height': 50
+              'width': 40,
+              'height': 40
             }
           },
           {
@@ -637,8 +505,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#f3e4ff',
               'border-color': '#9775fa',
-              'width': 70,
-              'height': 70,
+              'width': 60,
+              'height': 60,
               'font-weight': 'bold',
               'font-size': '14px'
             }
@@ -686,24 +554,24 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           animationDuration: 1000,
           animationEasing: 'ease-out',
           nodeDimensionsIncludeLabels: true,
-          idealEdgeLength: 150, // 적절한 엣지 길이
-          nodeRepulsion: 10000, // 적당한 반발력
-          nodeOverlap: 20, // 최소한의 오버랩 방지
-          numIter: 2000, // 충분한 반복
-          tile: false, // 타일링 비활성화
-          gravity: 0.25, // 적당한 중력
+          idealEdgeLength: 200,
+          nodeRepulsion: 10000,
+          nodeOverlap: 40,
+          numIter: 2500,
+          tile: false,
+          tilingPaddingVertical: 10,
+          tilingPaddingHorizontal: 10,
+          gravity: 0.2,
           gravityRange: 3.8,
-          padding: 100, // 적절한 패딩
-          edgeElasticity: 0.45,
-          quality: 'default', // 기본 품질
-          packComponents: false,
-          uniformNodeDimensions: false,
+          padding: 100,
           stop: () => {
             console.log('[SocialGraph] Initial layout completed');
             setLoading(false);
             setIsGraphInitialized(true);
-            // Don't show all elements if animation hasn't started yet
-            // Let updateGraphVisibility handle it based on currentTimestamp
+            // Show all elements after initial layout
+            if (cyRef.current) {
+              cyRef.current.elements().removeClass('hidden-element');
+            }
           }
         } as any,
         minZoom: 0.3,
