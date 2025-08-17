@@ -60,18 +60,28 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
     const cy = cyRef.current;
     
+    // Track previously visible nodes
+    const previouslyVisible = new Set<string>();
+    cy.elements(':visible').nodes().forEach(node => {
+      previouslyVisible.add(node.id());
+    });
+    
     // First, hide all elements
     cy.elements().addClass('hidden-element');
     
     // Determine which elements should be visible based on timestamp
     const visibleNodes = new Set<string>();
     const visibleEdges = new Set<string>();
+    const newlyVisible = new Set<string>();
     
     notes.forEach(note => {
       if ((note.timestamp || 0) <= currentTimestamp) {
         // Add user node
         const userHandle = normalizeHandle(note.twitterHandle);
         visibleNodes.add(userHandle);
+        if (!previouslyVisible.has(userHandle)) {
+          newlyVisible.add(userHandle);
+        }
         
         // Add CM/dApp node
         let cmHandle: string | undefined;
@@ -95,6 +105,9 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         
         if (cmHandle) {
           visibleNodes.add(cmHandle);
+          if (!previouslyVisible.has(cmHandle)) {
+            newlyVisible.add(cmHandle);
+          }
           
           // Add edge
           if (cmHandle !== userHandle) {
@@ -104,6 +117,29 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         }
       }
     });
+    
+    // Set initial positions for newly visible nodes to avoid overlap
+    if (newlyVisible.size > 0 && previouslyVisible.size > 0) {
+      const existingNodes = cy.nodes(':visible');
+      const boundingBox = existingNodes.boundingBox();
+      const centerX = (boundingBox.x1 + boundingBox.x2) / 2;
+      const centerY = (boundingBox.y1 + boundingBox.y2) / 2;
+      const radius = Math.max(boundingBox.w, boundingBox.h) / 2 + 200;
+      
+      let angleStep = (2 * Math.PI) / newlyVisible.size;
+      let currentAngle = 0;
+      
+      newlyVisible.forEach(nodeId => {
+        const node = cy.getElementById(nodeId);
+        if (node.length > 0) {
+          // Position new nodes in a circle around existing nodes
+          const x = centerX + radius * Math.cos(currentAngle);
+          const y = centerY + radius * Math.sin(currentAngle);
+          node.position({ x, y });
+          currentAngle += angleStep;
+        }
+      });
+    }
     
     // Show visible nodes
     visibleNodes.forEach(nodeId => {
@@ -125,20 +161,79 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     if (isAnimating) {
       const visibleElements = cy.elements(':visible');
       if (visibleElements.length > 0) {
-        visibleElements.layout({
+        // Get positions of hidden nodes to avoid overlap
+        const fixedPositions = new Map<string, { x: number; y: number }>();
+        cy.elements('.hidden-element').forEach(el => {
+          if (el.isNode() && el.position()) {
+            fixedPositions.set(el.id(), el.position());
+          }
+        });
+        
+        // Apply incremental layout with strong repulsion
+        const layout = visibleElements.layout({
           name: 'fcose',
           animate: true,
-          animationDuration: Math.min(animationSpeed * 0.8, 800), // Adjust based on animation speed
+          animationDuration: Math.min(animationSpeed * 0.8, 800),
           animationEasing: 'ease-out',
           fit: false,
-          padding: 50,
-          nodeRepulsion: 8000,
-          idealEdgeLength: 150,
+          padding: 100,
+          nodeRepulsion: 50000, // 매우 강한 반발력
+          idealEdgeLength: 300, // 더 큰 이상적 엣지 길이
+          edgeElasticity: 0.1, // 더 낮은 탄성으로 노드 간격 유지
+          nodeOverlap: 150, // 더 큰 오버랩 방지
           randomize: false,
-          gravity: 0.25,
-          gravityRange: 3.8,
-          numIter: 500 // Reduce iterations for faster layout
-        } as any).run();
+          gravity: 0.05, // 매우 낮은 중력
+          gravityRange: 8.0, // 더 넓은 중력 범위
+          numIter: 1000, // 충분한 반복
+          initialEnergyOnIncremental: 0.3,
+          quality: 'proof',
+          nestingFactor: 0.1,
+          uniformNodeDimensions: false,
+          packComponents: true,
+          tile: true,
+          tilingPaddingVertical: 50,
+          tilingPaddingHorizontal: 50,
+          nodeSeparation: 500, // 노드 간 최소 거리
+          // 새로 추가된 노드들이 기존 노드들로부터 멀리 배치되도록
+          fixedNodeConstraint: previouslyVisible.size > 0 ? Array.from(previouslyVisible).map(nodeId => ({
+            nodeId,
+            position: cy.getElementById(nodeId).position()
+          })) : undefined,
+          stop: () => {
+            // 레이아웃 완료 후 추가적인 충돌 검사
+            const nodes = cy.nodes(':visible');
+            const positions = nodes.map(node => ({
+              id: node.id(),
+              pos: node.position(),
+              width: node.width(),
+              height: node.height()
+            }));
+            
+            // 간단한 충돌 해결
+            for (let i = 0; i < positions.length; i++) {
+              for (let j = i + 1; j < positions.length; j++) {
+                const node1 = positions[i];
+                const node2 = positions[j];
+                const dx = node2.pos.x - node1.pos.x;
+                const dy = node2.pos.y - node1.pos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = (node1.width + node2.width) / 2 + 50;
+                
+                if (distance < minDistance) {
+                  // 노드들을 서로 밀어냄
+                  const pushDistance = (minDistance - distance) / 2;
+                  const angle = Math.atan2(dy, dx);
+                  cy.getElementById(node2.id).position({
+                    x: node2.pos.x + Math.cos(angle) * pushDistance,
+                    y: node2.pos.y + Math.sin(angle) * pushDistance
+                  });
+                }
+              }
+            }
+          }
+        } as any);
+        
+        layout.run();
       }
     }
   };
@@ -468,8 +563,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#ffe4e4',
               'border-color': '#ff6b6b',
-              'width': 50,
-              'height': 50,
+              'width': 60,
+              'height': 60,
               'font-weight': 'bold',
               'font-size': '14px'
             }
@@ -479,8 +574,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#e4f2ff',
               'border-color': '#4dabf7',
-              'width': 40,
-              'height': 40
+              'width': 50,
+              'height': 50
             }
           },
           {
@@ -488,8 +583,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             style: {
               'background-color': '#f3e4ff',
               'border-color': '#9775fa',
-              'width': 60,
-              'height': 60,
+              'width': 70,
+              'height': 70,
               'font-weight': 'bold',
               'font-size': '14px'
             }
@@ -537,16 +632,20 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           animationDuration: 1000,
           animationEasing: 'ease-out',
           nodeDimensionsIncludeLabels: true,
-          idealEdgeLength: 200,
-          nodeRepulsion: 10000,
-          nodeOverlap: 40,
-          numIter: 2500,
-          tile: false,
-          tilingPaddingVertical: 10,
-          tilingPaddingHorizontal: 10,
-          gravity: 0.2,
+          idealEdgeLength: 250, // 증가된 엣지 길이
+          nodeRepulsion: 25000, // 증가된 반발력
+          nodeOverlap: 100, // 증가된 오버랩 방지
+          numIter: 3000, // 더 많은 반복
+          tile: true, // 타일링 활성화
+          tilingPaddingVertical: 30,
+          tilingPaddingHorizontal: 30,
+          gravity: 0.15, // 감소된 중력
           gravityRange: 3.8,
-          padding: 100,
+          padding: 150, // 증가된 패딩
+          edgeElasticity: 0.45,
+          quality: 'proof', // 높은 품질
+          packComponents: true,
+          uniformNodeDimensions: false,
           stop: () => {
             console.log('[SocialGraph] Initial layout completed');
             setLoading(false);
