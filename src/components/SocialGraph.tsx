@@ -34,6 +34,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   const [minTimestamp, setMinTimestamp] = useState<number>(0);
   const [maxTimestamp, setMaxTimestamp] = useState<number>(0);
   const [isGraphInitialized, setIsGraphInitialized] = useState(false);
+  const animationTimeoutRef = useRef<number | null>(null);
 
   // Helper function to normalize handles
   const normalizeHandle = (handle: string): string => {
@@ -60,9 +61,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
     const cy = cyRef.current;
     
-    // If no timestamp is set, show all elements
+    // If no timestamp is set, don't change visibility
     if (currentTimestamp === null) {
-      cy.elements().removeClass('hidden-element');
       return;
     }
     
@@ -245,6 +245,14 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   useEffect(() => {
     updateGraphVisibility();
   }, [currentTimestamp, isGraphInitialized]);
+  
+  // Show all elements when graph is first initialized
+  useEffect(() => {
+    if (isGraphInitialized && cyRef.current && currentTimestamp === maxTimestamp) {
+      console.log('[SocialGraph] Showing all elements on initial load');
+      cyRef.current.elements().removeClass('hidden-element');
+    }
+  }, [isGraphInitialized, maxTimestamp, currentTimestamp]);
 
   // Animation control functions
   const startAnimation = () => {
@@ -262,33 +270,52 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     const sortedNotes = [...notes].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     const noteTimestamps = sortedNotes.map(note => note.timestamp || 0);
     
-    // If at the end, restart from beginning
-    if (currentTimestamp === maxTimestamp || currentTimestamp === null) {
-      setCurrentTimestamp(noteTimestamps[0]);
-    }
-    
     // Calculate 10% of total notes
     const notesPerStep = Math.max(1, Math.floor(notes.length * 0.1));
-    let currentIndex = noteTimestamps.findIndex(ts => ts >= (currentTimestamp || 0));
-    if (currentIndex === -1) currentIndex = 0;
+    let currentIndex = 0;
     
-    animationIntervalRef.current = setInterval(() => {
-      currentIndex += notesPerStep;
-      
-      if (currentIndex >= noteTimestamps.length - 1) {
-        // Show all notes at the end
-        setCurrentTimestamp(maxTimestamp);
-        stopAnimation();
-        // Ensure all elements are visible at the end
-        if (cyRef.current) {
-          cyRef.current.elements().removeClass('hidden-element');
-        }
-      } else {
-        // Set timestamp to include notes up to current index
-        const timestamp = noteTimestamps[Math.min(currentIndex, noteTimestamps.length - 1)];
-        setCurrentTimestamp(timestamp);
+    console.log('[Animation] Starting animation with', notes.length, 'notes, step size:', notesPerStep);
+    
+    // If at the end, restart from beginning
+    if (currentTimestamp === maxTimestamp || currentTimestamp === null) {
+      console.log('[Animation] Restarting from beginning');
+      // Hide all elements first
+      if (cyRef.current) {
+        cyRef.current.elements().addClass('hidden-element');
       }
-    }, animationSpeed);
+      // Start from the beginning with a small delay
+      setCurrentTimestamp(noteTimestamps[0]);
+      currentIndex = 0;
+    } else {
+      // Continue from current position
+      currentIndex = noteTimestamps.findIndex(ts => ts >= (currentTimestamp || 0));
+      if (currentIndex === -1) currentIndex = 0;
+      console.log('[Animation] Continuing from index:', currentIndex);
+    }
+    
+    // Start interval after a short delay to ensure state updates
+    animationTimeoutRef.current = setTimeout(() => {
+      animationIntervalRef.current = setInterval(() => {
+        currentIndex += notesPerStep;
+        console.log('[Animation] Current index:', currentIndex, '/', noteTimestamps.length);
+        
+        if (currentIndex >= noteTimestamps.length - 1) {
+          // Show all notes at the end
+          console.log('[Animation] Reached end, showing all elements');
+          setCurrentTimestamp(maxTimestamp);
+          stopAnimation();
+          // Ensure all elements are visible at the end
+          if (cyRef.current) {
+            cyRef.current.elements().removeClass('hidden-element');
+          }
+        } else {
+          // Set timestamp to include notes up to current index
+          const timestamp = noteTimestamps[Math.min(currentIndex, noteTimestamps.length - 1)];
+          console.log('[Animation] Setting timestamp to:', new Date(timestamp * 1000).toLocaleDateString());
+          setCurrentTimestamp(timestamp);
+        }
+      }, animationSpeed);
+    }, 100); // Small delay to allow initial state to settle
   };
 
   const stopAnimation = () => {
@@ -296,6 +323,10 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     if (animationIntervalRef.current) {
       clearInterval(animationIntervalRef.current);
       animationIntervalRef.current = null;
+    }
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
     }
   };
 
@@ -313,6 +344,9 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     return () => {
       if (animationIntervalRef.current) {
         clearInterval(animationIntervalRef.current);
+      }
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
       }
     };
   }, []);
@@ -668,8 +702,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
             console.log('[SocialGraph] Initial layout completed');
             setLoading(false);
             setIsGraphInitialized(true);
-            // Show all elements after initial layout
-            cy.elements().removeClass('hidden-element');
+            // Don't show all elements if animation hasn't started yet
+            // Let updateGraphVisibility handle it based on currentTimestamp
           }
         } as any,
         minZoom: 0.3,
