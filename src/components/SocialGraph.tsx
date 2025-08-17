@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import cytoscape, { Core } from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 import { Note } from '../types';
@@ -55,10 +55,18 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
   }, [notes]);
 
   // Update graph visibility based on timestamp
-  const updateGraphVisibility = () => {
-    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) return;
+  const updateGraphVisibility = useCallback(() => {
+    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) {
+      console.log('[SocialGraph] updateGraphVisibility early return:', {
+        cy: !!cyRef.current,
+        isGraphInitialized,
+        currentTimestamp
+      });
+      return;
+    }
 
     const cy = cyRef.current;
+    console.log('[SocialGraph] Updating visibility for timestamp:', currentTimestamp, 'max:', maxTimestamp);
     
     // First, hide all elements
     cy.elements().addClass('hidden-element');
@@ -105,6 +113,8 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       }
     });
     
+    console.log('[SocialGraph] Visible nodes:', visibleNodes.size, 'Visible edges:', visibleEdges.size);
+    
     // Show visible nodes
     visibleNodes.forEach(nodeId => {
       const node = cy.getElementById(nodeId);
@@ -121,14 +131,15 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       }
     });
     
-    // If no elements are visible (shouldn't happen), show all elements
-    if (visibleNodes.size === 0 && visibleEdges.size === 0 && currentTimestamp === maxTimestamp) {
+    // If at max timestamp, ensure all elements are visible
+    if (currentTimestamp === maxTimestamp) {
+      console.log('[SocialGraph] At max timestamp, showing all elements');
       cy.elements().removeClass('hidden-element');
     }
     
     // Run layout on visible elements only if animating
     if (isAnimating) {
-      const visibleElements = cy.elements(':visible');
+      const visibleElements = cy.elements().not('.hidden-element');
       if (visibleElements.length > 0) {
         visibleElements.layout({
           name: 'fcose',
@@ -146,12 +157,12 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         } as any).run();
       }
     }
-  };
+  }, [currentTimestamp, isGraphInitialized, notes, cmInfos, dAppInfos, cmNameToHandleMap, maxTimestamp, isAnimating, animationSpeed]);
 
   // Update visibility when timestamp changes
   useEffect(() => {
     updateGraphVisibility();
-  }, [currentTimestamp, isGraphInitialized]);
+  }, [updateGraphVisibility]);
 
   // Animation control functions
   const startAnimation = () => {
@@ -196,6 +207,10 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
     if (animationIntervalRef.current) {
       clearInterval(animationIntervalRef.current);
       animationIntervalRef.current = null;
+    }
+    // Ensure graph is fully visible when animation stops
+    if (cyRef.current && currentTimestamp === maxTimestamp) {
+      cyRef.current.elements().removeClass('hidden-element');
     }
   };
 
@@ -528,8 +543,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
           {
             selector: '.hidden-element',
             style: {
-              'opacity': 0,
-              'events': 'no'
+              'display': 'none'
             }
           },
           {
