@@ -57,9 +57,22 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
   // Update graph visibility based on timestamp
   const updateGraphVisibility = () => {
-    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) return;
+    if (!cyRef.current || !isGraphInitialized || currentTimestamp === null) {
+      console.log('[updateGraphVisibility] Early return:', {
+        hasCy: !!cyRef.current,
+        isInitialized: isGraphInitialized,
+        timestamp: currentTimestamp
+      });
+      return;
+    }
 
     const cy = cyRef.current;
+    
+    // Check if cy is still valid
+    if (!cy.container()) {
+      console.error('[updateGraphVisibility] Cytoscape container is null!');
+      return;
+    }
     
     // First, hide all elements
     cy.elements().addClass('hidden-element');
@@ -283,15 +296,21 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       return;
     }
 
-    // Don't recreate if already initialized
-    if (isGraphInitialized && cyRef.current) {
-      console.log('[SocialGraph] Graph already initialized, skipping recreation');
+    // Don't recreate if already initialized and container is valid
+    if (isGraphInitialized && cyRef.current && cyRef.current.container()) {
+      console.log('[SocialGraph] Graph already initialized with valid container, skipping recreation');
       return;
     }
 
-    // Destroy previous instance
+    // Destroy previous instance if it exists
     if (cyRef.current) {
-      cyRef.current.destroy();
+      try {
+        if (cyRef.current.container()) {
+          cyRef.current.destroy();
+        }
+      } catch (e) {
+        console.error('[SocialGraph] Error destroying previous instance:', e);
+      }
       cyRef.current = null;
       setIsGraphInitialized(false);
     }
@@ -521,6 +540,13 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
       console.log('[SocialGraph] Creating cytoscape instance with', elements.length, 'elements');
 
+      // Double-check container is still available
+      if (!containerRef.current) {
+        console.error('[SocialGraph] Container disappeared before creating cytoscape!');
+        setLoading(false);
+        return;
+      }
+
       // Create cytoscape instance
       const cy = cytoscape({
         container: containerRef.current,
@@ -680,15 +706,47 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
 
     createGraph();
 
+    // Monitor cytoscape instance
+    const checkCyInterval = setInterval(() => {
+      if (cyRef.current && !cyRef.current.container()) {
+        console.error('[SocialGraph] Cytoscape lost its container! Attempting to recover...');
+        // Try to recover by forcing visibility update
+        if (containerRef.current && currentTimestamp >= maxTimestamp) {
+          try {
+            cyRef.current.mount(containerRef.current);
+            cyRef.current.elements().removeClass('hidden-element');
+          } catch (e) {
+            console.error('[SocialGraph] Failed to recover:', e);
+            setIsGraphInitialized(false);
+          }
+        }
+      }
+    }, 1000);
+
     // Cleanup
     return () => {
-      if (cyRef.current) {
-        cyRef.current.destroy();
+      clearInterval(checkCyInterval);
+      // Only destroy if component is actually unmounting
+      if (!isMountedRef.current && cyRef.current) {
+        console.log('[SocialGraph] Component unmounting, destroying cytoscape instance');
+        try {
+          cyRef.current.destroy();
+        } catch (e) {
+          console.error('[SocialGraph] Error during cleanup:', e);
+        }
         cyRef.current = null;
         setIsGraphInitialized(false);
       }
     };
-  }, [notes.length]); // Only recreate when number of notes changes
+  }, []); // Create only once when component mounts
+
+  // Update graph when data changes
+  useEffect(() => {
+    if (cyRef.current && isGraphInitialized && notes.length > 0) {
+      // Instead of recreating, just update visibility
+      updateGraphVisibility();
+    }
+  }, [notes.length, isGraphInitialized]);
 
   // Format timestamp to date string
   const formatDate = (timestamp: number) => {
