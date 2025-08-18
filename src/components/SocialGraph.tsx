@@ -259,7 +259,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
         console.log('[SocialGraph] Page visible again');
         if (cyRef.current && isGraphInitialized) {
           // Ensure all elements are visible if at max timestamp
-          if (currentTimestamp >= maxTimestamp) {
+          if (currentTimestamp !== null && currentTimestamp >= maxTimestamp) {
             cyRef.current.elements().removeClass('hidden-element');
           } else {
             updateGraphVisibility();
@@ -711,7 +711,7 @@ function SocialGraph({ notes, cmInfos, dAppInfos = [], cmNameToHandleMap }: Soci
       if (cyRef.current && !cyRef.current.container()) {
         console.error('[SocialGraph] Cytoscape lost its container! Attempting to recover...');
         // Try to recover by forcing visibility update
-        if (containerRef.current && currentTimestamp >= maxTimestamp) {
+        if (containerRef.current && currentTimestamp !== null && currentTimestamp >= maxTimestamp) {
           try {
             cyRef.current.mount(containerRef.current);
             cyRef.current.elements().removeClass('hidden-element');
