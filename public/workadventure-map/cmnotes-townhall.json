@@ -3657,20 +3657,8 @@
       ]
     },
     {
-      "id": 4,
-      "name": "sprite-image",
-      "type": "imagelayer",
-      "visible": true,
-      "opacity": 1,
-      "offsetx": 512,
-      "offsety": 704,
-      "image": "sprite.png",
-      "x": 0,
-      "y": 0
-    },
-    {
       "draworder": "topdown",
-      "id": 5,
+      "id": 4,
       "name": "objects",
       "objects": [
         {
@@ -3911,6 +3899,48 @@
         },
         {
           "id": 10,
+          "name": "sprite-display",
+          "type": "zone",
+          "x": 512,
+          "y": 704,
+          "width": 256,
+          "height": 192,
+          "visible": true,
+          "properties": [
+            {
+              "name": "openWebsite",
+              "type": "string",
+              "value": "./sprite.png"
+            },
+            {
+              "name": "openWebsiteTrigger",
+              "type": "string",
+              "value": "onenter"
+            },
+            {
+              "name": "openWebsiteAllowApi",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "openWebsitePolicy",
+              "type": "string",
+              "value": "embedded"
+            },
+            {
+              "name": "openWebsiteWidth",
+              "type": "int",
+              "value": 256
+            },
+            {
+              "name": "openWebsitePosition",
+              "type": "string",
+              "value": "center"
+            }
+          ]
+        },
+        {
+          "id": 11,
           "name": "playerStats_*",
           "type": "variable",
           "x": 0,
@@ -3937,7 +3967,7 @@
           ]
         },
         {
-          "id": 11,
+          "id": 12,
           "name": "presence_*",
           "type": "variable",
           "x": 16,
@@ -3971,8 +4001,8 @@
       "y": 0
     }
   ],
-  "nextlayerid": 6,
-  "nextobjectid": 12,
+  "nextlayerid": 5,
+  "nextobjectid": 13,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.7.2",

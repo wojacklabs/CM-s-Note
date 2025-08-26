@@ -342,6 +342,26 @@ function createObjects() {
     ]
   });
   
+  // Sprite display area - using embedded website to show image
+  objects.push({
+    id: objectId++,
+    name: "sprite-display",
+    type: "zone",
+    x: 16 * TILE_SIZE,
+    y: 22 * TILE_SIZE,
+    width: 8 * TILE_SIZE,
+    height: 6 * TILE_SIZE,
+    visible: true,
+    properties: [
+      { name: "openWebsite", type: "string", value: "./sprite.png" },
+      { name: "openWebsiteTrigger", type: "string", value: "onenter" },
+      { name: "openWebsiteAllowApi", type: "bool", value: false },
+      { name: "openWebsitePolicy", type: "string", value: "embedded" },
+      { name: "openWebsiteWidth", type: "int", value: 256 },
+      { name: "openWebsitePosition", type: "string", value: "center" }
+    ]
+  });
+  
 
   
   // Variable storage areas for persistent data
@@ -451,20 +471,8 @@ function generateMap() {
         ]
       },
       {
-        id: 4,
-        name: "sprite-image",
-        type: "imagelayer",
-        visible: true,
-        opacity: 1,
-        offsetx: 16 * TILE_SIZE,  // Center X (512px from left)
-        offsety: 22 * TILE_SIZE,  // Bottom area Y (704px from top)
-        image: "sprite.png",
-        x: 0,
-        y: 0
-      },
-      {
         draworder: "topdown",
-        id: 5,
+        id: 4,
         name: "objects",
         objects: objects,
         opacity: 1,
@@ -474,7 +482,7 @@ function generateMap() {
         y: 0
       }
     ],
-    nextlayerid: 6,
+    nextlayerid: 5,
     nextobjectid: objects.length + 1,
     orientation: "orthogonal",
     renderorder: "right-down",
@@ -553,7 +561,7 @@ fs.writeFileSync(outputPath, JSON.stringify(mapData, null, 2));
 console.log('✅ Cyberpunk map generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`📐 Size: ${MAP_WIDTH}x${MAP_HEIGHT} tiles`);
-console.log(`🎯 Objects: ${mapData.layers[4].objects.length} interactive zones`);
+console.log(`🎯 Objects: ${mapData.layers[3].objects.length} interactive zones`);
 console.log('\n🤖 Cyber Layout:');
 console.log('  • Cyber Meeting Rooms: Top corners (holo-conference)');
 console.log('  • Tech Lounge: Left middle (social hub)');
