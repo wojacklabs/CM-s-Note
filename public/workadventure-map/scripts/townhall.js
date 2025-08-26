@@ -65,53 +65,17 @@ async function initializePlayer() {
   playerStats.totalVisits++;
   playerStats.startTime = Date.now();
   
-  // Welcome message based on visit count
-  if (playerStats.totalVisits === 1) {
-    WA.chat.sendChatMessage(
-      `🎉 Welcome to ${TOWN_HALL_CONFIG.name}, ${playerName}! This is your first visit!`,
-      'System'
-    );
-    
-    // Show tutorial
-    setTimeout(() => {
-      showTutorial();
-    }, 2000);
-  } else {
-    WA.chat.sendChatMessage(
-      `👋 Welcome back, ${playerName}! Visit #${playerStats.totalVisits}`,
-      'System'
-    );
-    
-    // Show daily tip
-    showDailyTip();
-  }
+  // Welcome message disabled - using UI guide instead
+  // Removed all chat messages for cleaner experience
   
   // Update presence
   updatePlayerPresence('online');
 }
 
-// Tutorial for new players
+// Tutorial for new players - disabled (using UI guide instead)
 function showTutorial() {
-  const tutorialSteps = [
-    "🎮 Use arrow keys or WASD to move around",
-    "🔍 Press SPACE near objects to interact",
-    "💬 Type in chat to communicate with everyone",
-    "🎥 Enter meeting rooms for video calls",
-    "🤫 Quiet zones automatically mute your microphone",
-    "🎨 Visit the creative space for collaborative whiteboard"
-  ];
-  
-  let step = 0;
-  const showNextStep = () => {
-    if (step < tutorialSteps.length) {
-      WA.chat.sendChatMessage(tutorialSteps[step], 'Tutorial');
-      step++;
-      setTimeout(showNextStep, 3000);
-    }
-  };
-  
-  WA.chat.sendChatMessage("📚 Quick Tutorial:", 'Tutorial');
-  setTimeout(showNextStep, 1000);
+  // Tutorial messages disabled - using separate UI guide
+  return;
 }
 
 // Daily tips

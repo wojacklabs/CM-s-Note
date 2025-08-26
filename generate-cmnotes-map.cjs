@@ -173,13 +173,13 @@ function createMapData() {
   decorLayer[15][19] = TILES.HOLO_PLANT;
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
-  // Add sprite image tiles in center bottom area
+  // Add sprite image tiles in center area (more centered vertically)
   // Sprite starts at tile 52 and is 10x15 tiles  
   const spriteStartTile = 52;
   const spriteWidth = 10;
   const spriteHeight = 15;
   const spriteStartX = Math.floor((MAP_WIDTH - spriteWidth) / 2); // Center horizontally (15)
-  const spriteStartY = MAP_HEIGHT - spriteHeight - 2; // Position near bottom with 2 tile margin (13)
+  const spriteStartY = Math.floor((MAP_HEIGHT - spriteHeight) / 2) + 2; // More centered vertically (9)
   
   for (let sy = 0; sy < spriteHeight; sy++) {
     for (let sx = 0; sx < spriteWidth; sx++) {
