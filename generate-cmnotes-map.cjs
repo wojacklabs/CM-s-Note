@@ -173,26 +173,7 @@ function createMapData() {
   decorLayer[15][19] = TILES.HOLO_PLANT;
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
-  // Add sprite image tiles - positioned at center-bottom with safe boundaries
-  // Sprite is 7x11 tiles, map is 40x30 tiles
-  const spriteStartTile = 52;
-  const spriteWidth = 7;
-  const spriteHeight = 11;
-  // Position at center-bottom with extra safety margin
-  const spriteStartX = 16; // Fixed position to avoid edge issues
-  const spriteStartY = 16; // Center-bottom position (30 - 11 - 3 = 16)
-  
-  for (let sy = 0; sy < spriteHeight; sy++) {
-    for (let sx = 0; sx < spriteWidth; sx++) {
-      const x = spriteStartX + sx;
-      const y = spriteStartY + sy;
-      // Only place tile if within map bounds
-      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        const tileIndex = spriteStartTile + (sy * spriteWidth) + sx;
-        decorLayer[y][x] = tileIndex;
-      }
-    }
-  }
+  // Note: sprite.png is now added as a separate image layer, not as tiles
   
   return { floorLayer, wallsLayer, decorLayer };
 }
@@ -477,8 +458,18 @@ function generateMap() {
         ]
       },
       {
-        draworder: "topdown",
         id: 4,
+        image: "sprite.png",
+        name: "sprite",
+        opacity: 1,
+        type: "imagelayer",
+        visible: true,
+        x: 512,  // Center horizontally: (40*32 - 256) / 2
+        y: 480   // Center-bottom position
+      },
+      {
+        draworder: "topdown",
+        id: 5,
         name: "objects",
         objects: objects,
         opacity: 1,
@@ -488,7 +479,7 @@ function generateMap() {
         y: 0
       }
     ],
-    nextlayerid: 5,
+    nextlayerid: 6,
     nextobjectid: objects.length + 1,
     orientation: "orthogonal",
     renderorder: "right-down",
@@ -499,12 +490,12 @@ function generateMap() {
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 416,  // Updated height for 13 rows (129 tiles / 10 columns) 
+        imageheight: 352,  // Height for base tileset without sprite
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 129,  // Updated to include sprite tiles (52-128)
+        tilecount: 101,  // Base tileset tiles only
         tileheight: 32,
         tilewidth: 32,
         tiles: [
@@ -567,7 +558,7 @@ fs.writeFileSync(outputPath, JSON.stringify(mapData, null, 2));
 console.log('✅ Cyberpunk map generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`📐 Size: ${MAP_WIDTH}x${MAP_HEIGHT} tiles`);
-console.log(`🎯 Objects: ${mapData.layers[3].objects.length} interactive zones`);
+console.log(`🎯 Objects: ${mapData.layers[4].objects.length} interactive zones`);
 console.log('\n🤖 Cyber Layout:');
 console.log('  • Cyber Meeting Rooms: Top corners (holo-conference)');
 console.log('  • Tech Lounge: Left middle (social hub)');
