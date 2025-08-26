@@ -176,7 +176,7 @@ function createMapData() {
   // Add sprite image tiles in safe center area
   // Sprite is 10x15 tiles, map is 40x30 tiles
   const spriteStartTile = 52;
-  const spriteWidth = 8;
+  const spriteWidth = 10;
   const spriteHeight = 15;
   // Calculate safe position: (40-10)/2 = 15, (30-15)/2 = 7.5 -> 8
   const spriteStartX = 15; // Centered horizontally
