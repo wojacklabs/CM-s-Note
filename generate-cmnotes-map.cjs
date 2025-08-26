@@ -342,6 +342,8 @@ function createObjects() {
     ]
   });
   
+
+  
   // Variable storage areas for persistent data
   // These are invisible objects that allow scripts to store data
   objects.push({
@@ -449,8 +451,20 @@ function generateMap() {
         ]
       },
       {
-        draworder: "topdown",
         id: 4,
+        name: "sprite-image",
+        type: "imagelayer",
+        visible: true,
+        opacity: 1,
+        offsetx: 16 * TILE_SIZE,  // Center X (512px from left)
+        offsety: 22 * TILE_SIZE,  // Bottom area Y (704px from top)
+        image: "sprite.png",
+        x: 0,
+        y: 0
+      },
+      {
+        draworder: "topdown",
+        id: 5,
         name: "objects",
         objects: objects,
         opacity: 1,
@@ -460,7 +474,7 @@ function generateMap() {
         y: 0
       }
     ],
-    nextlayerid: 5,
+    nextlayerid: 6,
     nextobjectid: objects.length + 1,
     orientation: "orthogonal",
     renderorder: "right-down",
@@ -539,7 +553,7 @@ fs.writeFileSync(outputPath, JSON.stringify(mapData, null, 2));
 console.log('✅ Cyberpunk map generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`📐 Size: ${MAP_WIDTH}x${MAP_HEIGHT} tiles`);
-console.log(`🎯 Objects: ${mapData.layers[3].objects.length} interactive zones`);
+console.log(`🎯 Objects: ${mapData.layers[4].objects.length} interactive zones`);
 console.log('\n🤖 Cyber Layout:');
 console.log('  • Cyber Meeting Rooms: Top corners (holo-conference)');
 console.log('  • Tech Lounge: Left middle (social hub)');

@@ -3657,8 +3657,20 @@
       ]
     },
     {
-      "draworder": "topdown",
       "id": 4,
+      "name": "sprite-image",
+      "type": "imagelayer",
+      "visible": true,
+      "opacity": 1,
+      "offsetx": 512,
+      "offsety": 704,
+      "image": "sprite.png",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 5,
       "name": "objects",
       "objects": [
         {
@@ -3959,7 +3971,7 @@
       "y": 0
     }
   ],
-  "nextlayerid": 5,
+  "nextlayerid": 6,
   "nextobjectid": 12,
   "orientation": "orthogonal",
   "renderorder": "right-down",
