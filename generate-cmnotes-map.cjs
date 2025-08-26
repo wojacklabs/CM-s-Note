@@ -173,14 +173,14 @@ function createMapData() {
   decorLayer[15][19] = TILES.HOLO_PLANT;
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
-  // Add sprite image tiles in safe center area
-  // Sprite is 10x15 tiles, map is 40x30 tiles
+  // Add sprite image tiles - smaller size to ensure it fits
+  // Sprite is 8x12 tiles, map is 40x30 tiles
   const spriteStartTile = 52;
-  const spriteWidth = 10;
-  const spriteHeight = 15;
-  // Calculate safe position: (40-10)/2 = 15, (30-15)/2 = 7.5 -> 8
-  const spriteStartX = 15; // Centered horizontally
-  const spriteStartY = 8;  // Centered vertically
+  const spriteWidth = 8;
+  const spriteHeight = 12;
+  // Calculate safe position with margin: (40-8)/2 = 16, (30-12)/2 = 9
+  const spriteStartX = 16; // Centered horizontally with margin
+  const spriteStartY = 9;  // Centered vertically with margin
   
   for (let sy = 0; sy < spriteHeight; sy++) {
     for (let sx = 0; sx < spriteWidth; sx++) {
@@ -499,12 +499,12 @@ function generateMap() {
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 672,  // Updated height for 21 rows (202 tiles / 10 columns) 
+        imageheight: 480,  // Updated height for 15 rows (148 tiles / 10 columns) 
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 202,  // Updated to include sprite tiles (52-201)
+        tilecount: 148,  // Updated to include sprite tiles (52-147)
         tileheight: 32,
         tilewidth: 32,
         tiles: [
