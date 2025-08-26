@@ -53,7 +53,8 @@ WA.onInit().then(() => {
 
 // Player initialization
 async function initializePlayer() {
-  const playerName = await WA.player.name;
+  // WA.player.name is already a string, not a promise
+  const playerName = WA.player.name || 'Guest';
   
   // Load saved data
   const savedStats = WA.state.loadVariable(`playerStats_${playerName}`);
@@ -515,25 +516,23 @@ Built with ❤️ for the CM's Note community
 
 // Utility functions
 function savePlayerStats() {
-  WA.player.name.then(name => {
-    // Convert Sets to Arrays for storage
-    const statsToSave = {
-      ...playerStats,
-      roomsVisited: Array.from(playerStats.roomsVisited),
-      achievementsUnlocked: Array.from(playerStats.achievementsUnlocked)
-    };
-    
-    WA.state.saveVariable(`playerStats_${name}`, statsToSave);
-  });
+  const name = WA.player.name || 'Guest';
+  // Convert Sets to Arrays for storage
+  const statsToSave = {
+    ...playerStats,
+    roomsVisited: Array.from(playerStats.roomsVisited),
+    achievementsUnlocked: Array.from(playerStats.achievementsUnlocked)
+  };
+  
+  WA.state.saveVariable(`playerStats_${name}`, statsToSave);
 }
 
 function updatePlayerPresence(status) {
-  WA.player.name.then(name => {
-    WA.state.saveVariable(`presence_${name}`, {
-      status: status,
-      lastSeen: Date.now(),
-      location: 'Town Hall'
-    });
+  const name = WA.player.name || 'Guest';
+  WA.state.saveVariable(`presence_${name}`, {
+    status: status,
+    lastSeen: Date.now(),
+    location: 'Town Hall'
   });
 }
 

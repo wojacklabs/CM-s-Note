@@ -14,7 +14,19 @@ export default function WorkAdventureIntegration({
   const [isLoading, setIsLoading] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(1);
   const [roomUrl, setRoomUrl] = useState('');
+  const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+
+  // Available avatars
+  const avatars = [
+    { id: 1, name: 'Business', color: '#1976D2' },
+    { id: 2, name: 'Casual', color: '#4CAF50' },
+    { id: 3, name: 'Creative', color: '#E91E63' },
+    { id: 4, name: 'Tech', color: '#FF9800' },
+    { id: 5, name: 'Formal', color: '#9C27B0' },
+    { id: 6, name: 'Student', color: '#00BCD4' }
+  ];
 
   useEffect(() => {
     // Generate room URL with the map
@@ -37,10 +49,16 @@ export default function WorkAdventureIntegration({
 
   const handleJoin = () => {
     if (playerName.trim()) {
-      // Add player name to URL
-      const urlWithName = `${roomUrl}#${encodeURIComponent(playerName)}`;
-      window.open(urlWithName, '_blank');
+      // Show character selection
+      setShowCharacterSelect(true);
     }
+  };
+
+  const handleStartGame = () => {
+    // Add player name and character to URL
+    const urlWithParams = `${roomUrl}#${encodeURIComponent(playerName)}&character=${selectedAvatar}`;
+    window.open(urlWithParams, '_blank');
+    setShowCharacterSelect(false);
   };
 
   return (
@@ -84,7 +102,7 @@ export default function WorkAdventureIntegration({
                 disabled={!playerName.trim()}
                 className="wa-join-button"
               >
-                Join in New Tab
+                Select Character
               </button>
             </div>
 
@@ -138,6 +156,50 @@ export default function WorkAdventureIntegration({
                 <li>🚪 Multiple rooms and areas</li>
                 <li>💬 Text chat for everyone</li>
               </ul>
+            </div>
+          </div>
+        )}
+
+        {showCharacterSelect && (
+          <div className="wa-character-modal">
+            <div className="wa-character-content">
+              <h2>Choose Your Character</h2>
+              <p>Hello, {playerName}! Select your avatar:</p>
+              
+              <div className="wa-character-grid">
+                {avatars.map((avatar) => (
+                  <div
+                    key={avatar.id}
+                    className={`wa-character-option ${selectedAvatar === avatar.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedAvatar(avatar.id)}
+                  >
+                    <div 
+                      className="wa-character-preview"
+                      style={{ backgroundColor: avatar.color }}
+                    >
+                      <div className="wa-character-icon">
+                        {avatar.id}
+                      </div>
+                    </div>
+                    <span>{avatar.name}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="wa-character-actions">
+                <button 
+                  onClick={() => setShowCharacterSelect(false)}
+                  className="wa-cancel-button"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleStartGame}
+                  className="wa-start-button"
+                >
+                  Enter Town Hall
+                </button>
+              </div>
             </div>
           </div>
         )}
