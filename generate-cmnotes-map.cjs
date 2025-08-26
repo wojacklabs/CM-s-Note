@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// CM's Note Virtual Town Hall Map Generator
-console.log('🏗️ Generating CM\'s Note Virtual Town Hall Map...\n');
+// CM's Note Cyberpunk Town Hall Map Generator
+console.log('🤖 Generating CM\'s Note Cyberpunk Town Hall Map...\n');
 
 // Map configuration
 const MAP_WIDTH = 40;
@@ -12,165 +12,165 @@ const TILE_SIZE = 32;
 // Tile indices
 const TILES = {
   // Floors
-  MARBLE: 1,
-  WOOD: 2,
-  CARPET_BLUE: 3,
-  CARPET_RED: 4,
-  GRASS: 5,
+  METAL_GRID: 1,      // Was MARBLE
+  NEON_ACCENT: 2,     // Was WOOD  
+  INDUSTRIAL_PLATE: 3, // Was CARPET_BLUE
+  HOLO_FLOOR: 4,      // Was CARPET_RED
+  GRATED_FLOOR: 5,    // Was GRASS
   
   // Walls
-  WALL_BRICK: 10,
-  WALL_GLASS: 11,
-  WALL_WOOD: 12,
+  TECH_PANEL: 10,     // Was WALL_BRICK
+  HOLO_GLASS: 11,     // Was WALL_GLASS
+  INDUSTRIAL_WALL: 12, // Was WALL_WOOD
   
   // Decorations
-  DESK: 20,
-  CHAIR: 21,
-  SOFA: 22,
-  PLANT: 23,
-  WHITEBOARD: 24,
-  BOOKSHELF: 25,
-  COMPUTER: 26,
-  COFFEE_MACHINE: 27,
+  CYBER_DESK: 20,     // Was DESK
+  HOLO_CHAIR: 21,     // Was CHAIR
+  CYBER_COUCH: 22,    // Was SOFA
+  HOLO_PLANT: 23,     // Was PLANT
+  HOLO_DISPLAY: 24,   // Was WHITEBOARD
+  DATA_SERVER: 25,    // Was BOOKSHELF
+  CYBER_TERMINAL: 26, // Was COMPUTER
+  ENERGY_DISPENSER: 27, // Was COFFEE_MACHINE
   
   // Special
-  SPAWN_POINT: 50,
-  TELEPORTER: 51
+  SPAWN_PORTAL: 50,   // Was SPAWN_POINT
+  TELEPORTER_PAD: 51  // Was TELEPORTER
 };
 
 // Create map data layers
 function createMapData() {
   // Initialize empty map
-  const floorLayer = Array(MAP_HEIGHT).fill(null).map(() => Array(MAP_WIDTH).fill(TILES.MARBLE));
+  const floorLayer = Array(MAP_HEIGHT).fill(null).map(() => Array(MAP_WIDTH).fill(TILES.METAL_GRID));
   const wallsLayer = Array(MAP_HEIGHT).fill(null).map(() => Array(MAP_WIDTH).fill(0));
   const decorLayer = Array(MAP_HEIGHT).fill(null).map(() => Array(MAP_WIDTH).fill(0));
   
   // Design floor patterns
-  // Main hall - marble floor
+  // Main data hub - metal grid floor
   for (let y = 10; y < 20; y++) {
     for (let x = 15; x < 25; x++) {
-      floorLayer[y][x] = TILES.MARBLE;
+      floorLayer[y][x] = TILES.METAL_GRID;
     }
   }
   
-  // Meeting rooms - carpeted
+  // Cyber meeting rooms - neon accent
   // Top-left meeting room
   for (let y = 2; y < 8; y++) {
     for (let x = 2; x < 10; x++) {
-      floorLayer[y][x] = TILES.CARPET_BLUE;
+      floorLayer[y][x] = TILES.NEON_ACCENT;
     }
   }
   
   // Top-right meeting room
   for (let y = 2; y < 8; y++) {
     for (let x = 30; x < 38; x++) {
-      floorLayer[y][x] = TILES.CARPET_BLUE;
+      floorLayer[y][x] = TILES.NEON_ACCENT;
     }
   }
   
-  // Bottom-left quiet zone
+  // Bottom-left server room
   for (let y = 22; y < 28; y++) {
     for (let x = 2; x < 10; x++) {
-      floorLayer[y][x] = TILES.CARPET_RED;
+      floorLayer[y][x] = TILES.INDUSTRIAL_PLATE;
     }
   }
   
-  // Bottom-right creative space
+  // Bottom-right innovation lab
   for (let y = 22; y < 28; y++) {
     for (let x = 30; x < 38; x++) {
-      floorLayer[y][x] = TILES.GRASS;
+      floorLayer[y][x] = TILES.GRATED_FLOOR;
     }
   }
   
-  // Cafe area - wood floor
+  // Tech lounge - holo floor
   for (let y = 10; y < 20; y++) {
     for (let x = 2; x < 12; x++) {
-      floorLayer[y][x] = TILES.WOOD;
+      floorLayer[y][x] = TILES.HOLO_FLOOR;
     }
   }
   
   // Add walls
-  // Outer walls
+  // Outer walls - tech panels
   for (let x = 0; x < MAP_WIDTH; x++) {
-    wallsLayer[0][x] = TILES.WALL_BRICK;
-    wallsLayer[MAP_HEIGHT - 1][x] = TILES.WALL_BRICK;
+    wallsLayer[0][x] = TILES.TECH_PANEL;
+    wallsLayer[MAP_HEIGHT - 1][x] = TILES.TECH_PANEL;
   }
   for (let y = 0; y < MAP_HEIGHT; y++) {
-    wallsLayer[y][0] = TILES.WALL_BRICK;
-    wallsLayer[y][MAP_WIDTH - 1] = TILES.WALL_BRICK;
+    wallsLayer[y][0] = TILES.TECH_PANEL;
+    wallsLayer[y][MAP_WIDTH - 1] = TILES.TECH_PANEL;
   }
   
-  // Meeting room walls
+  // Meeting room walls - holographic glass
   // Top-left room
   for (let x = 1; x < 11; x++) {
-    wallsLayer[1][x] = TILES.WALL_GLASS;
-    wallsLayer[9][x] = TILES.WALL_GLASS;
+    wallsLayer[1][x] = TILES.HOLO_GLASS;
+    wallsLayer[9][x] = TILES.HOLO_GLASS;
   }
   for (let y = 1; y < 9; y++) {
-    wallsLayer[y][1] = TILES.WALL_GLASS;
-    wallsLayer[y][11] = TILES.WALL_GLASS;
+    wallsLayer[y][1] = TILES.HOLO_GLASS;
+    wallsLayer[y][11] = TILES.HOLO_GLASS;
   }
-  // Add door opening
+  // Add door opening (energy field)
   wallsLayer[5][11] = 0;
   
   // Top-right room
   for (let x = 29; x < 39; x++) {
-    wallsLayer[1][x] = TILES.WALL_GLASS;
-    wallsLayer[9][x] = TILES.WALL_GLASS;
+    wallsLayer[1][x] = TILES.HOLO_GLASS;
+    wallsLayer[9][x] = TILES.HOLO_GLASS;
   }
   for (let y = 1; y < 9; y++) {
-    wallsLayer[y][29] = TILES.WALL_GLASS;
-    wallsLayer[y][38] = TILES.WALL_GLASS;
+    wallsLayer[y][29] = TILES.HOLO_GLASS;
+    wallsLayer[y][38] = TILES.HOLO_GLASS;
   }
-  // Add door opening
+  // Add door opening (energy field)
   wallsLayer[5][29] = 0;
   
   // Add furniture and decorations
   // Meeting room 1 - conference setup
-  decorLayer[4][5] = TILES.DESK;
-  decorLayer[4][6] = TILES.DESK;
-  decorLayer[3][5] = TILES.CHAIR;
-  decorLayer[3][6] = TILES.CHAIR;
-  decorLayer[5][5] = TILES.CHAIR;
-  decorLayer[5][6] = TILES.CHAIR;
-  decorLayer[2][2] = TILES.WHITEBOARD;
+  decorLayer[4][5] = TILES.CYBER_DESK;
+  decorLayer[4][6] = TILES.CYBER_DESK;
+  decorLayer[3][5] = TILES.HOLO_CHAIR;
+  decorLayer[3][6] = TILES.HOLO_CHAIR;
+  decorLayer[5][5] = TILES.HOLO_CHAIR;
+  decorLayer[5][6] = TILES.HOLO_CHAIR;
+  decorLayer[2][2] = TILES.HOLO_DISPLAY;
   
   // Meeting room 2 - lounge setup
-  decorLayer[4][33] = TILES.SOFA;
-  decorLayer[4][34] = TILES.SOFA;
-  decorLayer[6][33] = TILES.COFFEE_MACHINE;
-  decorLayer[2][36] = TILES.PLANT;
-  decorLayer[7][36] = TILES.PLANT;
+  decorLayer[4][33] = TILES.CYBER_COUCH;
+  decorLayer[4][34] = TILES.CYBER_COUCH;
+  decorLayer[6][33] = TILES.ENERGY_DISPENSER;
+  decorLayer[2][36] = TILES.HOLO_PLANT;
+  decorLayer[7][36] = TILES.HOLO_PLANT;
   
   // Cafe area
   for (let i = 0; i < 3; i++) {
-    decorLayer[12 + i * 2][4] = TILES.DESK;
-    decorLayer[12 + i * 2][5] = TILES.CHAIR;
-    decorLayer[12 + i * 2][6] = TILES.CHAIR;
+    decorLayer[12 + i * 2][4] = TILES.CYBER_DESK;
+    decorLayer[12 + i * 2][5] = TILES.HOLO_CHAIR;
+    decorLayer[12 + i * 2][6] = TILES.HOLO_CHAIR;
   }
-  decorLayer[14][8] = TILES.COFFEE_MACHINE;
+  decorLayer[14][8] = TILES.ENERGY_DISPENSER;
   
   // Library/quiet zone
   for (let i = 0; i < 3; i++) {
-    decorLayer[23][3 + i * 2] = TILES.BOOKSHELF;
+    decorLayer[23][3 + i * 2] = TILES.DATA_SERVER;
   }
-  decorLayer[25][5] = TILES.DESK;
-  decorLayer[25][6] = TILES.COMPUTER;
-  decorLayer[26][5] = TILES.CHAIR;
+  decorLayer[25][5] = TILES.CYBER_DESK;
+  decorLayer[25][6] = TILES.CYBER_TERMINAL;
+  decorLayer[26][5] = TILES.HOLO_CHAIR;
   
   // Creative space - garden theme
-  decorLayer[23][32] = TILES.PLANT;
-  decorLayer[23][35] = TILES.PLANT;
-  decorLayer[26][32] = TILES.PLANT;
-  decorLayer[26][35] = TILES.PLANT;
-  decorLayer[24][33] = TILES.SOFA;
-  decorLayer[24][34] = TILES.SOFA;
+  decorLayer[23][32] = TILES.HOLO_PLANT;
+  decorLayer[23][35] = TILES.HOLO_PLANT;
+  decorLayer[26][32] = TILES.HOLO_PLANT;
+  decorLayer[26][35] = TILES.HOLO_PLANT;
+  decorLayer[24][33] = TILES.CYBER_COUCH;
+  decorLayer[24][34] = TILES.CYBER_COUCH;
   
   // Central hub decorations
-  decorLayer[14][19] = TILES.PLANT;
-  decorLayer[14][20] = TILES.PLANT;
-  decorLayer[15][19] = TILES.PLANT;
-  decorLayer[15][20] = TILES.PLANT;
+  decorLayer[14][19] = TILES.HOLO_PLANT;
+  decorLayer[14][20] = TILES.HOLO_PLANT;
+  decorLayer[15][19] = TILES.HOLO_PLANT;
+  decorLayer[15][20] = TILES.HOLO_PLANT;
   
   return { floorLayer, wallsLayer, decorLayer };
 }
@@ -536,14 +536,14 @@ if (!fs.existsSync(path.dirname(outputPath))) {
 
 fs.writeFileSync(outputPath, JSON.stringify(mapData, null, 2));
 
-console.log('✅ Map generated successfully!');
+console.log('✅ Cyberpunk map generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`📐 Size: ${MAP_WIDTH}x${MAP_HEIGHT} tiles`);
 console.log(`🎯 Objects: ${mapData.layers[3].objects.length} interactive zones`);
-console.log('\n🏢 Room Layout:');
-console.log('  • Meeting Rooms: Top corners (with video chat)');
-console.log('  • Cafe: Left middle (social area)');
-console.log('  • Central Hub: Center (main gathering)');
-console.log('  • Quiet Zone: Bottom left (muted area)');
-console.log('  • Creative Space: Bottom right (whiteboard)');
-console.log('\n🚀 Ready to use in WorkAdventure!');
+console.log('\n🤖 Cyber Layout:');
+console.log('  • Cyber Meeting Rooms: Top corners (holo-conference)');
+console.log('  • Tech Lounge: Left middle (social hub)');
+console.log('  • Data Hub: Center (main nexus)');
+console.log('  • Server Room: Bottom left (secure zone)');
+console.log('  • Innovation Lab: Bottom right (holo-display)');
+console.log('\n⚡ Ready to jack into WorkAdventure!');
