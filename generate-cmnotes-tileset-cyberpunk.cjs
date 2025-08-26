@@ -7,7 +7,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 60;
+const TOTAL_TILES = 101; // Including sprite tiles (53-100)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -656,6 +656,41 @@ drawTile(51, () => {
   ctx.strokeRect(8, 8, 16, 16);
   ctx.strokeRect(10, 10, 12, 12);
   ctx.strokeRect(12, 12, 8, 8);
+});
+
+// Tile 52: Sprite marker/placeholder
+drawTile(52, () => {
+  // Create a special floor tile to mark where sprite should be
+  // Cyberpunk style floor with image marker
+  ctx.fillStyle = colors.darkBlue;
+  ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+  
+  // Grid pattern
+  ctx.strokeStyle = colors.neonCyan;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.3;
+  for (let i = 0; i <= TILE_SIZE; i += 8) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, TILE_SIZE);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(TILE_SIZE, i);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  
+  // Center marker
+  ctx.fillStyle = colors.neonCyan;
+  ctx.beginPath();
+  ctx.arc(16, 16, 6, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // "IMG" text
+  ctx.fillStyle = colors.darkBlue;
+  ctx.font = 'bold 8px sans-serif';
+  ctx.fillText('IMG', 10, 19);
 });
 
 // Save tileset

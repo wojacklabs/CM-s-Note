@@ -35,7 +35,8 @@ const TILES = {
   
   // Special
   SPAWN_PORTAL: 50,   // Was SPAWN_POINT
-  TELEPORTER_PAD: 51  // Was TELEPORTER
+  TELEPORTER_PAD: 51,  // Was TELEPORTER
+  SPRITE_MARKER: 52   // Image placeholder
 };
 
 // Create map data layers
@@ -171,6 +172,21 @@ function createMapData() {
   decorLayer[14][20] = TILES.HOLO_PLANT;
   decorLayer[15][19] = TILES.HOLO_PLANT;
   decorLayer[15][20] = TILES.HOLO_PLANT;
+  
+  // Add sprite image tiles in center bottom area
+  // Sprite starts at tile 53 and is 8x6 tiles
+  const spriteStartTile = 53;
+  const spriteWidth = 8;
+  const spriteHeight = 6;
+  const spriteStartX = 16; // Center position
+  const spriteStartY = 22; // Bottom area
+  
+  for (let sy = 0; sy < spriteHeight; sy++) {
+    for (let sx = 0; sx < spriteWidth; sx++) {
+      const tileIndex = spriteStartTile + (sy * spriteWidth) + sx;
+      decorLayer[spriteStartY + sy][spriteStartX + sx] = tileIndex;
+    }
+  }
   
   return { floorLayer, wallsLayer, decorLayer };
 }
@@ -342,25 +358,9 @@ function createObjects() {
     ]
   });
   
-  // Sprite display area - using embedded website to show image
-  objects.push({
-    id: objectId++,
-    name: "sprite-display",
-    type: "zone",
-    x: 16 * TILE_SIZE,
-    y: 22 * TILE_SIZE,
-    width: 8 * TILE_SIZE,
-    height: 6 * TILE_SIZE,
-    visible: true,
-    properties: [
-      { name: "openWebsite", type: "string", value: "./sprite.png" },
-      { name: "openWebsiteTrigger", type: "string", value: "onenter" },
-      { name: "openWebsiteAllowApi", type: "bool", value: false },
-      { name: "openWebsitePolicy", type: "string", value: "embedded" },
-      { name: "openWebsiteWidth", type: "int", value: 256 },
-      { name: "openWebsitePosition", type: "string", value: "center" }
-    ]
-  });
+
+  
+
   
 
   
