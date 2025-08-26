@@ -18,7 +18,9 @@ export default function WorkAdventureIntegration({
 
   useEffect(() => {
     // Generate room URL with the map
-    const workAdventureUrl = `https://play.workadventu.re/_/global/${mapUrl}`;
+    // If mapUrl already contains protocol, use it as is; otherwise prepend current origin
+    const fullMapUrl = mapUrl.startsWith('http') ? mapUrl : `${window.location.origin}${mapUrl.startsWith('/') ? '' : '/'}${mapUrl}`;
+    const workAdventureUrl = `https://play.workadventu.re/_/global/${fullMapUrl}`;
     setRoomUrl(workAdventureUrl);
   }, [mapUrl]);
 
