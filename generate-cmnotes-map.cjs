@@ -342,6 +342,57 @@ function createObjects() {
     ]
   });
   
+  // Variable storage areas for persistent data
+  // These are invisible objects that allow scripts to store data
+  objects.push({
+    id: objectId++,
+    name: "playerStats_*",
+    type: "variable",
+    x: 0,
+    y: 0,
+    width: 16,
+    height: 16,
+    visible: false,
+    properties: [
+      { name: "persist", type: "bool", value: true },
+      { name: "public", type: "bool", value: false },
+      { name: "jsonSchema", type: "string", value: JSON.stringify({
+        type: "object",
+        properties: {
+          totalVisits: { type: "number" },
+          totalChatMessages: { type: "number" },
+          roomsVisited: { type: "array" },
+          achievementsUnlocked: { type: "array" },
+          timeSpent: { type: "number" },
+          startTime: { type: "number" }
+        }
+      })}
+    ]
+  });
+  
+  objects.push({
+    id: objectId++,
+    name: "presence_*",
+    type: "variable",
+    x: 16,
+    y: 0,
+    width: 16,
+    height: 16,
+    visible: false,
+    properties: [
+      { name: "persist", type: "bool", value: false },
+      { name: "public", type: "bool", value: true },
+      { name: "jsonSchema", type: "string", value: JSON.stringify({
+        type: "object",
+        properties: {
+          status: { type: "string" },
+          lastSeen: { type: "number" },
+          location: { type: "string" }
+        }
+      })}
+    ]
+  });
+  
   return objects;
 }
 

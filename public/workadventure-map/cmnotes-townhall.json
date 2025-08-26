@@ -3896,6 +3896,60 @@
               "value": "_blank"
             }
           ]
+        },
+        {
+          "id": 10,
+          "name": "playerStats_*",
+          "type": "variable",
+          "x": 0,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": false,
+          "properties": [
+            {
+              "name": "persist",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "public",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "jsonSchema",
+              "type": "string",
+              "value": "{\"type\":\"object\",\"properties\":{\"totalVisits\":{\"type\":\"number\"},\"totalChatMessages\":{\"type\":\"number\"},\"roomsVisited\":{\"type\":\"array\"},\"achievementsUnlocked\":{\"type\":\"array\"},\"timeSpent\":{\"type\":\"number\"},\"startTime\":{\"type\":\"number\"}}}"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "presence_*",
+          "type": "variable",
+          "x": 16,
+          "y": 0,
+          "width": 16,
+          "height": 16,
+          "visible": false,
+          "properties": [
+            {
+              "name": "persist",
+              "type": "bool",
+              "value": false
+            },
+            {
+              "name": "public",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "name": "jsonSchema",
+              "type": "string",
+              "value": "{\"type\":\"object\",\"properties\":{\"status\":{\"type\":\"string\"},\"lastSeen\":{\"type\":\"number\"},\"location\":{\"type\":\"string\"}}}"
+            }
+          ]
         }
       ],
       "opacity": 1,
@@ -3906,7 +3960,7 @@
     }
   ],
   "nextlayerid": 5,
-  "nextobjectid": 10,
+  "nextobjectid": 12,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.7.2",

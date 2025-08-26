@@ -13,20 +13,8 @@ export default function WorkAdventureIntegration({
 }: WorkAdventureIntegrationProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [playerName, setPlayerName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(1);
   const [roomUrl, setRoomUrl] = useState('');
-  const [showCharacterSelect, setShowCharacterSelect] = useState(false);
-
-  // Available avatars
-  const avatars = [
-    { id: 1, name: 'Business', color: '#1976D2' },
-    { id: 2, name: 'Casual', color: '#4CAF50' },
-    { id: 3, name: 'Creative', color: '#E91E63' },
-    { id: 4, name: 'Tech', color: '#FF9800' },
-    { id: 5, name: 'Formal', color: '#9C27B0' },
-    { id: 6, name: 'Student', color: '#00BCD4' }
-  ];
+  const [showInfo, setShowInfo] = useState(true);
 
   useEffect(() => {
     // Generate room URL with the map
@@ -48,17 +36,8 @@ export default function WorkAdventureIntegration({
   }, [mapUrl]);
 
   const handleJoin = () => {
-    if (playerName.trim()) {
-      // Show character selection
-      setShowCharacterSelect(true);
-    }
-  };
-
-  const handleStartGame = () => {
-    // Add player name and character to URL
-    const urlWithParams = `${roomUrl}#${encodeURIComponent(playerName)}&character=${selectedAvatar}`;
-    window.open(urlWithParams, '_blank');
-    setShowCharacterSelect(false);
+    // Open WorkAdventure in new tab
+    window.open(roomUrl, '_blank');
   };
 
   return (
@@ -84,33 +63,25 @@ export default function WorkAdventureIntegration({
           </div>
 
           <div className="wa-controls">
-            <div className="wa-join-section">
-              <input
-                type="text"
-                placeholder="Enter your name..."
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && playerName.trim()) {
-                    handleJoin();
-                  }
-                }}
-                className="wa-name-input"
-              />
-              <button 
-                onClick={handleJoin}
-                disabled={!playerName.trim()}
-                className="wa-join-button"
-              >
-                Select Character
-              </button>
-            </div>
+            <button 
+              onClick={handleJoin}
+              className="wa-join-button"
+            >
+              Enter Town Hall
+            </button>
 
             <button
               onClick={() => setShowInstructions(!showInstructions)}
               className="wa-help-button"
             >
               {showInstructions ? 'Hide' : 'Show'} Controls
+            </button>
+            
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className="wa-help-button"
+            >
+              {showInfo ? 'Hide' : 'Show'} Info
             </button>
           </div>
         </div>
@@ -160,45 +131,40 @@ export default function WorkAdventureIntegration({
           </div>
         )}
 
-        {showCharacterSelect && (
-          <div className="wa-character-modal">
-            <div className="wa-character-content">
-              <h2>Choose Your Character</h2>
-              <p>Hello, {playerName}! Select your avatar:</p>
-              
-              <div className="wa-character-grid">
-                {avatars.map((avatar) => (
-                  <div
-                    key={avatar.id}
-                    className={`wa-character-option ${selectedAvatar === avatar.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedAvatar(avatar.id)}
-                  >
-                    <div 
-                      className="wa-character-preview"
-                      style={{ backgroundColor: avatar.color }}
-                    >
-                      <div className="wa-character-icon">
-                        {avatar.id}
-                      </div>
-                    </div>
-                    <span>{avatar.name}</span>
-                  </div>
-                ))}
+        {showInfo && (
+          <div className="wa-info-panel">
+            <h3>🏛️ Welcome to CM's Note Virtual Town Hall</h3>
+            <div className="wa-info-content">
+              <div className="wa-info-section">
+                <h4>📝 First Time?</h4>
+                <p>When you enter WorkAdventure:</p>
+                <ol>
+                  <li>You'll be prompted to enter your name</li>
+                  <li>Choose your avatar appearance</li>
+                  <li>Allow camera/microphone permissions for video chat</li>
+                  <li>Use arrow keys or WASD to move around</li>
+                </ol>
               </div>
               
-              <div className="wa-character-actions">
-                <button 
-                  onClick={() => setShowCharacterSelect(false)}
-                  className="wa-cancel-button"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleStartGame}
-                  className="wa-start-button"
-                >
-                  Enter Town Hall
-                </button>
+              <div className="wa-info-section">
+                <h4>🏢 Available Spaces</h4>
+                <ul>
+                  <li>🎥 <strong>Meeting Rooms</strong> - Private video conference areas</li>
+                  <li>☕ <strong>Cafe</strong> - Social space with ambient atmosphere</li>
+                  <li>🤫 <strong>Quiet Zone</strong> - Auto-muted area for focused work</li>
+                  <li>🎨 <strong>Creative Space</strong> - Collaborative whiteboard access</li>
+                  <li>📊 <strong>Info Board</strong> - Links to CM's Note website</li>
+                </ul>
+              </div>
+              
+              <div className="wa-info-section">
+                <h4>💡 Tips</h4>
+                <ul>
+                  <li>Get close to others to start video/audio chat</li>
+                  <li>Press SPACE near objects to interact</li>
+                  <li>Use chat commands like /help for more options</li>
+                  <li>Your progress and achievements are saved automatically</li>
+                </ul>
               </div>
             </div>
           </div>
