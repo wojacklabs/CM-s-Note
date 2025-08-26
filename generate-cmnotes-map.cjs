@@ -179,7 +179,7 @@ function createMapData() {
   const spriteWidth = 10;
   const spriteHeight = 15;
   // Calculate safe position: (40-10)/2 = 15, (30-15)/2 = 7.5 -> 8
-  const spriteStartX = 15; // Centered horizontally
+  const spriteStartX = 10; // Centered horizontally
   const spriteStartY = 8;  // Centered vertically
   
   for (let sy = 0; sy < spriteHeight; sy++) {
