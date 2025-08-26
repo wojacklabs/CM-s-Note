@@ -417,8 +417,30 @@ function generateMap() {
     tileheight: TILE_SIZE,
     tilesets: [
       {
+        columns: 10,
         firstgid: 1,
-        source: "cmnotes-tileset.tsx"
+        image: "cmnotes-tileset.png",
+        imageheight: 192,
+        imagewidth: 320,
+        margin: 0,
+        name: "cmnotes-tileset",
+        spacing: 0,
+        tilecount: 60,
+        tileheight: 32,
+        tilewidth: 32,
+        tiles: [
+          // Define collision properties for specific tiles
+          { id: 10, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 11, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 12, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 20, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 21, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 22, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 24, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 25, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 26, properties: [{ name: "collides", type: "bool", value: true }] },
+          { id: 27, properties: [{ name: "collides", type: "bool", value: true }] }
+        ]
       }
     ],
     tilewidth: TILE_SIZE,
