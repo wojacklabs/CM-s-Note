@@ -35,8 +35,8 @@ const TILES = {
   
   // Special
   SPAWN_PORTAL: 50,   // Was SPAWN_POINT
-  TELEPORTER_PAD: 51,  // Was TELEPORTER
-  SPRITE_MARKER: 52   // Image placeholder
+  TELEPORTER_PAD: 51  // Was TELEPORTER
+  // Sprite starts at 52
 };
 
 // Create map data layers
@@ -174,12 +174,12 @@ function createMapData() {
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
   // Add sprite image tiles in center bottom area
-  // Sprite starts at tile 53 and is 8x6 tiles
-  const spriteStartTile = 53;
-  const spriteWidth = 8;
-  const spriteHeight = 6;
-  const spriteStartX = 16; // Center position
-  const spriteStartY = 22; // Bottom area
+  // Sprite starts at tile 52 and is 10x15 tiles  
+  const spriteStartTile = 52;
+  const spriteWidth = 10;
+  const spriteHeight = 15;
+  const spriteStartX = Math.floor((MAP_WIDTH - spriteWidth) / 2); // Center horizontally (15)
+  const spriteStartY = MAP_HEIGHT - spriteHeight - 2; // Position near bottom with 2 tile margin (13)
   
   for (let sy = 0; sy < spriteHeight; sy++) {
     for (let sx = 0; sx < spriteWidth; sx++) {
@@ -493,12 +493,12 @@ function generateMap() {
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 352,  // Updated height for 11 rows (101 tiles / 10 columns)
+        imageheight: 672,  // Updated height for 21 rows (202 tiles / 10 columns) 
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 101,  // Updated to include sprite tiles
+        tilecount: 202,  // Updated to include sprite tiles (52-201)
         tileheight: 32,
         tilewidth: 32,
         tiles: [
