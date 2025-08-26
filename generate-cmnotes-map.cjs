@@ -493,12 +493,12 @@ function generateMap() {
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 192,
+        imageheight: 352,  // Updated height for 11 rows (101 tiles / 10 columns)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 60,
+        tilecount: 101,  // Updated to include sprite tiles
         tileheight: 32,
         tilewidth: 32,
         tiles: [
