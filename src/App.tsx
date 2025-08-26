@@ -11,7 +11,7 @@ function App() {
   const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notes' | 'analysis'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'analysis' | 'metaverse'>('notes');
   const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
@@ -23,6 +23,8 @@ function App() {
     const handleScroll = () => {
       const sections = activeTab === 'analysis' 
         ? ['growth-timeline', 'social-network', 'ranking-correlation']
+        : activeTab === 'metaverse'
+        ? ['metaverse-view']
         : ['community', 'dapps', 'cms'];
       
       const scrollPosition = window.scrollY + 150; // Offset for header/nav
@@ -49,6 +51,8 @@ function App() {
   useEffect(() => {
     const sections = activeTab === 'analysis' 
       ? ['growth-timeline', 'social-network', 'ranking-correlation']
+      : activeTab === 'metaverse'
+      ? ['metaverse-view']
       : ['community', 'dapps', 'cms'];
     setActiveSection(sections[0]);
   }, [activeTab]);
@@ -125,6 +129,15 @@ function App() {
                     onClick={() => handleSectionClick('ranking-correlation')}
                   >
                     Correlation
+                  </button>
+                </>
+              ) : activeTab === 'metaverse' ? (
+                <>
+                  <button 
+                    className={`section-tab ${activeSection === 'metaverse-view' ? 'active' : ''}`}
+                    onClick={() => handleSectionClick('metaverse-view')}
+                  >
+                    Exhibition Hall
                   </button>
                 </>
               ) : (

@@ -1,0 +1,256 @@
+/* Town Hall View Styles - Gather Town inspired */
+.metaverse-view {
+  padding: 20px;
+  background: #0f0f0f;
+  border-radius: 8px;
+  margin: 20px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+}
+
+.metaverse-view.town-hall {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+  border: 2px solid #333;
+}
+
+.metaverse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #333;
+}
+
+.metaverse-header h2 {
+  color: #fff;
+  font-size: 28px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.metaverse-info {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.metaverse-info span {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.connection-status {
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+
+.connection-status.connected {
+  background: #1e3a1e;
+  border-color: #2d5a2d;
+  color: #4ade80;
+}
+
+.connection-status.connecting {
+  background: #3a2a1a;
+  border-color: #5a4a2d;
+  color: #fbbf24;
+}
+
+.connection-status.disconnected {
+  background: #3a1a1a;
+  border-color: #5a2d2d;
+  color: #f87171;
+}
+
+.connected-players {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  border: 1px solid #333;
+}
+
+.controls-hint {
+  background: #2563eb20;
+  color: #60a5fa;
+  border: 1px solid #2563eb40;
+}
+
+.metaverse-game-container {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background: #000;
+}
+
+.metaverse-game-container canvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  image-rendering: auto;
+}
+
+.metaverse-description {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.metaverse-description p {
+  margin: 8px 0;
+  color: #a0a0a0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.metaverse-description p:first-child {
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+/* Chat input */
+.metaverse-chat {
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 0 1rem;
+}
+
+.metaverse-chat input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.metaverse-chat input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.metaverse-chat input::placeholder {
+  color: #666;
+}
+
+/* Name input modal */
+.name-input-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+}
+
+.name-input-content {
+  background: #1a1a1a;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  border: 2px solid #333;
+}
+
+.name-input-content h3 {
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 0.5rem;
+}
+
+.name-input-content p {
+  color: #888;
+  margin-bottom: 1.5rem;
+  font-size: 14px;
+}
+
+.name-input-content input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 16px;
+  background: #000;
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.name-input-content input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.name-input-content button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.name-input-content button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.name-input-content button:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .metaverse-view {
+    padding: 10px;
+  }
+  
+  .metaverse-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .metaverse-info {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .metaverse-info span {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  
+  .metaverse-game-container {
+    touch-action: none;
+  }
+}

@@ -9,7 +9,8 @@
 #ranking-correlation,
 #community,
 #dapps,
-#cms {
+#cms,
+#metaverse-view {
   scroll-margin-top: 140px; /* Header (73px) + LNB (67px) */
 }
 
@@ -427,13 +428,19 @@
   }
 }
 
+/* Metaverse section styles */
+.metaverse-section {
+  padding: 2rem 1rem;
+}
+
 @media (max-width: 480px) {
   #growth-timeline,
   #ranking-correlation,
   #social-network,
   #community,
   #dapps,
-  #cms {
+  #cms,
+  #metaverse-view {
     scroll-margin-top: 80px; /* Header (40px) + LNB (40px) */
   }
 } 

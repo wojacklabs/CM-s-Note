@@ -14,6 +14,10 @@ import { UserCardSkeleton, CMCardSkeleton } from '../components/SkeletonCard';
 import SocialGraph from '../components/SocialGraph';
 import GrowthTimeline from '../components/GrowthTimeline';
 import RankingCorrelation from '../components/RankingCorrelation';
+// import MetaverseView from '../components/MetaverseView';
+// import GatherTownLink from '../components/GatherTownLink';
+// import EmbeddedMetaverse from '../components/EmbeddedMetaverse';
+import WorkAdventureIntegration from '../components/WorkAdventureIntegration';
 import './HomePage.css';
 
 interface CMInfo {
@@ -76,12 +80,12 @@ function HomePage({ selectedProject }: HomePageProps) {
   // Auto-refresh interval ref
   const intervalRef = useRef<number | null>(null);
   const contentLoadingRef = useRef<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'analysis'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'analysis' | 'metaverse'>('notes');
 
   // Sync activeTab with Header via custom event
   useEffect(() => {
     const handler = (e: any) => {
-      if (e?.detail === 'notes' || e?.detail === 'analysis') {
+      if (e?.detail === 'notes' || e?.detail === 'analysis' || e?.detail === 'metaverse') {
         setActiveTab(e.detail);
       }
     };
@@ -1374,6 +1378,13 @@ function HomePage({ selectedProject }: HomePageProps) {
           </section>
         </>
       )}
+
+      {activeTab === 'metaverse' && (
+        <section id="metaverse-view" className="metaverse-section">
+          <WorkAdventureIntegration />
+        </section>
+      )}
+
       {/* Note Modal */}
       {selectedNote && <NoteModal note={selectedNote} onClose={() => setSelectedNote(null)} />}
       
