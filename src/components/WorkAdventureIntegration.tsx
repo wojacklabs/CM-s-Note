@@ -5,11 +5,11 @@ interface WorkAdventureIntegrationProps {
   mapUrl?: string;
 }
 
-// Default WorkAdventure map URL - using our custom CM's Note Town Hall map
-const DEFAULT_MAP_URL = window.location.origin + '/workadventure-map/cmnotes-townhall.json';
+// Default WorkAdventure map path - relative to public folder
+const DEFAULT_MAP_PATH = '/workadventure-map/cmnotes-townhall.json';
 
 export default function WorkAdventureIntegration({ 
-  mapUrl = DEFAULT_MAP_URL 
+  mapUrl 
 }: WorkAdventureIntegrationProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -18,9 +18,20 @@ export default function WorkAdventureIntegration({
 
   useEffect(() => {
     // Generate room URL with the map
-    // If mapUrl already contains protocol, use it as is; otherwise prepend current origin
-    const fullMapUrl = mapUrl.startsWith('http') ? mapUrl : `${window.location.origin}${mapUrl.startsWith('/') ? '' : '/'}${mapUrl}`;
-    const workAdventureUrl = `https://play.workadventu.re/_/global/${fullMapUrl}`;
+    // Use the map path with current host
+    const host = window.location.host; // This gets just "www.notesfromcm.xyz" without protocol
+    const protocol = window.location.protocol; // This gets "https:"
+    const path = mapUrl || DEFAULT_MAP_PATH;
+    
+    // Construct the full URL properly
+    const fullMapUrl = `${protocol}//${host}${path}`;
+    
+    // WorkAdventure expects the full URL after /_/global/
+    const workAdventureUrl = `https://play.workadventu.re/_/global/${host}${path}`;
+    
+    console.log('Map URL:', fullMapUrl);
+    console.log('WorkAdventure URL:', workAdventureUrl);
+    
     setRoomUrl(workAdventureUrl);
   }, [mapUrl]);
 
