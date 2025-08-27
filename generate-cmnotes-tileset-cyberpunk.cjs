@@ -8,7 +8,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 120; // Including sprite tiles (53-100) and iryslogo tiles (101-116)
+const TOTAL_TILES = 130; // Including sprite tiles (60-107) and iryslogo tiles (110-125)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -715,7 +715,8 @@ if (spriteImagePath) {
   const spriteTileWidth = 8;
   const spriteTileHeight = 6;
   const spriteTileSize = 32;
-  let tileIndex = 53;
+  // Start sprite at beginning of new row to avoid wrapping
+  let tileIndex = 60; // Row 6, Column 0
   
   for (let row = 0; row < spriteTileHeight; row++) {
     for (let col = 0; col < spriteTileWidth; col++) {
@@ -736,11 +737,11 @@ if (spriteImagePath) {
       tileIndex++;
     }
   }
-  console.log('✅ Added sprite as tiles 53-100');
+  console.log('✅ Added sprite as tiles 60-107');
 } else {
   console.log('⚠️  sprite image not found, creating placeholder tiles');
   // Create placeholder tiles for sprite
-  for (let i = 53; i <= 100; i++) {
+  for (let i = 60; i <= 107; i++) {
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkGray;
@@ -769,7 +770,8 @@ if (fs.existsSync(iryslogoPath)) {
   
   // iryslogo is 128x128, divide into 4x4 = 16 tiles of 32x32 each
   const iryslogoTileSize = 32;
-  let tileIndex = 101;
+  // Start iryslogo at beginning of new row to avoid wrapping
+  let tileIndex = 110; // Row 11, Column 0
   
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
@@ -790,11 +792,11 @@ if (fs.existsSync(iryslogoPath)) {
       tileIndex++;
     }
   }
-  console.log('✅ Added iryslogo as tiles 101-116');
+  console.log('✅ Added iryslogo as tiles 110-125');
 } else {
   console.log('⚠️  iryslogo.png not found, creating placeholder tiles');
   // Create placeholder tiles for iryslogo
-  for (let i = 101; i <= 116; i++) {
+  for (let i = 110; i <= 125; i++) {
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkBlue;
@@ -895,8 +897,8 @@ console.log('  • 1-9: Tech floors (metal grid, neon accent, industrial, holo)'
 console.log('  • 10-19: Cyber walls (tech panels, holo glass, industrial)');
 console.log('  • 20-39: Future furniture (cyber desk, holo chair, data server, etc.)');
 console.log('  • 50+: Special tiles (spawn portal, teleporter pad)');
-console.log('  • 53-100: Sprite tiles (8x6 grid)');
-console.log('  • 101-116: Iryslogo tiles (4x4 grid)');
+console.log('  • 60-107: Sprite tiles (8x6 grid)');
+console.log('  • 110-125: Iryslogo tiles (4x4 grid)');
 }
 
 // Run the async function

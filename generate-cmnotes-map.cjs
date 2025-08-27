@@ -174,7 +174,7 @@ function createMapData() {
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
   // Add sprite image tiles with precise boundaries
-  const spriteStartTile = 53;
+  const spriteStartTile = 60;
   const spriteWidth = 8;  // sprite-resized.png is 256px / 32px = 8 tiles wide
   const spriteHeight = 6; // sprite-resized.png is 192px / 32px = 6 tiles high
   
@@ -196,7 +196,7 @@ function createMapData() {
   }
   
   // Add iryslogo image tiles with precise boundaries
-  const iryslogoStartTile = 101; // After sprite tiles (53 + 48 sprite tiles)
+  const iryslogoStartTile = 110; // Start at new row to avoid wrapping
   const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
   const iryslogoHeight = 4; // 128px / 32px = 4 tiles
   
@@ -522,12 +522,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 384,  // Height including sprite tiles and iryslogo
+        imageheight: 416,  // Height including sprite tiles and iryslogo (13 rows * 32)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 120,  // Including sprite tiles and iryslogo tiles
+        tilecount: 130,  // Including sprite tiles and iryslogo tiles
         tileheight: 32,
         tilewidth: 32,
         tiles: [
