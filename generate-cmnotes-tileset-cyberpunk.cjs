@@ -694,6 +694,71 @@ drawTile(52, () => {
   ctx.fillText('IMG', 10, 19);
 });
 
+// Add sprite tiles (53-106) - 6x9 grid
+console.log('🎨 Adding sprite tiles...');
+
+// Check if sprite-resized.png exists, otherwise try sprite.png
+const spriteResizedPath = path.join('public', 'workadventure-map', 'sprite-resized.png');
+const spritePath = path.join('public', 'workadventure-map', 'sprite.png');
+let spriteImagePath = null;
+
+if (fs.existsSync(spriteResizedPath)) {
+  spriteImagePath = spriteResizedPath;
+} else if (fs.existsSync(spritePath)) {
+  spriteImagePath = spritePath;
+}
+
+if (spriteImagePath) {
+  const spriteImage = await loadImage(spriteImagePath);
+  
+  // sprite is 6x9 tiles = 192x288 pixels
+  const spriteTileWidth = 6;
+  const spriteTileHeight = 9;
+  const spriteTileSize = 32;
+  let tileIndex = 53;
+  
+  for (let row = 0; row < spriteTileHeight; row++) {
+    for (let col = 0; col < spriteTileWidth; col++) {
+      drawTile(tileIndex, () => {
+        // Draw portion of sprite
+        ctx.drawImage(
+          spriteImage,
+          col * spriteTileSize,  // source x
+          row * spriteTileSize,  // source y
+          spriteTileSize,        // source width
+          spriteTileSize,        // source height
+          0,                     // dest x
+          0,                     // dest y
+          TILE_SIZE,             // dest width
+          TILE_SIZE              // dest height
+        );
+      });
+      tileIndex++;
+    }
+  }
+  console.log('✅ Added sprite as tiles 53-106');
+} else {
+  console.log('⚠️  sprite image not found, creating placeholder tiles');
+  // Create placeholder tiles for sprite
+  for (let i = 53; i <= 106; i++) {
+    drawTile(i, () => {
+      // Cyberpunk style placeholder
+      ctx.fillStyle = colors.darkGray;
+      ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+      
+      // Border
+      ctx.strokeStyle = colors.neonCyan;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(1, 1, TILE_SIZE - 2, TILE_SIZE - 2);
+      
+      // Text
+      ctx.fillStyle = colors.neonPink;
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillText('SPR', 8, 20);
+    });
+  }
+}
+
 // Add iryslogo tiles (107-122) - 4x4 grid
 console.log('🎨 Adding iryslogo tiles...');
 
