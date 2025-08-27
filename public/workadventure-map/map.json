@@ -199,6 +199,17 @@
           "width": 96,
           "x": 336,
           "y": 480
+        },
+        {
+          "gid": 21,
+          "height": 128,
+          "id": 9,
+          "name": "irys-logo",
+          "type": "",
+          "visible": true,
+          "width": 128,
+          "x": 336,
+          "y": 384
         }
       ],
       "opacity": 1,
@@ -242,7 +253,7 @@
     }
   ],
   "nextlayerid": 4,
-  "nextobjectid": 9,
+  "nextobjectid": 10,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.7.2",
@@ -251,6 +262,10 @@
     {
       "firstgid": 1,
       "source": "tileset.tsx"
+    },
+    {
+      "firstgid": 21,
+      "source": "iryslogo.tsx"
     }
   ],
   "tilewidth": 32,
