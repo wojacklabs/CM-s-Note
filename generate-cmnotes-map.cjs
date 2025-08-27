@@ -189,10 +189,8 @@ function createMapData() {
       const y = spriteStartY + sy;
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Calculate correct tile index considering tileset is 10 tiles wide
-        const tilesetRow = Math.floor(spriteStartTile / 10) + sy;
-        const tilesetCol = (spriteStartTile % 10) + sx;
-        const tileIndex = tilesetRow * 10 + tilesetCol;
+        // Use sequential tile indices for sprite (60-107)
+        const tileIndex = spriteStartTile + (sy * spriteWidth) + sx;
         decorLayer[y][x] = tileIndex;
       }
     }
@@ -214,10 +212,8 @@ function createMapData() {
       const y = iryslogoStartY + iy;
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Calculate correct tile index considering tileset is 10 tiles wide
-        const tilesetRow = Math.floor(iryslogoStartTile / 10) + iy;
-        const tilesetCol = (iryslogoStartTile % 10) + ix;
-        const tileIndex = tilesetRow * 10 + tilesetCol;
+        // Use sequential tile indices for iryslogo (110-125)
+        const tileIndex = iryslogoStartTile + (iy * iryslogoWidth) + ix;
         decorLayer[y][x] = tileIndex;
       }
     }
