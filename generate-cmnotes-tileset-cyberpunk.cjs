@@ -8,7 +8,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 122; // Including sprite tiles (53-106) and iryslogo tiles (107-122)
+const TOTAL_TILES = 117; // Including sprite tiles (53-100) and iryslogo tiles (101-116)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -711,9 +711,9 @@ if (fs.existsSync(spriteResizedPath)) {
 if (spriteImagePath) {
   const spriteImage = await loadImage(spriteImagePath);
   
-  // sprite is 6x9 tiles = 192x288 pixels
-  const spriteTileWidth = 6;
-  const spriteTileHeight = 9;
+  // sprite-resized is 8x6 tiles = 256x192 pixels
+  const spriteTileWidth = 8;
+  const spriteTileHeight = 6;
   const spriteTileSize = 32;
   let tileIndex = 53;
   
@@ -736,11 +736,11 @@ if (spriteImagePath) {
       tileIndex++;
     }
   }
-  console.log('✅ Added sprite as tiles 53-106');
+  console.log('✅ Added sprite as tiles 53-100');
 } else {
   console.log('⚠️  sprite image not found, creating placeholder tiles');
   // Create placeholder tiles for sprite
-  for (let i = 53; i <= 106; i++) {
+  for (let i = 53; i <= 100; i++) {
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkGray;
@@ -759,7 +759,7 @@ if (spriteImagePath) {
   }
 }
 
-// Add iryslogo tiles (107-122) - 4x4 grid
+// Add iryslogo tiles (101-116) - 4x4 grid
 console.log('🎨 Adding iryslogo tiles...');
 
 // Check if iryslogo.png exists
@@ -769,7 +769,7 @@ if (fs.existsSync(iryslogoPath)) {
   
   // iryslogo is 128x128, divide into 4x4 = 16 tiles of 32x32 each
   const iryslogoTileSize = 32;
-  let tileIndex = 107;
+  let tileIndex = 101;
   
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
@@ -790,11 +790,11 @@ if (fs.existsSync(iryslogoPath)) {
       tileIndex++;
     }
   }
-  console.log('✅ Added iryslogo as tiles 107-122');
+  console.log('✅ Added iryslogo as tiles 101-116');
 } else {
   console.log('⚠️  iryslogo.png not found, creating placeholder tiles');
   // Create placeholder tiles for iryslogo
-  for (let i = 107; i <= 122; i++) {
+  for (let i = 101; i <= 116; i++) {
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkBlue;

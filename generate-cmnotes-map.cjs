@@ -175,8 +175,8 @@ function createMapData() {
   
   // Add sprite image tiles with precise boundaries
   const spriteStartTile = 52;
-  const spriteWidth = 6;
-  const spriteHeight = 9;
+  const spriteWidth = 8;  // sprite-resized.png is 256px / 32px = 8 tiles wide
+  const spriteHeight = 6; // sprite-resized.png is 192px / 32px = 6 tiles high
   
   // Position at center-bottom
   const spriteStartX = Math.floor((MAP_WIDTH - spriteWidth) / 2);
@@ -196,7 +196,7 @@ function createMapData() {
   }
   
   // Add iryslogo image tiles with precise boundaries
-  const iryslogoStartTile = 107; // After sprite tiles (52 + 54 sprite tiles)
+  const iryslogoStartTile = 100; // After sprite tiles (52 + 48 sprite tiles)
   const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
   const iryslogoHeight = 4; // 128px / 32px = 4 tiles
   
