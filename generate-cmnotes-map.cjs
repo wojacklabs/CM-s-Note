@@ -195,6 +195,28 @@ function createMapData() {
     }
   }
   
+  // Add iryslogo image tiles with precise boundaries
+  const iryslogoStartTile = 107; // After sprite tiles (52 + 54 sprite tiles)
+  const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
+  const iryslogoHeight = 4; // 128px / 32px = 4 tiles
+  
+  // Position at center of map
+  const iryslogoStartX = Math.floor((MAP_WIDTH - iryslogoWidth) / 2);
+  const iryslogoStartY = Math.floor((MAP_HEIGHT - iryslogoHeight) / 2);
+  
+  // Place iryslogo tiles with exact positioning
+  for (let iy = 0; iy < iryslogoHeight; iy++) {
+    for (let ix = 0; ix < iryslogoWidth; ix++) {
+      const x = iryslogoStartX + ix;
+      const y = iryslogoStartY + iy;
+      
+      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
+        const tileIndex = iryslogoStartTile + (iy * iryslogoWidth) + ix;
+        decorLayer[y][x] = tileIndex + 1; // +1 for 1-based indexing
+      }
+    }
+  }
+  
   return { floorLayer, wallsLayer, decorLayer };
 }
 
@@ -500,12 +522,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 352,  // Height including sprite tiles
+        imageheight: 416,  // Height including sprite tiles and iryslogo (352 + 64)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 106,  // Including sprite tiles
+        tilecount: 122,  // Including sprite tiles and iryslogo tiles (106 + 16)
         tileheight: 32,
         tilewidth: 32,
         tiles: [
