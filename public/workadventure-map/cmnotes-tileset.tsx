@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.5" tiledversion="1.7.2" name="cmnotes-tileset" tilewidth="32" tileheight="32" tilecount="117" columns="10">
+<tileset version="1.5" tiledversion="1.7.2" name="cmnotes-tileset" tilewidth="32" tileheight="32" tilecount="120" columns="10">
  <image source="cmnotes-tileset.png" width="320" height="384"/>
  <tile id="0">
   <properties>

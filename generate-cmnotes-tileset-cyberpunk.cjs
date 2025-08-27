@@ -8,7 +8,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 117; // Including sprite tiles (53-100) and iryslogo tiles (101-116)
+const TOTAL_TILES = 120; // Including sprite tiles (53-100) and iryslogo tiles (101-116)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -895,7 +895,8 @@ console.log('  • 1-9: Tech floors (metal grid, neon accent, industrial, holo)'
 console.log('  • 10-19: Cyber walls (tech panels, holo glass, industrial)');
 console.log('  • 20-39: Future furniture (cyber desk, holo chair, data server, etc.)');
 console.log('  • 50+: Special tiles (spawn portal, teleporter pad)');
-console.log('  • 107-122: Iryslogo tiles (4x4 grid)');
+console.log('  • 53-100: Sprite tiles (8x6 grid)');
+console.log('  • 101-116: Iryslogo tiles (4x4 grid)');
 }
 
 // Run the async function

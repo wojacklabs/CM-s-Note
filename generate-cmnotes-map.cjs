@@ -522,12 +522,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 416,  // Height including sprite tiles and iryslogo (352 + 64)
+        imageheight: 384,  // Height including sprite tiles and iryslogo
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 122,  // Including sprite tiles and iryslogo tiles (106 + 16)
+        tilecount: 120,  // Including sprite tiles and iryslogo tiles
         tileheight: 32,
         tilewidth: 32,
         tiles: [
