@@ -1,13 +1,14 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
 // Create cyberpunk themed tileset for CM's Note Town Hall
+async function generateTileset() {
 console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 101; // Including sprite tiles (53-100)
+const TOTAL_TILES = 122; // Including sprite tiles (53-106) and iryslogo tiles (107-122)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -693,6 +694,60 @@ drawTile(52, () => {
   ctx.fillText('IMG', 10, 19);
 });
 
+// Add iryslogo tiles (107-122) - 4x4 grid
+console.log('🎨 Adding iryslogo tiles...');
+
+// Check if iryslogo.png exists
+const iryslogoPath = path.join('public', 'workadventure-map', 'iryslogo.png');
+if (fs.existsSync(iryslogoPath)) {
+  const iryslogoImage = await loadImage(iryslogoPath);
+  
+  // iryslogo is 128x128, divide into 4x4 = 16 tiles of 32x32 each
+  const iryslogoTileSize = 32;
+  let tileIndex = 107;
+  
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      drawTile(tileIndex, () => {
+        // Draw portion of iryslogo
+        ctx.drawImage(
+          iryslogoImage,
+          col * iryslogoTileSize,  // source x
+          row * iryslogoTileSize,  // source y
+          iryslogoTileSize,        // source width
+          iryslogoTileSize,        // source height
+          0,                       // dest x
+          0,                       // dest y
+          TILE_SIZE,               // dest width
+          TILE_SIZE                // dest height
+        );
+      });
+      tileIndex++;
+    }
+  }
+  console.log('✅ Added iryslogo as tiles 107-122');
+} else {
+  console.log('⚠️  iryslogo.png not found, creating placeholder tiles');
+  // Create placeholder tiles for iryslogo
+  for (let i = 107; i <= 122; i++) {
+    drawTile(i, () => {
+      // Cyberpunk style placeholder
+      ctx.fillStyle = colors.darkBlue;
+      ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+      
+      // Border
+      ctx.strokeStyle = colors.neonPink;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, TILE_SIZE - 2, TILE_SIZE - 2);
+      
+      // Text
+      ctx.fillStyle = colors.neonCyan;
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('IRYS', 4, 20);
+    });
+  }
+}
+
 // Save tileset
 const outputPath = path.join('public', 'workadventure-map', 'cmnotes-tileset.png');
 const buffer = canvas.toBuffer('image/png');
@@ -775,3 +830,8 @@ console.log('  • 1-9: Tech floors (metal grid, neon accent, industrial, holo)'
 console.log('  • 10-19: Cyber walls (tech panels, holo glass, industrial)');
 console.log('  • 20-39: Future furniture (cyber desk, holo chair, data server, etc.)');
 console.log('  • 50+: Special tiles (spawn portal, teleporter pad)');
+console.log('  • 107-122: Iryslogo tiles (4x4 grid)');
+}
+
+// Run the async function
+generateTileset().catch(console.error);
