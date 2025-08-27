@@ -174,7 +174,7 @@ function createMapData() {
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
   // Add sprite image tiles with precise boundaries
-  const spriteStartTile = 52;
+  const spriteStartTile = 53;
   const spriteWidth = 8;  // sprite-resized.png is 256px / 32px = 8 tiles wide
   const spriteHeight = 6; // sprite-resized.png is 192px / 32px = 6 tiles high
   
@@ -190,13 +190,13 @@ function createMapData() {
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
         const tileIndex = spriteStartTile + (sy * spriteWidth) + sx;
-        decorLayer[y][x] = tileIndex + 1; // +1 for 1-based indexing
+        decorLayer[y][x] = tileIndex;
       }
     }
   }
   
   // Add iryslogo image tiles with precise boundaries
-  const iryslogoStartTile = 100; // After sprite tiles (52 + 48 sprite tiles)
+  const iryslogoStartTile = 101; // After sprite tiles (53 + 48 sprite tiles)
   const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
   const iryslogoHeight = 4; // 128px / 32px = 4 tiles
   
@@ -212,7 +212,7 @@ function createMapData() {
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
         const tileIndex = iryslogoStartTile + (iy * iryslogoWidth) + ix;
-        decorLayer[y][x] = tileIndex + 1; // +1 for 1-based indexing
+        decorLayer[y][x] = tileIndex;
       }
     }
   }
