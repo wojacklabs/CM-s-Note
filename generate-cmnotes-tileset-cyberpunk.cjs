@@ -8,7 +8,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 150; // Including sprite tiles and iryslogo tiles (up to 143)
+const TOTAL_TILES = 160; // Including sprite tiles and iryslogo tiles (up to 153)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -776,12 +776,12 @@ if (fs.existsSync(iryslogoPath)) {
   // iryslogo is 128x128, divide into 4x4 = 16 tiles of 32x32 each
   const iryslogoTileSize = 32;
   // Start iryslogo at beginning of new row to avoid wrapping
-  let tileIndex = 110; // Row 11, Column 0
+  let tileIndex = 120; // Row 12, Column 0 (to avoid overlap with sprite)
   
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
       // Calculate tile index ensuring each iryslogo row starts at new tileset row
-      const currentTileIndex = 110 + (row * 10) + col;  // Each row jumps by 10 (tileset width)
+      const currentTileIndex = 120 + (row * 10) + col;  // Each row jumps by 10 (tileset width)
       drawTile(currentTileIndex, () => {
         // Draw portion of iryslogo
         ctx.drawImage(
@@ -798,13 +798,13 @@ if (fs.existsSync(iryslogoPath)) {
       });
     }
   }
-  console.log('✅ Added iryslogo as tiles (rows 11-14, 4 tiles per row)');
+  console.log('✅ Added iryslogo as tiles (rows 12-15, 4 tiles per row)');
 } else {
   console.log('⚠️  iryslogo.png not found, creating placeholder tiles');
   // Create placeholder tiles for iryslogo matching the layout
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
-      const i = 110 + (row * 10) + col;
+      const i = 120 + (row * 10) + col;
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkBlue;
@@ -906,8 +906,8 @@ console.log('  • 1-9: Tech floors (metal grid, neon accent, industrial, holo)'
 console.log('  • 10-19: Cyber walls (tech panels, holo glass, industrial)');
 console.log('  • 20-39: Future furniture (cyber desk, holo chair, data server, etc.)');
 console.log('  • 50+: Special tiles (spawn portal, teleporter pad)');
-console.log('  • 60+: Sprite tiles (8x6 grid, using rows 6-10)');
-console.log('  • 110+: Iryslogo tiles (4x4 grid, using rows 11-14)');
+console.log('  • 60+: Sprite tiles (8x6 grid, using rows 6-11)');
+console.log('  • 120+: Iryslogo tiles (4x4 grid, using rows 12-15)');
 }
 
 // Run the async function

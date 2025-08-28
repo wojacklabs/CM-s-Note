@@ -197,7 +197,7 @@ function createMapData() {
   }
   
   // Add iryslogo image tiles with precise boundaries
-  const iryslogoStartTile = 110; // Start at new row to avoid wrapping
+  const iryslogoStartTile = 120; // Start at row 12 to avoid overlap with sprite
   const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
   const iryslogoHeight = 4; // 128px / 32px = 4 tiles
   
@@ -524,12 +524,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 480,  // Height including sprite tiles and iryslogo (15 rows * 32)
+        imageheight: 512,  // Height including sprite tiles and iryslogo (16 rows * 32)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 150,  // Including sprite tiles and iryslogo tiles
+        tilecount: 160,  // Including sprite tiles and iryslogo tiles
         tileheight: 32,
         tilewidth: 32,
         tiles: [
