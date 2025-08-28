@@ -697,8 +697,8 @@ drawTile(52, () => {
 // Add sprite tiles (53-106) - 6x9 grid
 console.log('🎨 Adding sprite tiles...');
 
-// Check if sprite-resized.png exists, otherwise try sprite.png
-const spriteResizedPath = path.join('public', 'workadventure-map', 'sprite-resized.png');
+// Check if sprite-fixed.png exists, otherwise try sprite-resized.png
+const spriteResizedPath = path.join('public', 'workadventure-map', 'sprite-fixed.png');
 const spritePath = path.join('public', 'workadventure-map', 'sprite.png');
 let spriteImagePath = null;
 
@@ -769,7 +769,7 @@ if (spriteImagePath) {
 console.log('🎨 Adding iryslogo tiles...');
 
 // Check if iryslogo.png exists
-const iryslogoPath = path.join('public', 'workadventure-map', 'iryslogo.png');
+const iryslogoPath = path.join('public', 'workadventure-map', 'iryslogo-fixed.png');
 if (fs.existsSync(iryslogoPath)) {
   const iryslogoImage = await loadImage(iryslogoPath);
   
