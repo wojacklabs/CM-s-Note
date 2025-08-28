@@ -212,8 +212,8 @@ function createMapData() {
       const y = iryslogoStartY + iy;
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Use sequential tile indices for iryslogo (110-125)
-        const tileIndex = iryslogoStartTile + (iy * iryslogoWidth) + ix;
+        // Calculate tile index matching tileset layout (each row jumps by 10)
+        const tileIndex = iryslogoStartTile + (iy * 10) + ix;
         decorLayer[y][x] = tileIndex;
       }
     }
@@ -524,12 +524,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 416,  // Height including sprite tiles and iryslogo (13 rows * 32)
+        imageheight: 480,  // Height including sprite tiles and iryslogo (15 rows * 32)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 130,  // Including sprite tiles and iryslogo tiles
+        tilecount: 150,  // Including sprite tiles and iryslogo tiles
         tileheight: 32,
         tilewidth: 32,
         tiles: [

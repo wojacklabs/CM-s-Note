@@ -8,7 +8,7 @@ console.log('🤖 Generating Cyberpunk CM\'s Note Town Hall Tileset...\n');
 
 const TILE_SIZE = 32;
 const TILES_PER_ROW = 10;
-const TOTAL_TILES = 130; // Including sprite tiles (60-107) and iryslogo tiles (110-125)
+const TOTAL_TILES = 150; // Including sprite tiles and iryslogo tiles (up to 143)
 const CANVAS_WIDTH = TILE_SIZE * TILES_PER_ROW;
 const CANVAS_HEIGHT = Math.ceil(TOTAL_TILES / TILES_PER_ROW) * TILE_SIZE;
 
@@ -738,7 +738,7 @@ if (spriteImagePath) {
       });
     }
   }
-  console.log('✅ Added sprite as tiles 60-107');
+  console.log('✅ Added sprite as tiles (rows 6-10, 8 tiles per row)');
 } else {
   console.log('⚠️  sprite image not found, creating placeholder tiles');
   // Create placeholder tiles for sprite
@@ -780,7 +780,9 @@ if (fs.existsSync(iryslogoPath)) {
   
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
-      drawTile(tileIndex, () => {
+      // Calculate tile index ensuring each iryslogo row starts at new tileset row
+      const currentTileIndex = 110 + (row * 10) + col;  // Each row jumps by 10 (tileset width)
+      drawTile(currentTileIndex, () => {
         // Draw portion of iryslogo
         ctx.drawImage(
           iryslogoImage,
@@ -794,14 +796,15 @@ if (fs.existsSync(iryslogoPath)) {
           TILE_SIZE                // dest height
         );
       });
-      tileIndex++;
     }
   }
-  console.log('✅ Added iryslogo as tiles 110-125');
+  console.log('✅ Added iryslogo as tiles (rows 11-14, 4 tiles per row)');
 } else {
   console.log('⚠️  iryslogo.png not found, creating placeholder tiles');
-  // Create placeholder tiles for iryslogo
-  for (let i = 110; i <= 125; i++) {
+  // Create placeholder tiles for iryslogo matching the layout
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      const i = 110 + (row * 10) + col;
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkBlue;
@@ -817,6 +820,7 @@ if (fs.existsSync(iryslogoPath)) {
       ctx.font = 'bold 10px sans-serif';
       ctx.fillText('IRYS', 4, 20);
     });
+    }
   }
 }
 
@@ -828,7 +832,7 @@ fs.writeFileSync(outputPath, buffer);
 console.log('✅ Cyberpunk tileset generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`🎨 Size: ${CANVAS_WIDTH}x${CANVAS_HEIGHT} pixels`);
-console.log(`🔢 Tiles: ${TOTAL_TILES} unique tiles`);
+console.log(`🔢 Tiles: ${TOTAL_TILES} total tile slots`);
 console.log(`🎯 Theme: Cyberpunk with ${colors.neonCyan} highlight`);
 
 // Generate tileset definition file
@@ -902,8 +906,8 @@ console.log('  • 1-9: Tech floors (metal grid, neon accent, industrial, holo)'
 console.log('  • 10-19: Cyber walls (tech panels, holo glass, industrial)');
 console.log('  • 20-39: Future furniture (cyber desk, holo chair, data server, etc.)');
 console.log('  • 50+: Special tiles (spawn portal, teleporter pad)');
-console.log('  • 60-107: Sprite tiles (8x6 grid)');
-console.log('  • 110-125: Iryslogo tiles (4x4 grid)');
+console.log('  • 60+: Sprite tiles (8x6 grid, using rows 6-10)');
+console.log('  • 110+: Iryslogo tiles (4x4 grid, using rows 11-14)');
 }
 
 // Run the async function
