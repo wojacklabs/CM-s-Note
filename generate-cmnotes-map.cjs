@@ -189,8 +189,8 @@ function createMapData() {
       const y = spriteStartY + sy;
       
       if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Use sequential tile indices for sprite (60-107)
-        const tileIndex = spriteStartTile + (sy * spriteWidth) + sx;
+        // Calculate tile index matching tileset layout (each row jumps by 10)
+        const tileIndex = spriteStartTile + (sy * 10) + sx;
         decorLayer[y][x] = tileIndex;
       }
     }

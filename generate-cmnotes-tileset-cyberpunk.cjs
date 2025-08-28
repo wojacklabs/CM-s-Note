@@ -720,7 +720,9 @@ if (spriteImagePath) {
   
   for (let row = 0; row < spriteTileHeight; row++) {
     for (let col = 0; col < spriteTileWidth; col++) {
-      drawTile(tileIndex, () => {
+      // Calculate tile index ensuring each sprite row starts at new tileset row
+      const currentTileIndex = 60 + (row * 10) + col;  // Each row jumps by 10 (tileset width)
+      drawTile(currentTileIndex, () => {
         // Draw portion of sprite
         ctx.drawImage(
           spriteImage,
@@ -734,14 +736,16 @@ if (spriteImagePath) {
           TILE_SIZE              // dest height
         );
       });
-      tileIndex++;
     }
   }
   console.log('✅ Added sprite as tiles 60-107');
 } else {
   console.log('⚠️  sprite image not found, creating placeholder tiles');
   // Create placeholder tiles for sprite
-  for (let i = 60; i <= 107; i++) {
+  // Create placeholder tiles matching the sprite layout
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 8; col++) {
+      const i = 60 + (row * 10) + col;
     drawTile(i, () => {
       // Cyberpunk style placeholder
       ctx.fillStyle = colors.darkGray;
@@ -757,6 +761,7 @@ if (spriteImagePath) {
       ctx.font = 'bold 8px sans-serif';
       ctx.fillText('SPR', 8, 20);
     });
+    }
   }
 }
 
