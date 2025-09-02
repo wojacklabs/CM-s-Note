@@ -173,51 +173,8 @@ function createMapData() {
   decorLayer[15][19] = TILES.HOLO_PLANT;
   decorLayer[15][20] = TILES.HOLO_PLANT;
   
-  // Add sprite image tiles with precise boundaries
-  const spriteStartTile = 60;
-  const spriteWidth = 8;  // sprite-resized.png is 256px / 32px = 8 tiles wide
-  const spriteHeight = 6; // sprite-resized.png is 192px / 32px = 6 tiles high
-  
-  // Position at center-bottom
-  const spriteStartX = Math.floor((MAP_WIDTH - spriteWidth) / 2);
-  const spriteStartY = MAP_HEIGHT - spriteHeight - 2; // Bottom with 2-tile margin
-  
-  // Place sprite tiles with exact positioning
-  for (let sy = 0; sy < spriteHeight; sy++) {
-    for (let sx = 0; sx < spriteWidth; sx++) {
-      const x = spriteStartX + sx;
-      const y = spriteStartY + sy;
-      
-      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Calculate tile index matching tileset layout (each row jumps by 10)
-        const tileIndex = spriteStartTile + (sy * 10) + sx;
-        decorLayer[y][x] = tileIndex;
-      }
-    }
-  }
-  
-  // Add iryslogo image tiles with precise boundaries
-  const iryslogoStartTile = 120; // Start at row 12 to avoid overlap with sprite
-  const iryslogoWidth = 4;  // 128px / 32px = 4 tiles
-  const iryslogoHeight = 4; // 128px / 32px = 4 tiles
-  
-  // Position at center of map
-  const iryslogoStartX = Math.floor((MAP_WIDTH - iryslogoWidth) / 2);
-  const iryslogoStartY = Math.floor((MAP_HEIGHT - iryslogoHeight) / 2);
-  
-  // Place iryslogo tiles with exact positioning
-  for (let iy = 0; iy < iryslogoHeight; iy++) {
-    for (let ix = 0; ix < iryslogoWidth; ix++) {
-      const x = iryslogoStartX + ix;
-      const y = iryslogoStartY + iy;
-      
-      if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT) {
-        // Calculate tile index matching tileset layout (each row jumps by 10)
-        const tileIndex = iryslogoStartTile + (iy * 10) + ix;
-        decorLayer[y][x] = tileIndex;
-      }
-    }
-  }
+  // Remove sprite and iryslogo from decoration layer - will use image layers instead
+  // (keeping decoration layer for other decorative tiles if needed)
   
   return { floorLayer, wallsLayer, decorLayer };
 }
@@ -502,9 +459,35 @@ function generateMap() {
         ]
       },
       {
-        draworder: "topdown",
+        // Sprite image layer
         id: 4,
-name: "objects",
+        image: "sprite-resized.png",
+        name: "sprite-image",
+        offsetx: Math.floor((MAP_WIDTH - 8) / 2) * TILE_SIZE,  // Center horizontally (8 tiles wide)
+        offsety: (MAP_HEIGHT - 8) * TILE_SIZE,                 // Bottom position (6 tiles high + 2 margin)
+        opacity: 1,
+        type: "imagelayer",
+        visible: true,
+        x: 0,
+        y: 0
+      },
+      {
+        // Iryslogo image layer
+        id: 5,
+        image: "iryslogo.png",
+        name: "iryslogo-image",
+        offsetx: Math.floor((MAP_WIDTH - 4) / 2) * TILE_SIZE,  // Center horizontally (4 tiles wide)
+        offsety: Math.floor((MAP_HEIGHT - 4) / 2) * TILE_SIZE, // Center vertically (4 tiles high)
+        opacity: 1,
+        type: "imagelayer",
+        visible: true,
+        x: 0,
+        y: 0
+      },
+      {
+        draworder: "topdown",
+        id: 6,
+        name: "objects",
         objects: objects,
         opacity: 1,
         type: "objectgroup",
@@ -513,7 +496,7 @@ name: "objects",
         y: 0
       }
     ],
-    nextlayerid: 5,
+    nextlayerid: 7,
     nextobjectid: objects.length + 1,
     orientation: "orthogonal",
     renderorder: "right-down",
@@ -524,12 +507,12 @@ name: "objects",
         columns: 10,
         firstgid: 1,
         image: "cmnotes-tileset.png",
-        imageheight: 512,  // Height including sprite tiles and iryslogo (16 rows * 32)
+        imageheight: 192,  // Basic tiles only (6 rows * 32)
         imagewidth: 320,
         margin: 0,
         name: "cmnotes-tileset",
         spacing: 0,
-        tilecount: 160,  // Including sprite tiles and iryslogo tiles
+        tilecount: 60,  // Basic tiles only (no sprite/iryslogo)
         tileheight: 32,
         tilewidth: 32,
         tiles: [
@@ -592,7 +575,7 @@ fs.writeFileSync(outputPath, JSON.stringify(mapData, null, 2));
 console.log('✅ Cyberpunk map generated successfully!');
 console.log(`📍 Location: ${outputPath}`);
 console.log(`📐 Size: ${MAP_WIDTH}x${MAP_HEIGHT} tiles`);
-console.log(`🎯 Objects: ${mapData.layers[3].objects.length} interactive zones`);
+console.log(`🎯 Objects: ${mapData.layers[5].objects.length} interactive zones`);
 console.log('\n🤖 Cyber Layout:');
 console.log('  • Cyber Meeting Rooms: Top corners (holo-conference)');
 console.log('  • Tech Lounge: Left middle (social hub)');

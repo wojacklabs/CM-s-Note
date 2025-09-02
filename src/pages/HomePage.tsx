@@ -115,7 +115,7 @@ function HomePage({ selectedProject }: HomePageProps) {
     const testCMHandles = ['0xrahulk']; // 소문자로 저장
     
     // dApp로 분류할 트위터 핸들들
-    const dAppHandles = ['playhirys']; // 소문자로 저장, @ 없이, 정확한 철자
+    const dAppHandles = ['playhirys', 'irysdune']; // 소문자로 저장, @ 없이, 정확한 철자
     console.log(`[dApp Data] dApp handles configured:`, dAppHandles);
     
     // 먼저 권한이 있는 모든 CM을 맵에 추가 (노트가 없어도 표시되도록)
